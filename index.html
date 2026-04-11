@@ -130,9 +130,14 @@
       <div class="wrap contact-inner">
         <div class="contact-copy">
           <h2>Liên hệ để được kết nối</h2>
-          <p>Điền form bên cạnh (demo). Trên site thật, bạn có thể nối form tới email hoặc hệ thống CRM.</p>
+          <p>
+            Gửi form là nội dung được chuyển tới hộp thư của đội EduBridge. Chúng tôi đọc nhu cầu và hỗ trợ ghép gia sư — học viên;
+            có thể kết hợp công cụ AI để gợi ý ghép đôi phù hợp, rồi xác nhận thủ công trước khi kết nối hai bên.
+          </p>
         </div>
-        <form class="contact-form" action="#" method="get">
+        <form class="contact-form" action="https://formsubmit.co/tu620014@gmail.com" method="post">
+          <input type="hidden" name="_subject" value="[EduBridge] Yêu cầu kết nối gia sư / học viên" />
+          <input type="hidden" name="_template" value="table" />
           <label>
             Bạn là
             <select name="role" required>
@@ -155,7 +160,10 @@
             <textarea name="message" rows="4" placeholder="Ví dụ: Lớp 12, ôn thi đại học khối A, tối T2–T4…"></textarea>
           </label>
           <button type="submit" class="btn btn-primary btn-block">Gửi yêu cầu</button>
-          <p class="form-note">Gửi form sẽ tải lại trang (demo). Thay <code>action</code> bằng endpoint backend khi triển khai.</p>
+          <p class="form-note">
+            Form gửi qua FormSubmit tới email bạn cấu hình trong mã nguồn (<code>action</code>).
+            Ghép đôi tự động hoàn toàn bằng AI cần thêm backend; hiện tại luồng phù hợp là nhận mail → xử lý / gợi ý AI ngoài site → liên hệ lại người gửi.
+          </p>
         </form>
       </div>
     </section>
