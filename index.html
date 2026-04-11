@@ -145,7 +145,7 @@
         >
           <input type="hidden" name="_subject" value="[EduBridge] Yêu cầu kết nối gia sư / học viên" />
           <input type="hidden" name="_template" value="table" />
-          <!-- _next: dùng khi tắt JavaScript. FormSubmit đôi khi không áp dụng đúng _next; script bên dưới gửi AJAX rồi chuyển về data-success-url. -->
+          <!-- _next: khi tắt JavaScript (form gửi trực tiếp). Có JS: gửi vào iframe ẩn rồi chuyển tới data-success-url. -->
           <input type="hidden" name="_next" value="https://tuhitomi.github.io/tuhitomi-edubridge-landing-web/#lien-he" />
           <label>
             Bạn là
@@ -170,7 +170,7 @@
           </label>
           <button type="submit" class="btn btn-primary btn-block">Gửi yêu cầu</button>
           <p class="form-note">
-            Form gửi qua FormSubmit tới email trong <code>action</code>. Sau khi gửi thành công, trang chuyển về địa chỉ trong <code>data-success-url</code> (sửa nếu đổi domain hoặc tên repo).
+            Form gửi qua FormSubmit tới email trong <code>action</code>. Sau khi gửi xong, trang chuyển về <code>data-success-url</code> (sửa nếu đổi domain hoặc tên repo).
             Ghép đôi tự động hoàn toàn bằng AI cần thêm backend; hiện tại luồng phù hợp là nhận mail → xử lý / gợi ý AI ngoài site → liên hệ lại người gửi.
           </p>
         </form>
@@ -184,53 +184,59 @@
       <p>© 2026 — Trang demo kết nối gia sư & học viên.</p>
     </div>
   </footer>
+  <iframe
+    name="formsubmit-iframe"
+    id="formsubmit-iframe"
+    title="Kết quả gửi form"
+    style="position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); border: 0"
+    aria-hidden="true"
+  ></iframe>
   <script>
     (function () {
       var form = document.getElementById("contact-form");
-      if (!form) return;
+      var iframe = document.getElementById("formsubmit-iframe");
+      if (!form || !iframe) return;
 
-      form.addEventListener("submit", function (e) {
-        var returnUrl = form.getAttribute("data-success-url");
-        var actionUrl;
-        try {
-          var u = new URL(form.getAttribute("action"), window.location.origin);
-          if (u.hostname !== "formsubmit.co" || !returnUrl) return;
-          if (!u.pathname.startsWith("/ajax")) {
-            u.pathname = "/ajax" + u.pathname;
-          }
-          actionUrl = u.href;
-        } catch (err) {
-          return;
+      var returnUrl = form.getAttribute("data-success-url");
+      if (!returnUrl) return;
+
+      var waitingForResponse = false;
+      var timeoutId = null;
+
+      iframe.addEventListener("load", function () {
+        if (!waitingForResponse) return;
+        waitingForResponse = false;
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+          timeoutId = null;
         }
-        e.preventDefault();
+        window.location.href = returnUrl;
+      });
+
+      form.addEventListener("submit", function () {
+        form.setAttribute("target", "formsubmit-iframe");
+        waitingForResponse = true;
 
         var btn = form.querySelector('button[type="submit"]');
-        var label = btn ? btn.textContent : "";
+        var label = btn && btn.textContent ? btn.textContent : "Gửi yêu cầu";
         if (btn) {
           btn.disabled = true;
           btn.textContent = "Đang gửi…";
         }
 
-        var body = new FormData(form);
-        fetch(actionUrl, {
-          method: "POST",
-          body: body,
-          headers: { Accept: "application/json" },
-        })
-          .then(function (res) {
-            if (res.ok) {
-              window.location.href = returnUrl;
-              return;
-            }
-            throw new Error("submit failed");
-          })
-          .catch(function () {
-            alert("Không gửi được. Kiểm tra mạng hoặc thử lại sau.");
-            if (btn) {
-              btn.disabled = false;
-              btn.textContent = label;
-            }
-          });
+        if (timeoutId) clearTimeout(timeoutId);
+        timeoutId = setTimeout(function () {
+          if (!waitingForResponse) return;
+          waitingForResponse = false;
+          timeoutId = null;
+          if (btn) {
+            btn.disabled = false;
+            btn.textContent = label;
+          }
+          alert(
+            "Không nhận được tín hiệu hoàn tất từ trình duyệt. Nếu bạn đã nhận email thì yêu cầu đã được gửi — bạn có thể đóng thông báo này và kiểm tra hộp thư."
+          );
+        }, 45000);
       });
     })();
   </script>
