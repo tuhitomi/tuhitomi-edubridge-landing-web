@@ -145,7 +145,7 @@
         >
           <input type="hidden" name="_subject" value="[EduBridge] Yêu cầu kết nối gia sư / học viên" />
           <input type="hidden" name="_template" value="table" />
-          <!-- _next: khi tắt JavaScript (form gửi trực tiếp). Có JS: gửi vào iframe ẩn rồi chuyển tới data-success-url. -->
+          <!-- _next: khi tắt JavaScript. Có JS: fetch no-cors + hẹn giờ, rồi chuyển tới data-success-url (tránh treo nút). -->
           <input type="hidden" name="_next" value="https://tuhitomi.github.io/tuhitomi-edubridge-landing-web/#lien-he" />
           <label>
             Bạn là
@@ -184,38 +184,16 @@
       <p>© 2026 — Trang demo kết nối gia sư & học viên.</p>
     </div>
   </footer>
-  <iframe
-    name="formsubmit-iframe"
-    id="formsubmit-iframe"
-    title="Kết quả gửi form"
-    style="position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); border: 0"
-    aria-hidden="true"
-  ></iframe>
   <script>
     (function () {
       var form = document.getElementById("contact-form");
-      var iframe = document.getElementById("formsubmit-iframe");
-      if (!form || !iframe) return;
+      if (!form) return;
 
       var returnUrl = form.getAttribute("data-success-url");
       if (!returnUrl) return;
 
-      var waitingForResponse = false;
-      var timeoutId = null;
-
-      iframe.addEventListener("load", function () {
-        if (!waitingForResponse) return;
-        waitingForResponse = false;
-        if (timeoutId) {
-          clearTimeout(timeoutId);
-          timeoutId = null;
-        }
-        window.location.href = returnUrl;
-      });
-
-      form.addEventListener("submit", function () {
-        form.setAttribute("target", "formsubmit-iframe");
-        waitingForResponse = true;
+      form.addEventListener("submit", function (e) {
+        e.preventDefault();
 
         var btn = form.querySelector('button[type="submit"]');
         var label = btn && btn.textContent ? btn.textContent : "Gửi yêu cầu";
@@ -224,19 +202,31 @@
           btn.textContent = "Đang gửi…";
         }
 
-        if (timeoutId) clearTimeout(timeoutId);
-        timeoutId = setTimeout(function () {
-          if (!waitingForResponse) return;
-          waitingForResponse = false;
-          timeoutId = null;
-          if (btn) {
-            btn.disabled = false;
-            btn.textContent = label;
-          }
-          alert(
-            "Không nhận được tín hiệu hoàn tất từ trình duyệt. Nếu bạn đã nhận email thì yêu cầu đã được gửi — bạn có thể đóng thông báo này và kiểm tra hộp thư."
-          );
-        }, 45000);
+        var action = form.getAttribute("action");
+        var params = new URLSearchParams();
+        new FormData(form).forEach(function (value, key) {
+          params.append(key, value);
+        });
+
+        /* no-cors: không đọc được body nhưng promise thường kết thúc ổn định hơn so với CORS+json.
+           Promise.race: nếu vẫn treo (hiếm), sau 3s vẫn chuyển trang để không kẹt nút. */
+        var post = fetch(action, {
+          method: "POST",
+          mode: "no-cors",
+          body: params,
+          credentials: "omit",
+          cache: "no-store",
+        });
+
+        var cap = new Promise(function (resolve) {
+          setTimeout(resolve, 3000);
+        });
+
+        Promise.race([post, cap])
+          .catch(function () {})
+          .finally(function () {
+            window.location.assign(returnUrl);
+          });
       });
     })();
   </script>
