@@ -135,11 +135,18 @@
             có thể kết hợp công cụ AI để gợi ý ghép đôi phù hợp, rồi xác nhận thủ công trước khi kết nối hai bên.
           </p>
         </div>
-        <form class="contact-form" action="https://formsubmit.co/tu620014@gmail.com" method="POST" enctype="application/x-www-form-urlencoded">
+        <form
+          id="contact-form"
+          class="contact-form"
+          action="https://formsubmit.co/tu620014@gmail.com"
+          method="POST"
+          enctype="application/x-www-form-urlencoded"
+          data-success-url="https://tuhitomi.github.io/tuhitomi-edubridge-landing-web/#lien-he"
+        >
           <input type="hidden" name="_subject" value="[EduBridge] Yêu cầu kết nối gia sư / học viên" />
           <input type="hidden" name="_template" value="table" />
-          <!-- FormSubmit: link “quay lại site” sau khi gửi — phải là URL đầy đủ https://... Sửa nếu tên repo hoặc domain khác. -->
-          <input type="hidden" name="_next" value="https://tuhitomi.github.io/tuhitomi-edubridge-landing-web/" />
+          <!-- _next: dùng khi tắt JavaScript. FormSubmit đôi khi không áp dụng đúng _next; script bên dưới gửi AJAX rồi chuyển về data-success-url. -->
+          <input type="hidden" name="_next" value="https://tuhitomi.github.io/tuhitomi-edubridge-landing-web/#lien-he" />
           <label>
             Bạn là
             <select name="role" required>
@@ -163,7 +170,7 @@
           </label>
           <button type="submit" class="btn btn-primary btn-block">Gửi yêu cầu</button>
           <p class="form-note">
-            Form gửi qua FormSubmit tới email bạn cấu hình trong mã nguồn (<code>action</code>).
+            Form gửi qua FormSubmit tới email trong <code>action</code>. Sau khi gửi thành công, trang chuyển về địa chỉ trong <code>data-success-url</code> (sửa nếu đổi domain hoặc tên repo).
             Ghép đôi tự động hoàn toàn bằng AI cần thêm backend; hiện tại luồng phù hợp là nhận mail → xử lý / gợi ý AI ngoài site → liên hệ lại người gửi.
           </p>
         </form>
@@ -177,5 +184,55 @@
       <p>© 2026 — Trang demo kết nối gia sư & học viên.</p>
     </div>
   </footer>
+  <script>
+    (function () {
+      var form = document.getElementById("contact-form");
+      if (!form) return;
+
+      form.addEventListener("submit", function (e) {
+        var returnUrl = form.getAttribute("data-success-url");
+        var actionUrl;
+        try {
+          var u = new URL(form.getAttribute("action"), window.location.origin);
+          if (u.hostname !== "formsubmit.co" || !returnUrl) return;
+          if (!u.pathname.startsWith("/ajax")) {
+            u.pathname = "/ajax" + u.pathname;
+          }
+          actionUrl = u.href;
+        } catch (err) {
+          return;
+        }
+        e.preventDefault();
+
+        var btn = form.querySelector('button[type="submit"]');
+        var label = btn ? btn.textContent : "";
+        if (btn) {
+          btn.disabled = true;
+          btn.textContent = "Đang gửi…";
+        }
+
+        var body = new FormData(form);
+        fetch(actionUrl, {
+          method: "POST",
+          body: body,
+          headers: { Accept: "application/json" },
+        })
+          .then(function (res) {
+            if (res.ok) {
+              window.location.href = returnUrl;
+              return;
+            }
+            throw new Error("submit failed");
+          })
+          .catch(function () {
+            alert("Không gửi được. Kiểm tra mạng hoặc thử lại sau.");
+            if (btn) {
+              btn.disabled = false;
+              btn.textContent = label;
+            }
+          });
+      });
+    })();
+  </script>
 </body>
 </html>
