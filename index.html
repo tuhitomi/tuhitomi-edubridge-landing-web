@@ -135,10 +135,16 @@
             có thể kết hợp công cụ AI để gợi ý ghép đôi phù hợp, rồi xác nhận thủ công trước khi kết nối hai bên.
           </p>
         </div>
-        <form class="contact-form" action="https://formsubmit.co/tu620014@gmail.com" method="POST" enctype="application/x-www-form-urlencoded">
+        <form
+          class="contact-form"
+          action="https://formsubmit.co/tu620014@gmail.com"
+          method="POST"
+          enctype="application/x-www-form-urlencoded"
+          onsubmit="try{sessionStorage.setItem('edubridge_show_thanks','1')}catch(e){}"
+        >
           <input type="hidden" name="_subject" value="[EduBridge] Yêu cầu kết nối gia sư / học viên" />
           <input type="hidden" name="_template" value="table" />
-          <!-- _next: URL đầy đủ https, không dùng # (FormSubmit đôi khi xử lý fragment lỗi). Đổi nếu đổi tên repo. -->
+          <!-- Về trang chủ (luôn tồn tại). Cảm ơn hiện bằng lớp phủ + sessionStorage — tránh 404 khi thanks.html chưa lên GitHub. Muốn URL thanks.html: push file rồi đổi _next. -->
           <input type="hidden" name="_next" value="https://tuhitomi.github.io/tuhitomi-edubridge-landing-web/" />
           <label>
             Bạn là
@@ -163,8 +169,7 @@
           </label>
           <button type="submit" class="btn btn-primary btn-block">Gửi yêu cầu</button>
           <p class="form-note">
-            Gửi form: trình duyệt chuyển sang FormSubmit rồi (theo cấu hình) quay lại trang này qua trường ẩn <code>_next</code> trong mã nguồn.
-            Nếu bạn vẫn thấy trang “Thanks” của FormSubmit, bấm link “Return to original site” hoặc mở lại đúng URL GitHub Pages của repo.
+            Sau khi xác minh robot, FormSubmit đưa bạn về trang chủ và hiện <strong>thông báo đã gửi thành công</strong> (lớp phủ). File <a href="thanks.html"><code>thanks.html</code></a> cần <code>git add</code> + push — nếu chưa push, link <code>/thanks.html</code> trên Pages sẽ 404.
             Ghép đôi tự động hoàn toàn bằng AI cần backend; luồng hiện tại: nhận mail → xử lý / gợi ý AI ngoài site → liên hệ lại người gửi.
           </p>
         </form>
@@ -178,5 +183,59 @@
       <p>© 2026 — Trang demo kết nối gia sư & học viên.</p>
     </div>
   </footer>
+
+  <div id="thanks-layer" class="thanks-layer" hidden>
+    <div class="thanks-layer-inner">
+      <div class="thanks-card" role="dialog" aria-labelledby="thanks-title" aria-modal="true">
+        <h1 id="thanks-title">Đã gửi yêu cầu thành công</h1>
+        <p>
+          Cảm ơn bạn đã xác minh và gửi form. Chúng tôi đã nhận thông tin; đội EduBridge sẽ xem và liên hệ bạn sớm qua email hoặc số điện thoại bạn đã để lại.
+        </p>
+        <div class="thanks-actions">
+          <button type="button" class="btn btn-primary" id="thanks-btn-lienhe">Gửi thêm / mục liên hệ</button>
+          <button type="button" class="btn btn-secondary" id="thanks-btn-home">Về đầu trang</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    (function () {
+      var layer = document.getElementById("thanks-layer");
+      if (!layer) return;
+
+      function hideThanks() {
+        layer.setAttribute("hidden", "");
+        document.body.style.overflow = "";
+      }
+
+      function showThanks() {
+        layer.removeAttribute("hidden");
+        document.body.style.overflow = "hidden";
+      }
+
+      try {
+        if (sessionStorage.getItem("edubridge_show_thanks") === "1") {
+          sessionStorage.removeItem("edubridge_show_thanks");
+          showThanks();
+        }
+      } catch (e) {}
+
+      var btnL = document.getElementById("thanks-btn-lienhe");
+      var btnH = document.getElementById("thanks-btn-home");
+      if (btnL) {
+        btnL.addEventListener("click", function () {
+          hideThanks();
+          var sec = document.getElementById("lien-he");
+          if (sec) sec.scrollIntoView({ behavior: "smooth", block: "start" });
+        });
+      }
+      if (btnH) {
+        btnH.addEventListener("click", function () {
+          hideThanks();
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        });
+      }
+    })();
+  </script>
 </body>
 </html>

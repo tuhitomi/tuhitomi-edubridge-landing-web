@@ -499,6 +499,66 @@ a:hover {
   border-radius: 4px;
 }
 
+/* Thanks (sau khi gửi form) */
+.thanks-layout {
+  padding: clamp(3rem, 8vw, 5rem) 0 4rem;
+}
+
+.thanks-card {
+  max-width: 520px;
+  margin: 0 auto;
+  background: var(--surface);
+  padding: 2rem 1.75rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  text-align: center;
+}
+
+.thanks-card h1 {
+  margin: 0 0 0.75rem;
+  font-size: clamp(1.25rem, 3.5vw, 1.5rem);
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: -0.02em;
+}
+
+.thanks-card p {
+  margin: 0 0 1.5rem;
+  color: var(--muted);
+  font-size: 0.98rem;
+  line-height: 1.6;
+}
+
+.thanks-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: center;
+}
+
+/* Lớp “trang cảm ơn” sau FormSubmit (cùng index.html) */
+.thanks-layer[hidden] {
+  display: none !important;
+}
+
+.thanks-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background: rgba(244, 241, 235, 0.96);
+  backdrop-filter: blur(6px);
+}
+
+.thanks-layer-inner {
+  width: 100%;
+  max-width: 520px;
+}
+
 /* Footer */
 .site-footer {
   border-top: 1px solid var(--border);
