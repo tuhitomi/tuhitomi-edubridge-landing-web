@@ -17,7 +17,7 @@
       <nav class="nav">
         <a href="index.html#cach-hoat-dong">Cách hoạt động</a>
         <a href="index.html#loi-ich">Lợi ích</a>
-        <a href="dang-nhap.html">Đăng nhập</a>
+        <a id="nav-auth-link" href="dang-nhap.html">Đăng nhập</a>
       </nav>
     </div>
   </header>
@@ -62,6 +62,7 @@
       <p>© 2026 — Trang demo kết nối gia sư & học viên.</p>
     </div>
   </footer>
+  <script type="module" src="auth-nav.js"></script>
   <script type="module">
     import { createUserWithEmailAndPassword, sendEmailVerification, updateProfile } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
     import { auth } from "./firebase-config.js";

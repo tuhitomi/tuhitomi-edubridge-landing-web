@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Trang cá nhân người dùng EduBridge." />
+  <title>Trang cá nhân - EduBridge</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a class="logo" href="index.html">EduBridge</a>
+      <nav class="nav">
+        <a href="index.html#cach-hoat-dong">Cách hoạt động</a>
+        <a href="index.html#loi-ich">Lợi ích</a>
+        <a id="nav-auth-link" href="dang-nhap.html">Đăng nhập</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="auth-page">
+    <section class="wrap auth-page-wrap">
+      <form class="auth-form profile-card" id="profile-form">
+        <h1>Trang cá nhân</h1>
+        <p class="auth-note">Bạn có thể cập nhật tên hiển thị cho tài khoản của mình.</p>
+        <label>
+          Tên hiển thị
+          <input type="text" id="profile-name" name="name" placeholder="Nhập tên hiển thị" />
+        </label>
+        <label>
+          Email
+          <input type="email" id="profile-email" name="email" readonly />
+        </label>
+        <button type="submit" class="btn btn-primary btn-block">Lưu thay đổi</button>
+        <button type="button" class="btn btn-secondary btn-block" id="logout-btn">Đăng xuất</button>
+        <p class="auth-status" id="profile-status"></p>
+      </form>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-inner">
+      <span class="logo">EduBridge</span>
+      <p>© 2026 — Trang demo kết nối gia sư & học viên.</p>
+    </div>
+  </footer>
+
+  <script type="module" src="auth-nav.js"></script>
+  <script type="module">
+    import { onAuthStateChanged, signOut, updateProfile } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+    import { auth } from "./firebase-config.js";
+
+    var form = document.getElementById("profile-form");
+    var nameInput = document.getElementById("profile-name");
+    var emailInput = document.getElementById("profile-email");
+    var statusEl = document.getElementById("profile-status");
+    var logoutBtn = document.getElementById("logout-btn");
+    var currentUser = null;
+
+    function setStatus(message) {
+      statusEl.textContent = message;
+    }
+
+    onAuthStateChanged(auth, function (user) {
+      if (!user || !user.emailVerified) {
+        window.location.href = "dang-nhap.html?next=profile.html";
+        return;
+      }
+
+      currentUser = user;
+      nameInput.value = user.displayName || "";
+      emailInput.value = user.email || "";
+    });
+
+    form.addEventListener("submit", async function (event) {
+      event.preventDefault();
+      setStatus("");
+      if (!currentUser) return;
+
+      try {
+        await updateProfile(currentUser, { displayName: nameInput.value.trim() });
+        setStatus("Đã cập nhật hồ sơ thành công.");
+      } catch (error) {
+        setStatus("Không cập nhật được hồ sơ: " + (error && error.message ? error.message : "lỗi không xác định."));
+      }
+    });
+
+    logoutBtn.addEventListener("click", async function () {
+      await signOut(auth);
+      window.location.href = "dang-nhap.html";
+    });
+  </script>
+</body>
+</html>

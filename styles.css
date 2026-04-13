@@ -89,6 +89,25 @@ a:hover {
   font-size: 0.95rem;
 }
 
+.nav-auth-icon {
+  width: 2.1rem;
+  height: 2.1rem;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none !important;
+  padding: 0;
+}
+
+.nav-auth-icon svg {
+  width: 1.05rem;
+  height: 1.05rem;
+  color: var(--ink);
+}
+
 .nav a:hover {
   color: var(--ink);
 }
@@ -669,6 +688,10 @@ a:hover {
   margin: 0;
   font-size: 0.9rem;
   color: var(--muted);
+}
+
+.profile-card {
+  width: min(560px, 100%);
 }
 
 .form-note {
