@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="description" content="Đăng nhập tài khoản EduBridge bằng tên đăng nhập hoặc email." />
+  <meta name="description" content="Đăng nhập tài khoản EduBridge và xác thực email." />
   <title>Đăng nhập - EduBridge</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -26,16 +26,17 @@
     <section class="wrap auth-page-wrap">
       <form class="auth-form auth-form-single" action="#" method="POST" id="login-form">
         <h1>Đăng nhập</h1>
-        <p class="auth-note">Dùng tên đăng nhập hoặc email để truy cập tài khoản.</p>
+        <p class="auth-note">Đăng nhập bằng email đã đăng ký và đã kích hoạt tài khoản.</p>
         <label>
-          Tên đăng nhập hoặc Email
-          <input type="text" name="identity" autocomplete="username" required placeholder="username hoặc email@example.com" />
+          Email
+          <input type="email" name="identity" autocomplete="email" required placeholder="email@example.com" />
         </label>
         <label>
           Mật khẩu
           <input type="password" name="password" autocomplete="current-password" required placeholder="Nhập mật khẩu" />
         </label>
         <button type="submit" class="btn btn-primary btn-block">Đăng nhập</button>
+        <p id="login-status" class="auth-status"></p>
         <p class="auth-links">
           <a href="quen-mat-khau.html">Quên mật khẩu?</a>
           <span>Chưa có tài khoản? <a href="dang-ky.html">Đăng ký</a></span>
@@ -50,27 +51,52 @@
       <p>© 2026 — Trang demo kết nối gia sư & học viên.</p>
     </div>
   </footer>
-  <script>
-    (function () {
-      var form = document.getElementById("login-form");
-      if (!form) return;
+  <script type="module">
+    import { sendEmailVerification, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+    import { auth } from "./firebase-config.js";
 
-      var params = new URLSearchParams(window.location.search);
-      var nextPage = params.get("next") || "index.html";
+    var form = document.getElementById("login-form");
+    var statusEl = document.getElementById("login-status");
+    if (!form || !statusEl) {
+      throw new Error("Form đăng nhập không tồn tại.");
+    }
 
-      form.addEventListener("submit", function (event) {
-        event.preventDefault();
-        var formData = new FormData(form);
-        var identity = String(formData.get("identity") || "").trim();
-        if (!identity) return;
+    var params = new URLSearchParams(window.location.search);
+    var nextPage = params.get("next") || "index.html";
 
-        try {
-          localStorage.setItem("edubridge_user", identity);
-        } catch (e) {}
+    function setStatus(message) {
+      statusEl.textContent = message;
+    }
+
+    form.addEventListener("submit", async function (event) {
+      event.preventDefault();
+      setStatus("");
+
+      var formData = new FormData(form);
+      var identity = String(formData.get("identity") || "").trim();
+      var password = String(formData.get("password") || "");
+
+      if (identity.indexOf("@") === -1) {
+        setStatus("Firebase đang đăng nhập bằng email. Vui lòng nhập email để đăng nhập.");
+        return;
+      }
+
+      try {
+        var credential = await signInWithEmailAndPassword(auth, identity, password);
+        await credential.user.reload();
+
+        if (!credential.user.emailVerified) {
+          await sendEmailVerification(credential.user);
+          await signOut(auth);
+          setStatus("Email chưa kích hoạt. Hệ thống đã gửi lại link kích hoạt, vui lòng kiểm tra email.");
+          return;
+        }
 
         window.location.href = nextPage;
-      });
-    })();
+      } catch (error) {
+        setStatus("Đăng nhập thất bại: " + (error && error.message ? error.message : "lỗi không xác định."));
+      }
+    });
   </script>
 </body>
 </html>

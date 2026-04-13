@@ -79,7 +79,10 @@
     </div>
   </footer>
 
-  <script>
+  <script type="module">
+    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+    import { auth } from "./firebase-config.js";
+
     (function () {
       var tutors = [
         { id: 1, name: "Nguyễn Minh Anh", subject: "toan", subjectLabel: "Toán", mode: "online", modeLabel: "Online", price: 220000, sessionHours: 2, level: "THCS - THPT", bio: "3 năm kinh nghiệm ôn thi vào 10 và THPT Quốc gia." },
@@ -96,6 +99,11 @@
       var modeEl = document.getElementById("filter-mode");
       var priceEl = document.getElementById("filter-price");
       var durationEl = document.getElementById("filter-duration");
+      var activeUser = null;
+
+      onAuthStateChanged(auth, function (user) {
+        activeUser = user;
+      });
 
       function formatPrice(price) {
         return price.toLocaleString("vi-VN") + " VND/buổi";
@@ -140,12 +148,8 @@
         buttons.forEach(function (button) {
           button.addEventListener("click", function () {
             var tutorName = button.getAttribute("data-name") || "gia sư";
-            var currentUser = null;
-            try {
-              currentUser = localStorage.getItem("edubridge_user");
-            } catch (e) {}
 
-            if (!currentUser) {
+            if (!activeUser || !activeUser.emailVerified) {
               var next = encodeURIComponent("tim-gia-su.html");
               window.location.href = "dang-nhap.html?next=" + next;
               return;

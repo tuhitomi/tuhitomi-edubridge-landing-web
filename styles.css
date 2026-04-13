@@ -665,6 +665,12 @@ a:hover {
   font-weight: 600;
 }
 
+.auth-status {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
 .form-note {
   margin: 0;
   font-size: 0.8rem;

@@ -24,7 +24,7 @@
 
   <main class="auth-page">
     <section class="wrap auth-page-wrap">
-      <form class="auth-form auth-form-single" action="#" method="POST">
+      <form class="auth-form auth-form-single" action="#" method="POST" id="forgot-form">
         <h1>Quên mật khẩu</h1>
         <p class="auth-note">Nhập email đã đăng ký, chúng tôi sẽ gửi hướng dẫn đặt lại mật khẩu.</p>
         <label>
@@ -32,6 +32,7 @@
           <input type="email" name="email" autocomplete="email" required placeholder="email@example.com" />
         </label>
         <button type="submit" class="btn btn-primary btn-block">Gửi yêu cầu</button>
+        <p id="forgot-status" class="auth-status"></p>
         <p class="auth-links">
           <span>Nhớ mật khẩu rồi? <a href="dang-nhap.html">Quay lại đăng nhập</a></span>
         </p>
@@ -45,5 +46,34 @@
       <p>© 2026 — Trang demo kết nối gia sư & học viên.</p>
     </div>
   </footer>
+  <script type="module">
+    import { sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+    import { auth } from "./firebase-config.js";
+
+    var form = document.getElementById("forgot-form");
+    var statusEl = document.getElementById("forgot-status");
+    if (!form || !statusEl) {
+      throw new Error("Form quên mật khẩu không tồn tại.");
+    }
+
+    function setStatus(message) {
+      statusEl.textContent = message;
+    }
+
+    form.addEventListener("submit", async function (event) {
+      event.preventDefault();
+      setStatus("");
+
+      var formData = new FormData(form);
+      var email = String(formData.get("email") || "").trim();
+
+      try {
+        await sendPasswordResetEmail(auth, email);
+        setStatus("Đã gửi email đặt lại mật khẩu. Vui lòng kiểm tra hộp thư.");
+      } catch (error) {
+        setStatus("Không gửi được email: " + (error && error.message ? error.message : "lỗi không xác định."));
+      }
+    });
+  </script>
 </body>
 </html>

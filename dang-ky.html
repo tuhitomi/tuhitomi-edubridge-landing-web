@@ -32,10 +32,6 @@
           <input type="text" name="name" autocomplete="name" required placeholder="Nguyễn Văn A" />
         </label>
         <label>
-          Tên đăng nhập
-          <input type="text" name="username" autocomplete="username" minlength="4" required placeholder="Tối thiểu 4 ký tự" />
-        </label>
-        <label>
           Email
           <input type="email" name="email" autocomplete="email" required placeholder="email@example.com" />
         </label>
@@ -52,6 +48,7 @@
           <input type="password" name="password_confirm" autocomplete="new-password" minlength="8" required placeholder="Nhập lại mật khẩu" />
         </label>
         <button type="submit" class="btn btn-primary btn-block">Tạo tài khoản</button>
+        <p id="register-status" class="auth-status"></p>
         <p class="auth-links">
           <span>Đã có tài khoản? <a href="dang-nhap.html">Đăng nhập</a></span>
         </p>
@@ -65,34 +62,47 @@
       <p>© 2026 — Trang demo kết nối gia sư & học viên.</p>
     </div>
   </footer>
-  <script>
-    (function () {
-      var form = document.getElementById("register-form");
-      if (!form) return;
+  <script type="module">
+    import { createUserWithEmailAndPassword, sendEmailVerification, updateProfile } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+    import { auth } from "./firebase-config.js";
 
-      form.addEventListener("submit", function (event) {
-        event.preventDefault();
-        var formData = new FormData(form);
-        var password = String(formData.get("password") || "");
-        var confirmPassword = String(formData.get("password_confirm") || "");
-        if (password !== confirmPassword) {
-          alert("Mật khẩu nhập lại chưa khớp.");
-          return;
+    var form = document.getElementById("register-form");
+    var statusEl = document.getElementById("register-status");
+    if (!form || !statusEl) {
+      throw new Error("Form đăng ký không tồn tại.");
+    }
+
+    function setStatus(message) {
+      statusEl.textContent = message;
+    }
+
+    form.addEventListener("submit", async function (event) {
+      event.preventDefault();
+      setStatus("");
+
+      var formData = new FormData(form);
+      var password = String(formData.get("password") || "");
+      var confirmPassword = String(formData.get("password_confirm") || "");
+      var name = String(formData.get("name") || "").trim();
+      var email = String(formData.get("email") || "").trim();
+
+      if (password !== confirmPassword) {
+        setStatus("Mật khẩu nhập lại chưa khớp.");
+        return;
+      }
+
+      try {
+        var credential = await createUserWithEmailAndPassword(auth, email, password);
+        if (name) {
+          await updateProfile(credential.user, { displayName: name });
         }
-
-        var username = String(formData.get("username") || "").trim();
-        var email = String(formData.get("email") || "").trim();
-        var accountName = username || email;
-        if (!accountName) return;
-
-        try {
-          localStorage.setItem("edubridge_user", accountName);
-        } catch (e) {}
-
-        alert("Đăng ký thành công. Bạn đã được đăng nhập.");
-        window.location.href = "index.html";
-      });
-    })();
+        await sendEmailVerification(credential.user);
+        setStatus("Đã gửi email kích hoạt. Vui lòng mở email và bấm vào link kích hoạt trước khi đăng nhập.");
+        form.reset();
+      } catch (error) {
+        setStatus("Đăng ký thất bại: " + (error && error.message ? error.message : "lỗi không xác định."));
+      }
+    });
   </script>
 </body>
 </html>

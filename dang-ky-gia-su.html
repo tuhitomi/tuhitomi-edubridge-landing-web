@@ -74,27 +74,26 @@
     </div>
   </footer>
 
-  <script>
-    (function () {
-      var currentUser = null;
-      try {
-        currentUser = localStorage.getItem("edubridge_user");
-      } catch (e) {}
+  <script type="module">
+    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+    import { auth } from "./firebase-config.js";
 
-      if (!currentUser) {
+    var form = document.getElementById("tutor-register-form");
+    if (!form) {
+      throw new Error("Form đăng ký gia sư không tồn tại.");
+    }
+
+    onAuthStateChanged(auth, function (user) {
+      if (!user || !user.emailVerified) {
         window.location.href = "dang-nhap.html?next=dang-ky-gia-su.html";
-        return;
       }
+    });
 
-      var form = document.getElementById("tutor-register-form");
-      if (!form) return;
-
-      form.addEventListener("submit", function (event) {
-        event.preventDefault();
-        alert("Đăng ký làm gia sư thành công! EduBridge sẽ liên hệ bạn sớm.");
-        window.location.href = "index.html";
-      });
-    })();
+    form.addEventListener("submit", function (event) {
+      event.preventDefault();
+      alert("Đăng ký làm gia sư thành công! EduBridge sẽ liên hệ bạn sớm.");
+      window.location.href = "index.html";
+    });
   </script>
 </body>
 </html>
