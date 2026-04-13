@@ -2,10 +2,13 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/fireba
 import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyCQk1mGaPiiHe0D2j20h-cuUsfrG-mvMIA",
+  authDomain: "edubridge-landing-web.firebaseapp.com",
+  projectId: "edubridge-landing-web",
+  storageBucket: "edubridge-landing-web.firebasestorage.app",
+  messagingSenderId: "998209261117",
+  appId: "1:998209261117:web:5b8f7e87e6dc9fb2602454",
+  measurementId: "G-Y44CK7MLEV"
 };
 
 const app = initializeApp(firebaseConfig);
