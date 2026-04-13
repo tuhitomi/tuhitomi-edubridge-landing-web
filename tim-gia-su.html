@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Danh sách gia sư EduBridge với bộ lọc tìm kiếm." />
+  <title>Tìm gia sư - EduBridge</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a class="logo" href="index.html">EduBridge</a>
+      <nav class="nav">
+        <a href="index.html#cach-hoat-dong">Cách hoạt động</a>
+        <a href="index.html#loi-ich">Lợi ích</a>
+        <a href="dang-nhap.html">Đăng nhập</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="auth-page">
+    <section class="wrap tutor-search-section">
+      <h1 class="section-title">Danh sách gia sư</h1>
+      <p class="section-intro">Lọc theo nhu cầu học tập và gửi yêu cầu trực tiếp đến gia sư phù hợp.</p>
+
+      <form class="tutor-filters" id="tutor-filters">
+        <label>
+          Từ khóa
+          <input type="text" id="filter-keyword" placeholder="Tên gia sư, môn học..." />
+        </label>
+        <label>
+          Môn học
+          <select id="filter-subject">
+            <option value="">Tất cả môn</option>
+            <option value="toan">Toán</option>
+            <option value="tieng-anh">Tiếng Anh</option>
+            <option value="hoa">Hóa học</option>
+            <option value="vat-ly">Vật lý</option>
+            <option value="van">Ngữ văn</option>
+          </select>
+        </label>
+        <label>
+          Hình thức
+          <select id="filter-mode">
+            <option value="">Tất cả hình thức</option>
+            <option value="online">Online</option>
+            <option value="offline">Offline</option>
+          </select>
+        </label>
+        <label>
+          Mức học phí tối đa (VND/buổi)
+          <input type="number" id="filter-price" min="0" step="50000" placeholder="Ví dụ: 300000" />
+        </label>
+        <label>
+          Thời lượng 1 buổi
+          <select id="filter-duration">
+            <option value="">Tất cả</option>
+            <option value="1.5">1.5 giờ</option>
+            <option value="2">2 giờ</option>
+            <option value="2.5">2.5 giờ</option>
+            <option value="3">3 giờ</option>
+          </select>
+        </label>
+      </form>
+
+      <div id="tutor-list" class="tutor-list"></div>
+      <p id="tutor-empty" class="tutor-empty" hidden>Không có gia sư phù hợp với bộ lọc hiện tại.</p>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-inner">
+      <span class="logo">EduBridge</span>
+      <p>© 2026 — Trang demo kết nối gia sư & học viên.</p>
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      var tutors = [
+        { id: 1, name: "Nguyễn Minh Anh", subject: "toan", subjectLabel: "Toán", mode: "online", modeLabel: "Online", price: 220000, sessionHours: 2, level: "THCS - THPT", bio: "3 năm kinh nghiệm ôn thi vào 10 và THPT Quốc gia." },
+        { id: 2, name: "Trần Thu Hà", subject: "tieng-anh", subjectLabel: "Tiếng Anh", mode: "offline", modeLabel: "Offline", price: 300000, sessionHours: 1.5, level: "IELTS 5.5 - 7.0", bio: "Chuyên luyện giao tiếp và kỹ năng Speaking." },
+        { id: 3, name: "Lê Quang Huy", subject: "vat-ly", subjectLabel: "Vật lý", mode: "online", modeLabel: "Online", price: 250000, sessionHours: 2.5, level: "Lớp 10 - 12", bio: "Dạy bám sát chương trình SGK và luyện đề." },
+        { id: 4, name: "Phạm Ngọc Linh", subject: "hoa", subjectLabel: "Hóa học", mode: "offline", modeLabel: "Offline", price: 280000, sessionHours: 2, level: "THPT", bio: "Tập trung nền tảng và giải nhanh bài tập trắc nghiệm." },
+        { id: 5, name: "Đỗ Khánh Vy", subject: "van", subjectLabel: "Ngữ văn", mode: "online", modeLabel: "Online", price: 200000, sessionHours: 3, level: "THCS", bio: "Giúp học sinh nắm bố cục và cải thiện kỹ năng viết." }
+      ];
+
+      var listEl = document.getElementById("tutor-list");
+      var emptyEl = document.getElementById("tutor-empty");
+      var keywordEl = document.getElementById("filter-keyword");
+      var subjectEl = document.getElementById("filter-subject");
+      var modeEl = document.getElementById("filter-mode");
+      var priceEl = document.getElementById("filter-price");
+      var durationEl = document.getElementById("filter-duration");
+
+      function formatPrice(price) {
+        return price.toLocaleString("vi-VN") + " VND/buổi";
+      }
+
+      function cardTemplate(tutor) {
+        return (
+          '<article class="tutor-card">' +
+          '<h3>' + tutor.name + "</h3>" +
+          '<p class="tutor-meta">' + tutor.subjectLabel + " • " + tutor.modeLabel + " • " + tutor.level + "</p>" +
+          '<p class="tutor-bio">' + tutor.bio + "</p>" +
+          '<p class="tutor-duration">1 buổi: ' + tutor.sessionHours + " giờ</p>" +
+          '<p class="tutor-price">' + formatPrice(tutor.price) + "</p>" +
+          '<button type="button" class="btn btn-primary btn-block tutor-request-btn" data-id="' + tutor.id + '" data-name="' + tutor.name + '">Gửi yêu cầu gia sư</button>' +
+          "</article>"
+        );
+      }
+
+      function getFilteredTutors() {
+        var keyword = (keywordEl.value || "").toLowerCase().trim();
+        var subject = subjectEl.value;
+        var mode = modeEl.value;
+        var maxPrice = Number(priceEl.value || 0);
+        var sessionHours = Number(durationEl.value || 0);
+
+        return tutors.filter(function (tutor) {
+          var byKeyword = !keyword || tutor.name.toLowerCase().includes(keyword) || tutor.subjectLabel.toLowerCase().includes(keyword);
+          var bySubject = !subject || tutor.subject === subject;
+          var byMode = !mode || tutor.mode === mode;
+          var byPrice = !maxPrice || tutor.price <= maxPrice;
+          var byDuration = !sessionHours || tutor.sessionHours === sessionHours;
+          return byKeyword && bySubject && byMode && byPrice && byDuration;
+        });
+      }
+
+      function render() {
+        var filtered = getFilteredTutors();
+        listEl.innerHTML = filtered.map(cardTemplate).join("");
+        emptyEl.hidden = filtered.length !== 0;
+
+        var buttons = document.querySelectorAll(".tutor-request-btn");
+        buttons.forEach(function (button) {
+          button.addEventListener("click", function () {
+            var tutorName = button.getAttribute("data-name") || "gia sư";
+            var currentUser = null;
+            try {
+              currentUser = localStorage.getItem("edubridge_user");
+            } catch (e) {}
+
+            if (!currentUser) {
+              var next = encodeURIComponent("tim-gia-su.html");
+              window.location.href = "dang-nhap.html?next=" + next;
+              return;
+            }
+
+            alert("Đã gửi yêu cầu học với gia sư " + tutorName + ". EduBridge sẽ liên hệ bạn sớm.");
+          });
+        });
+      }
+
+      [keywordEl, subjectEl, modeEl, priceEl, durationEl].forEach(function (element) {
+        element.addEventListener("input", render);
+        element.addEventListener("change", render);
+      });
+
+      render();
+    })();
+  </script>
+</body>
+</html>

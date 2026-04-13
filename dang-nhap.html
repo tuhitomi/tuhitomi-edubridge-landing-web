@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Đăng nhập tài khoản EduBridge bằng tên đăng nhập hoặc email." />
+  <title>Đăng nhập - EduBridge</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a class="logo" href="index.html">EduBridge</a>
+      <nav class="nav">
+        <a href="index.html#cach-hoat-dong">Cách hoạt động</a>
+        <a href="index.html#loi-ich">Lợi ích</a>
+        <a href="dang-nhap.html">Đăng nhập</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="auth-page">
+    <section class="wrap auth-page-wrap">
+      <form class="auth-form auth-form-single" action="#" method="POST" id="login-form">
+        <h1>Đăng nhập</h1>
+        <p class="auth-note">Dùng tên đăng nhập hoặc email để truy cập tài khoản.</p>
+        <label>
+          Tên đăng nhập hoặc Email
+          <input type="text" name="identity" autocomplete="username" required placeholder="username hoặc email@example.com" />
+        </label>
+        <label>
+          Mật khẩu
+          <input type="password" name="password" autocomplete="current-password" required placeholder="Nhập mật khẩu" />
+        </label>
+        <button type="submit" class="btn btn-primary btn-block">Đăng nhập</button>
+        <p class="auth-links">
+          <a href="quen-mat-khau.html">Quên mật khẩu?</a>
+          <span>Chưa có tài khoản? <a href="dang-ky.html">Đăng ký</a></span>
+        </p>
+      </form>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-inner">
+      <span class="logo">EduBridge</span>
+      <p>© 2026 — Trang demo kết nối gia sư & học viên.</p>
+    </div>
+  </footer>
+  <script>
+    (function () {
+      var form = document.getElementById("login-form");
+      if (!form) return;
+
+      var params = new URLSearchParams(window.location.search);
+      var nextPage = params.get("next") || "index.html";
+
+      form.addEventListener("submit", function (event) {
+        event.preventDefault();
+        var formData = new FormData(form);
+        var identity = String(formData.get("identity") || "").trim();
+        if (!identity) return;
+
+        try {
+          localStorage.setItem("edubridge_user", identity);
+        } catch (e) {}
+
+        window.location.href = nextPage;
+      });
+    })();
+  </script>
+</body>
+</html>

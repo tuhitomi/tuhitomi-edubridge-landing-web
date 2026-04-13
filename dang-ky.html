@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Đăng ký tài khoản EduBridge." />
+  <title>Đăng ký - EduBridge</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a class="logo" href="index.html">EduBridge</a>
+      <nav class="nav">
+        <a href="index.html#cach-hoat-dong">Cách hoạt động</a>
+        <a href="index.html#loi-ich">Lợi ích</a>
+        <a href="dang-nhap.html">Đăng nhập</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="auth-page">
+    <section class="wrap auth-page-wrap">
+      <form class="auth-form auth-form-single" action="#" method="POST" id="register-form">
+        <h1>Đăng ký tài khoản</h1>
+        <p class="auth-note">Điền thông tin cơ bản để tạo tài khoản mới.</p>
+        <label>
+          Họ và tên
+          <input type="text" name="name" autocomplete="name" required placeholder="Nguyễn Văn A" />
+        </label>
+        <label>
+          Tên đăng nhập
+          <input type="text" name="username" autocomplete="username" minlength="4" required placeholder="Tối thiểu 4 ký tự" />
+        </label>
+        <label>
+          Email
+          <input type="email" name="email" autocomplete="email" required placeholder="email@example.com" />
+        </label>
+        <label>
+          Số điện thoại
+          <input type="tel" name="phone" autocomplete="tel" required placeholder="09xxxxxxxx" />
+        </label>
+        <label>
+          Mật khẩu
+          <input type="password" name="password" autocomplete="new-password" minlength="8" required placeholder="Tối thiểu 8 ký tự" />
+        </label>
+        <label>
+          Nhập lại mật khẩu
+          <input type="password" name="password_confirm" autocomplete="new-password" minlength="8" required placeholder="Nhập lại mật khẩu" />
+        </label>
+        <button type="submit" class="btn btn-primary btn-block">Tạo tài khoản</button>
+        <p class="auth-links">
+          <span>Đã có tài khoản? <a href="dang-nhap.html">Đăng nhập</a></span>
+        </p>
+      </form>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-inner">
+      <span class="logo">EduBridge</span>
+      <p>© 2026 — Trang demo kết nối gia sư & học viên.</p>
+    </div>
+  </footer>
+  <script>
+    (function () {
+      var form = document.getElementById("register-form");
+      if (!form) return;
+
+      form.addEventListener("submit", function (event) {
+        event.preventDefault();
+        var formData = new FormData(form);
+        var password = String(formData.get("password") || "");
+        var confirmPassword = String(formData.get("password_confirm") || "");
+        if (password !== confirmPassword) {
+          alert("Mật khẩu nhập lại chưa khớp.");
+          return;
+        }
+
+        var username = String(formData.get("username") || "").trim();
+        var email = String(formData.get("email") || "").trim();
+        var accountName = username || email;
+        if (!accountName) return;
+
+        try {
+          localStorage.setItem("edubridge_user", accountName);
+        } catch (e) {}
+
+        alert("Đăng ký thành công. Bạn đã được đăng nhập.");
+        window.location.href = "index.html";
+      });
+    })();
+  </script>
+</body>
+</html>

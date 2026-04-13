@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Biểu mẫu đăng ký làm gia sư tại EduBridge." />
+  <title>Đăng ký làm gia sư - EduBridge</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a class="logo" href="index.html">EduBridge</a>
+      <nav class="nav">
+        <a href="index.html#cach-hoat-dong">Cách hoạt động</a>
+        <a href="index.html#loi-ich">Lợi ích</a>
+        <a href="dang-nhap.html">Đăng nhập</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="auth-page">
+    <section class="wrap auth-page-wrap">
+      <form class="auth-form auth-form-single" action="#" method="POST" id="tutor-register-form">
+        <h1>Đăng ký làm gia sư</h1>
+        <p class="auth-note">Điền đầy đủ thông tin để EduBridge duyệt hồ sơ và ghép lớp phù hợp.</p>
+        <label>
+          Họ và tên
+          <input type="text" name="full_name" autocomplete="name" required placeholder="Nguyễn Văn A" />
+        </label>
+        <label>
+          Email
+          <input type="email" name="email" autocomplete="email" required placeholder="email@example.com" />
+        </label>
+        <label>
+          Số điện thoại
+          <input type="tel" name="phone" autocomplete="tel" required placeholder="09xxxxxxxx" />
+        </label>
+        <label>
+          Môn dạy chính
+          <input type="text" name="subject" required placeholder="Toán, Tiếng Anh, Vật lý..." />
+        </label>
+        <label>
+          Trình độ học viên có thể dạy
+          <input type="text" name="level" required placeholder="Tiểu học, THCS, THPT, IELTS..." />
+        </label>
+        <label>
+          Kinh nghiệm giảng dạy
+          <textarea name="experience" rows="4" required placeholder="Mô tả ngắn kinh nghiệm, chứng chỉ, thành tích..."></textarea>
+        </label>
+        <label>
+          Khu vực / hình thức dạy
+          <input type="text" name="location" required placeholder="Online hoặc khu vực bạn nhận dạy" />
+        </label>
+        <label>
+          Khung giờ rảnh
+          <textarea name="available_time" rows="3" required placeholder="Ví dụ: T2-T6 từ 19h đến 21h"></textarea>
+        </label>
+        <button type="submit" class="btn btn-primary btn-block">Gửi đăng ký gia sư</button>
+        <p class="auth-links">
+          <span>Cần đăng nhập tài khoản để gửi biểu mẫu này.</span>
+        </p>
+      </form>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-inner">
+      <span class="logo">EduBridge</span>
+      <p>© 2026 — Trang demo kết nối gia sư & học viên.</p>
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      var currentUser = null;
+      try {
+        currentUser = localStorage.getItem("edubridge_user");
+      } catch (e) {}
+
+      if (!currentUser) {
+        window.location.href = "dang-nhap.html?next=dang-ky-gia-su.html";
+        return;
+      }
+
+      var form = document.getElementById("tutor-register-form");
+      if (!form) return;
+
+      form.addEventListener("submit", function (event) {
+        event.preventDefault();
+        alert("Đăng ký làm gia sư thành công! EduBridge sẽ liên hệ bạn sớm.");
+        window.location.href = "index.html";
+      });
+    })();
+  </script>
+</body>
+</html>

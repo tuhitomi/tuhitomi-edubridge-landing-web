@@ -17,7 +17,7 @@
       <nav class="nav">
         <a href="#cach-hoat-dong">Cách hoạt động</a>
         <a href="#loi-ich">Lợi ích</a>
-        <a href="#lien-he" class="nav-cta">Liên hệ</a>
+        <a href="dang-nhap.html">Đăng nhập</a>
       </nav>
     </div>
   </header>
@@ -65,7 +65,7 @@
             <li>Thông báo khi có học viên phù hợp</li>
             <li>Hỗ trợ thống nhất lịch & mức học phí</li>
           </ul>
-          <a class="btn btn-primary btn-block" href="#lien-he">Đăng ký làm gia sư</a>
+          <a class="btn btn-primary btn-block" href="dang-ky-gia-su.html">Đăng ký làm gia sư</a>
         </article>
         <article id="dang-ky-hoc-vien" class="panel panel-student">
           <h2>Dành cho học viên</h2>
@@ -75,7 +75,7 @@
             <li>Ưu tiên gia sư có kinh nghiệm tương ứng</li>
             <li>Theo dõi buổi đầu & phản hồi</li>
           </ul>
-          <a class="btn btn-secondary btn-block" href="#lien-he">Tìm gia sư</a>
+          <a class="btn btn-secondary btn-block" href="tim-gia-su.html">Tìm gia sư</a>
         </article>
       </div>
     </section>
@@ -126,55 +126,6 @@
       </div>
     </section>
 
-    <section id="lien-he" class="contact-section">
-      <div class="wrap contact-inner">
-        <div class="contact-copy">
-          <h2>Liên hệ để được kết nối</h2>
-          <p>
-            Gửi form là nội dung được chuyển tới hộp thư của đội EduBridge. Chúng tôi đọc nhu cầu và hỗ trợ ghép gia sư — học viên;
-            có thể kết hợp công cụ AI để gợi ý ghép đôi phù hợp, rồi xác nhận thủ công trước khi kết nối hai bên.
-          </p>
-        </div>
-        <form
-          class="contact-form"
-          action="https://formsubmit.co/tu620014@gmail.com"
-          method="POST"
-          enctype="application/x-www-form-urlencoded"
-          onsubmit="try{sessionStorage.setItem('edubridge_show_thanks','1')}catch(e){}"
-        >
-          <input type="hidden" name="_subject" value="[EduBridge] Yêu cầu kết nối gia sư / học viên" />
-          <input type="hidden" name="_template" value="table" />
-          <!-- Về trang chủ (luôn tồn tại). Cảm ơn hiện bằng lớp phủ + sessionStorage — tránh 404 khi thanks.html chưa lên GitHub. Muốn URL thanks.html: push file rồi đổi _next. -->
-          <input type="hidden" name="_next" value="https://tuhitomi.github.io/tuhitomi-edubridge-landing-web/" />
-          <label>
-            Bạn là
-            <select name="role" required>
-              <option value="">— Chọn —</option>
-              <option value="tutor">Gia sư</option>
-              <option value="student">Học viên</option>
-              <option value="parent">Phụ huynh</option>
-            </select>
-          </label>
-          <label>
-            Họ tên
-            <input type="text" name="name" autocomplete="name" required placeholder="Nguyễn Văn A" />
-          </label>
-          <label>
-            Email hoặc SĐT
-            <input type="text" name="contact" required placeholder="email@example.com" />
-          </label>
-          <label>
-            Nhu cầu / môn học / lịch rảnh
-            <textarea name="message" rows="4" placeholder="Ví dụ: Lớp 12, ôn thi đại học khối A, tối T2–T4…"></textarea>
-          </label>
-          <button type="submit" class="btn btn-primary btn-block">Gửi yêu cầu</button>
-          <p class="form-note">
-            <!--Sau khi xác minh robot, FormSubmit đưa bạn về trang chủ và hiện <strong>thông báo đã gửi thành công</strong> (lớp phủ). File <a href="thanks.html"><code>thanks.html</code></a> cần <code>git add</code> + push — nếu chưa push, link <code>/thanks.html</code> trên Pages sẽ 404.
-            Ghép đôi tự động hoàn toàn bằng AI cần backend; luồng hiện tại: nhận mail → xử lý / gợi ý AI ngoài site → liên hệ lại người gửi.-->
-          </p>
-        </form>
-      </div>
-    </section>
   </main>
 
   <footer class="site-footer">
@@ -184,58 +135,5 @@
     </div>
   </footer>
 
-  <div id="thanks-layer" class="thanks-layer" hidden>
-    <div class="thanks-layer-inner">
-      <div class="thanks-card" role="dialog" aria-labelledby="thanks-title" aria-modal="true">
-        <h1 id="thanks-title">Đã gửi yêu cầu thành công</h1>
-        <p>
-          Cảm ơn bạn đã xác minh và gửi form. Chúng tôi đã nhận thông tin; đội EduBridge sẽ xem và liên hệ bạn sớm qua email hoặc số điện thoại bạn đã để lại.
-        </p>
-        <div class="thanks-actions">
-          <button type="button" class="btn btn-primary" id="thanks-btn-lienhe">Gửi thêm / mục liên hệ</button>
-          <button type="button" class="btn btn-secondary" id="thanks-btn-home">Về đầu trang</button>
-        </div>
-      </div>
-    </div>
-  </div>
-  <script>
-    (function () {
-      var layer = document.getElementById("thanks-layer");
-      if (!layer) return;
-
-      function hideThanks() {
-        layer.setAttribute("hidden", "");
-        document.body.style.overflow = "";
-      }
-
-      function showThanks() {
-        layer.removeAttribute("hidden");
-        document.body.style.overflow = "hidden";
-      }
-
-      try {
-        if (sessionStorage.getItem("edubridge_show_thanks") === "1") {
-          sessionStorage.removeItem("edubridge_show_thanks");
-          showThanks();
-        }
-      } catch (e) {}
-
-      var btnL = document.getElementById("thanks-btn-lienhe");
-      var btnH = document.getElementById("thanks-btn-home");
-      if (btnL) {
-        btnL.addEventListener("click", function () {
-          hideThanks();
-          var sec = document.getElementById("lien-he");
-          if (sec) sec.scrollIntoView({ behavior: "smooth", block: "start" });
-        });
-      }
-      if (btnH) {
-        btnH.addEventListener("click", function () {
-          hideThanks();
-          window.scrollTo({ top: 0, behavior: "smooth" });
-        });
-      }
-    })();
-  </script>
 </body>
 </html>
