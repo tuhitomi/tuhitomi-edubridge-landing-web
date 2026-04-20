@@ -38,6 +38,10 @@
         <button type="submit" class="btn btn-primary btn-block">Lưu thay đổi</button>
         <button type="button" class="btn btn-secondary btn-block" id="logout-btn">Đăng xuất</button>
         <p class="auth-status" id="profile-status"></p>
+        <h3>Lịch sử yêu cầu (học viên)</h3>
+        <ul id="sent-history" class="history-list"></ul>
+        <h3>Lịch sử được yêu cầu (gia sư)</h3>
+        <ul id="received-history" class="history-list"></ul>
       </form>
     </section>
   </main>
@@ -59,10 +63,50 @@
     var emailInput = document.getElementById("profile-email");
     var statusEl = document.getElementById("profile-status");
     var logoutBtn = document.getElementById("logout-btn");
+    var sentHistoryEl = document.getElementById("sent-history");
+    var receivedHistoryEl = document.getElementById("received-history");
     var currentUser = null;
 
     function setStatus(message) {
       statusEl.textContent = message;
+    }
+
+    function readRequests() {
+      try {
+        return JSON.parse(localStorage.getItem("edubridge_requests") || "[]");
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function formatTime(value) {
+      try {
+        return new Date(value).toLocaleString("vi-VN");
+      } catch (e) {
+        return "";
+      }
+    }
+
+    function renderHistories(email) {
+      var requests = readRequests();
+      var sent = requests.filter(function (item) {
+        return item.studentEmail === email;
+      });
+      var received = requests.filter(function (item) {
+        return item.tutorEmail === email;
+      });
+
+      sentHistoryEl.innerHTML = sent.length
+        ? sent.map(function (item) {
+            return '<li class="history-item"><strong>Gia sư:</strong> ' + item.tutorName + '<br><strong>Môn:</strong> ' + item.subject + '<br><strong>Ghi chú:</strong> ' + (item.note || "Không có") + '<br><small>' + formatTime(item.createdAt) + "</small></li>";
+          }).join("")
+        : '<li class="history-item">Chưa có yêu cầu nào được gửi.</li>';
+
+      receivedHistoryEl.innerHTML = received.length
+        ? received.map(function (item) {
+            return '<li class="history-item"><strong>Học viên:</strong> ' + item.studentName + '<br><strong>Môn:</strong> ' + item.subject + '<br><strong>Ghi chú:</strong> ' + (item.note || "Không có") + '<br><small>' + formatTime(item.createdAt) + "</small></li>";
+          }).join("")
+        : '<li class="history-item">Chưa có yêu cầu nào gửi đến bạn.</li>';
     }
 
     onAuthStateChanged(auth, function (user) {
@@ -74,6 +118,7 @@
       currentUser = user;
       nameInput.value = user.displayName || "";
       emailInput.value = user.email || "";
+      renderHistories(user.email || "");
     });
 
     form.addEventListener("submit", async function (event) {

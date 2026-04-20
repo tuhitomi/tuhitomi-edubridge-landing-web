@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Thông báo tài khoản EduBridge." />
+  <title>Thông báo - EduBridge</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a class="logo" href="index.html">EduBridge</a>
+      <nav class="nav">
+        <a href="index.html#cach-hoat-dong">Cách hoạt động</a>
+        <a href="index.html#loi-ich">Lợi ích</a>
+        <a id="nav-auth-link" href="dang-nhap.html">Đăng nhập</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="auth-page">
+    <section class="wrap auth-page-wrap">
+      <div class="auth-form profile-card">
+        <h1>Thông báo</h1>
+        <p class="auth-note">Các thông báo yêu cầu gia sư mới nhất của bạn.</p>
+        <button type="button" class="btn btn-secondary" id="mark-read-btn">Đánh dấu đã đọc tất cả</button>
+        <ul id="notify-list" class="history-list"></ul>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-inner">
+      <span class="logo">EduBridge</span>
+      <p>© 2026 — Trang demo kết nối gia sư & học viên.</p>
+    </div>
+  </footer>
+
+  <script type="module" src="auth-nav.js"></script>
+  <script type="module">
+    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+    import { auth } from "./firebase-config.js";
+
+    var listEl = document.getElementById("notify-list");
+    var markReadBtn = document.getElementById("mark-read-btn");
+    var currentEmail = "";
+
+    function readNotifications() {
+      try {
+        return JSON.parse(localStorage.getItem("edubridge_notifications") || "[]");
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function writeNotifications(notifications) {
+      localStorage.setItem("edubridge_notifications", JSON.stringify(notifications));
+    }
+
+    function formatTime(value) {
+      try {
+        return new Date(value).toLocaleString("vi-VN");
+      } catch (e) {
+        return "";
+      }
+    }
+
+    function render() {
+      var notifications = readNotifications().filter(function (item) {
+        return item.userEmail === currentEmail;
+      });
+
+      listEl.innerHTML = notifications.length
+        ? notifications.map(function (item) {
+            var unreadTag = item.read ? "" : " <strong>(Mới)</strong>";
+            return '<li class="history-item">' + item.text + unreadTag + "<br><small>" + formatTime(item.createdAt) + "</small></li>";
+          }).join("")
+        : '<li class="history-item">Bạn chưa có thông báo nào.</li>';
+    }
+
+    markReadBtn.addEventListener("click", function () {
+      var notifications = readNotifications().map(function (item) {
+        if (item.userEmail === currentEmail) {
+          return { id: item.id, userEmail: item.userEmail, text: item.text, read: true, createdAt: item.createdAt };
+        }
+        return item;
+      });
+      writeNotifications(notifications);
+      render();
+      window.dispatchEvent(new Event("edubridge-notifications-updated"));
+    });
+
+    onAuthStateChanged(auth, function (user) {
+      if (!user || !user.emailVerified) {
+        window.location.href = "dang-nhap.html?next=thong-bao.html";
+        return;
+      }
+      currentEmail = user.email || "";
+      render();
+    });
+  </script>
+</body>
+</html>

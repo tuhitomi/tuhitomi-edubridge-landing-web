@@ -2,12 +2,60 @@ import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.5/f
 import { auth } from "./firebase-config.js";
 
 const navAuthLink = document.getElementById("nav-auth-link");
+const nav = navAuthLink ? navAuthLink.closest(".nav") : null;
 const avatarIconSvg =
   '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
   '<path fill="currentColor" d="M12 12c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5Zm0 2c-4.42 0-8 2.24-8 5v1h16v-1c0-2.76-3.58-5-8-5Z" />' +
   "</svg>";
+const bellIconSvg =
+  '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
+  '<path fill="currentColor" d="M12 22a2.5 2.5 0 0 0 2.45-2h-4.9A2.5 2.5 0 0 0 12 22Zm7-6v-1l-1.5-1.5V10a5.5 5.5 0 0 0-11 0v3.5L5 15v1h14Z" />' +
+  "</svg>";
+
+function readNotifications() {
+  try {
+    return JSON.parse(localStorage.getItem("edubridge_notifications") || "[]");
+  } catch (e) {
+    return [];
+  }
+}
+
+function ensureBellLink() {
+  if (!nav) return null;
+  var bellLink = document.getElementById("nav-bell-link");
+  if (!bellLink) {
+    bellLink = document.createElement("a");
+    bellLink.id = "nav-bell-link";
+    bellLink.href = "thong-bao.html";
+    bellLink.className = "nav-bell-link";
+    bellLink.innerHTML = bellIconSvg + '<span id="nav-bell-badge" class="nav-bell-badge" hidden>0</span>';
+    bellLink.setAttribute("aria-label", "Thông báo");
+    bellLink.title = "Thông báo";
+    nav.insertBefore(bellLink, navAuthLink);
+  }
+  return bellLink;
+}
+
+function updateBellBadge(user) {
+  var bellLink = document.getElementById("nav-bell-link");
+  var badge = document.getElementById("nav-bell-badge");
+  if (!bellLink || !badge) return;
+
+  if (!user || !user.emailVerified) {
+    bellLink.setAttribute("hidden", "");
+    return;
+  }
+
+  bellLink.removeAttribute("hidden");
+  var unread = readNotifications().filter(function (item) {
+    return item.userEmail === user.email && !item.read;
+  }).length;
+  badge.textContent = String(unread);
+  badge.hidden = unread === 0;
+}
 
 if (navAuthLink) {
+  ensureBellLink();
   onAuthStateChanged(auth, function (user) {
     if (user && user.emailVerified) {
       navAuthLink.href = "profile.html";
@@ -15,6 +63,7 @@ if (navAuthLink) {
       navAuthLink.classList.add("nav-auth-icon");
       navAuthLink.setAttribute("aria-label", "Trang cá nhân");
       navAuthLink.title = "Trang cá nhân";
+      updateBellBadge(user);
       return;
     }
 
@@ -23,5 +72,13 @@ if (navAuthLink) {
     navAuthLink.classList.remove("nav-auth-icon");
     navAuthLink.removeAttribute("aria-label");
     navAuthLink.removeAttribute("title");
+    updateBellBadge(null);
+  });
+
+  window.addEventListener("storage", function () {
+    updateBellBadge(auth.currentUser);
+  });
+  window.addEventListener("edubridge-notifications-updated", function () {
+    updateBellBadge(auth.currentUser);
   });
 }

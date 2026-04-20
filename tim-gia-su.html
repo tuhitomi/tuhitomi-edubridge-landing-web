@@ -72,6 +72,21 @@
     </section>
   </main>
 
+  <div id="request-modal" class="request-modal" hidden>
+    <div class="request-modal-content">
+      <h2>Gửi yêu cầu gia sư</h2>
+      <p id="request-modal-title" class="auth-note"></p>
+      <label>
+        Ghi chú thêm cho học viên
+        <textarea id="request-note" rows="4" placeholder="Ví dụ: Mục tiêu học, lịch rảnh, nội dung muốn tập trung..."></textarea>
+      </label>
+      <div class="request-modal-actions">
+        <button type="button" class="btn btn-secondary" id="request-cancel-btn">Hủy</button>
+        <button type="button" class="btn btn-primary" id="request-submit-btn">Gửi yêu cầu</button>
+      </div>
+    </div>
+  </div>
+
   <footer class="site-footer">
     <div class="wrap footer-inner">
       <span class="logo">EduBridge</span>
@@ -86,11 +101,11 @@
 
     (function () {
       var tutors = [
-        { id: 1, name: "Nguyễn Minh Anh", subject: "toan", subjectLabel: "Toán", mode: "online", modeLabel: "Online", price: 220000, sessionHours: 2, level: "THCS - THPT", bio: "3 năm kinh nghiệm ôn thi vào 10 và THPT Quốc gia." },
-        { id: 2, name: "Trần Thu Hà", subject: "tieng-anh", subjectLabel: "Tiếng Anh", mode: "offline", modeLabel: "Offline", price: 300000, sessionHours: 1.5, level: "IELTS 5.5 - 7.0", bio: "Chuyên luyện giao tiếp và kỹ năng Speaking." },
-        { id: 3, name: "Lê Quang Huy", subject: "vat-ly", subjectLabel: "Vật lý", mode: "online", modeLabel: "Online", price: 250000, sessionHours: 2.5, level: "Lớp 10 - 12", bio: "Dạy bám sát chương trình SGK và luyện đề." },
-        { id: 4, name: "Phạm Ngọc Linh", subject: "hoa", subjectLabel: "Hóa học", mode: "offline", modeLabel: "Offline", price: 280000, sessionHours: 2, level: "THPT", bio: "Tập trung nền tảng và giải nhanh bài tập trắc nghiệm." },
-        { id: 5, name: "Đỗ Khánh Vy", subject: "van", subjectLabel: "Ngữ văn", mode: "online", modeLabel: "Online", price: 200000, sessionHours: 3, level: "THCS", bio: "Giúp học sinh nắm bố cục và cải thiện kỹ năng viết." }
+        { id: 1, name: "Nguyễn Minh Anh", email: "gia-su1@edubridge.demo", subject: "toan", subjectLabel: "Toán", mode: "online", modeLabel: "Online", price: 220000, sessionHours: 2, level: "THCS - THPT", bio: "3 năm kinh nghiệm ôn thi vào 10 và THPT Quốc gia." },
+        { id: 2, name: "Trần Thu Hà", email: "gia-su2@edubridge.demo", subject: "tieng-anh", subjectLabel: "Tiếng Anh", mode: "offline", modeLabel: "Offline", price: 300000, sessionHours: 1.5, level: "IELTS 5.5 - 7.0", bio: "Chuyên luyện giao tiếp và kỹ năng Speaking." },
+        { id: 3, name: "Lê Quang Huy", email: "gia-su3@edubridge.demo", subject: "vat-ly", subjectLabel: "Vật lý", mode: "online", modeLabel: "Online", price: 250000, sessionHours: 2.5, level: "Lớp 10 - 12", bio: "Dạy bám sát chương trình SGK và luyện đề." },
+        { id: 4, name: "Phạm Ngọc Linh", email: "gia-su4@edubridge.demo", subject: "hoa", subjectLabel: "Hóa học", mode: "offline", modeLabel: "Offline", price: 280000, sessionHours: 2, level: "THPT", bio: "Tập trung nền tảng và giải nhanh bài tập trắc nghiệm." },
+        { id: 5, name: "Đỗ Khánh Vy", email: "gia-su5@edubridge.demo", subject: "van", subjectLabel: "Ngữ văn", mode: "online", modeLabel: "Online", price: 200000, sessionHours: 3, level: "THCS", bio: "Giúp học sinh nắm bố cục và cải thiện kỹ năng viết." }
       ];
 
       var listEl = document.getElementById("tutor-list");
@@ -101,6 +116,12 @@
       var priceEl = document.getElementById("filter-price");
       var durationEl = document.getElementById("filter-duration");
       var activeUser = null;
+      var selectedTutor = null;
+      var modalEl = document.getElementById("request-modal");
+      var modalTitleEl = document.getElementById("request-modal-title");
+      var noteEl = document.getElementById("request-note");
+      var modalSubmitBtn = document.getElementById("request-submit-btn");
+      var modalCancelBtn = document.getElementById("request-cancel-btn");
 
       onAuthStateChanged(auth, function (user) {
         activeUser = user;
@@ -108,6 +129,84 @@
 
       function formatPrice(price) {
         return price.toLocaleString("vi-VN") + " VND/buổi";
+      }
+
+      function readJson(key) {
+        try {
+          return JSON.parse(localStorage.getItem(key) || "[]");
+        } catch (e) {
+          return [];
+        }
+      }
+
+      function writeJson(key, value) {
+        localStorage.setItem(key, JSON.stringify(value));
+      }
+
+      var registeredTutors = readJson("edubridge_tutors").map(function (item, index) {
+        return {
+          id: 1000 + index,
+          name: item.name || "Gia sư mới",
+          email: item.email || "",
+          subject: "custom",
+          subjectLabel: item.subject || "Môn học khác",
+          mode: item.location && item.location.toLowerCase().indexOf("online") !== -1 ? "online" : "offline",
+          modeLabel: item.location && item.location.toLowerCase().indexOf("online") !== -1 ? "Online" : "Offline",
+          price: Number(item.price || 250000),
+          sessionHours: Number(item.sessionHours || 2),
+          level: item.level || "Nhiều cấp độ",
+          bio: item.experience || "Gia sư đã đăng ký trên hệ thống EduBridge."
+        };
+      });
+
+      tutors = tutors.concat(registeredTutors);
+
+      function openModal(tutor) {
+        selectedTutor = tutor;
+        modalTitleEl.textContent = "Gia sư: " + tutor.name + " (" + tutor.subjectLabel + ")";
+        noteEl.value = "";
+        modalEl.hidden = false;
+      }
+
+      function closeModal() {
+        selectedTutor = null;
+        modalEl.hidden = true;
+      }
+
+      function saveRequest(note) {
+        if (!selectedTutor || !activeUser) return;
+
+        var requests = readJson("edubridge_requests");
+        requests.unshift({
+          id: Date.now(),
+          tutorId: selectedTutor.id,
+          tutorName: selectedTutor.name,
+          tutorEmail: selectedTutor.email,
+          subject: selectedTutor.subjectLabel,
+          studentEmail: activeUser.email,
+          studentName: activeUser.displayName || activeUser.email,
+          note: note,
+          createdAt: new Date().toISOString()
+        });
+        writeJson("edubridge_requests", requests);
+
+        var notifications = readJson("edubridge_notifications");
+        notifications.unshift({
+          id: Date.now() + 1,
+          userEmail: selectedTutor.email,
+          text: "Bạn có yêu cầu mới từ " + (activeUser.displayName || activeUser.email) + " cho môn " + selectedTutor.subjectLabel + ".",
+          read: false,
+          createdAt: new Date().toISOString()
+        });
+        notifications.unshift({
+          id: Date.now() + 2,
+          userEmail: activeUser.email,
+          text: "Bạn đã gửi yêu cầu đến gia sư " + selectedTutor.name + ".",
+          read: false,
+          createdAt: new Date().toISOString()
+        });
+        writeJson("edubridge_notifications", notifications);
+        window.dispatchEvent(new Event("edubridge-notifications-updated"));
       }
 
       function cardTemplate(tutor) {
@@ -148,15 +247,23 @@
         var buttons = document.querySelectorAll(".tutor-request-btn");
         buttons.forEach(function (button) {
           button.addEventListener("click", function () {
-            var tutorName = button.getAttribute("data-name") || "gia sư";
-
             if (!activeUser || !activeUser.emailVerified) {
               var next = encodeURIComponent("tim-gia-su.html");
               window.location.href = "dang-nhap.html?next=" + next;
               return;
             }
 
-            alert("Đã gửi yêu cầu học với gia sư " + tutorName + ". EduBridge sẽ liên hệ bạn sớm.");
+            var tutorId = Number(button.getAttribute("data-id") || 0);
+            var tutor = tutors.find(function (item) {
+              return item.id === tutorId;
+            });
+
+            if (!tutor) {
+              alert("Không tìm thấy thông tin gia sư.");
+              return;
+            }
+
+            openModal(tutor);
           });
         });
       }
@@ -164,6 +271,16 @@
       [keywordEl, subjectEl, modeEl, priceEl, durationEl].forEach(function (element) {
         element.addEventListener("input", render);
         element.addEventListener("change", render);
+      });
+
+      modalCancelBtn.addEventListener("click", closeModal);
+      modalSubmitBtn.addEventListener("click", function () {
+        if (!selectedTutor) return;
+        var note = (noteEl.value || "").trim();
+        var tutorName = selectedTutor.name;
+        saveRequest(note);
+        closeModal();
+        alert("Đã gửi yêu cầu học với gia sư " + tutorName + ".");
       });
 
       render();

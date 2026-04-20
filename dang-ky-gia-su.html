@@ -59,6 +59,14 @@
           Khung giờ rảnh
           <textarea name="available_time" rows="3" required placeholder="Ví dụ: T2-T6 từ 19h đến 21h"></textarea>
         </label>
+        <label>
+          Học phí tham khảo (VND/buổi)
+          <input type="number" name="price" min="0" step="50000" placeholder="Ví dụ: 250000" />
+        </label>
+        <label>
+          Thời lượng 1 buổi (giờ)
+          <input type="number" name="session_hours" min="1" max="4" step="0.5" placeholder="Ví dụ: 2" />
+        </label>
         <button type="submit" class="btn btn-primary btn-block">Gửi đăng ký gia sư</button>
         <p class="auth-links">
           <span>Cần đăng nhập tài khoản để gửi biểu mẫu này.</span>
@@ -80,6 +88,7 @@
     import { auth } from "./firebase-config.js";
 
     var form = document.getElementById("tutor-register-form");
+    var activeUser = null;
     if (!form) {
       throw new Error("Form đăng ký gia sư không tồn tại.");
     }
@@ -87,11 +96,37 @@
     onAuthStateChanged(auth, function (user) {
       if (!user || !user.emailVerified) {
         window.location.href = "dang-nhap.html?next=dang-ky-gia-su.html";
+        return;
       }
+      activeUser = user;
     });
 
     form.addEventListener("submit", function (event) {
       event.preventDefault();
+      if (!activeUser) return;
+
+      var formData = new FormData(form);
+      var tutors = [];
+      try {
+        tutors = JSON.parse(localStorage.getItem("edubridge_tutors") || "[]");
+      } catch (e) {}
+
+      tutors = tutors.filter(function (item) {
+        return item.email !== activeUser.email;
+      });
+      tutors.unshift({
+        email: activeUser.email,
+        name: String(formData.get("full_name") || "").trim(),
+        subject: String(formData.get("subject") || "").trim(),
+        level: String(formData.get("level") || "").trim(),
+        experience: String(formData.get("experience") || "").trim(),
+        location: String(formData.get("location") || "").trim(),
+        availableTime: String(formData.get("available_time") || "").trim(),
+        price: Number(formData.get("price") || 0),
+        sessionHours: Number(formData.get("session_hours") || 0)
+      });
+      localStorage.setItem("edubridge_tutors", JSON.stringify(tutors));
+
       alert("Đăng ký làm gia sư thành công! EduBridge sẽ liên hệ bạn sớm.");
       window.location.href = "index.html";
     });
