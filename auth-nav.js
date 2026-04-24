@@ -3,7 +3,7 @@ import { auth } from "./firebase-config.js";
 
 const navAuthLink = document.getElementById("nav-auth-link");
 const nav = navAuthLink ? navAuthLink.closest(".nav") : null;
-const DEFAULT_ADMIN_EMAIL = "admin@edubridge.demo";
+const DEFAULT_ADMIN_EMAIL = "tu620014@gmail.com";
 const MODERATOR_KEY = "edubridge_moderator_emails";
 const avatarIconSvg =
   '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
