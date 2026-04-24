@@ -33,6 +33,18 @@
     </section>
   </main>
 
+  <div id="notify-detail-modal" class="request-modal" hidden>
+    <div class="request-modal-content">
+      <h2>Chi tiết thông báo</h2>
+      <p id="notify-detail-text" class="auth-note"></p>
+      <p id="notify-detail-time" class="form-note"></p>
+      <pre id="notify-detail-payload" class="history-item"></pre>
+      <div class="request-modal-actions">
+        <button type="button" class="btn btn-secondary" id="notify-detail-close-btn">Đóng</button>
+      </div>
+    </div>
+  </div>
+
   <footer class="site-footer">
     <div class="wrap footer-inner">
       <span class="logo">EduBridge</span>
@@ -48,8 +60,14 @@
     var DEFAULT_ADMIN_EMAIL = "admin@edubridge.demo";
     var listEl = document.getElementById("notify-list");
     var markReadBtn = document.getElementById("mark-read-btn");
+    var detailModalEl = document.getElementById("notify-detail-modal");
+    var detailTextEl = document.getElementById("notify-detail-text");
+    var detailTimeEl = document.getElementById("notify-detail-time");
+    var detailPayloadEl = document.getElementById("notify-detail-payload");
+    var detailCloseBtn = document.getElementById("notify-detail-close-btn");
+    var MODERATOR_KEY = "edubridge_moderator_emails";
     var currentEmail = "";
-    var isAdmin = false;
+    var canReviewTutor = false;
 
     function readNotifications() {
       try {
@@ -86,6 +104,52 @@
     function getAdminEmail() {
       var custom = localStorage.getItem("edubridge_admin_email");
       return (custom || DEFAULT_ADMIN_EMAIL).trim().toLowerCase();
+    }
+
+    function getModeratorEmails() {
+      try {
+        var value = JSON.parse(localStorage.getItem(MODERATOR_KEY) || "[]");
+        if (!Array.isArray(value)) return [];
+        return value
+          .map(function (item) { return String(item || "").trim().toLowerCase(); })
+          .filter(function (item, index, arr) { return item && arr.indexOf(item) === index; });
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function getVisibleNotifications() {
+      return readNotifications().filter(function (item) {
+        return item.userEmail === currentEmail;
+      });
+    }
+
+    function updateNotificationReadState(notificationId, shouldRead) {
+      var notifications = readNotifications().map(function (item) {
+        if (Number(item.id || 0) !== Number(notificationId || 0) || item.userEmail !== currentEmail) return item;
+        item.read = !!shouldRead;
+        return item;
+      });
+      writeNotifications(notifications);
+      window.dispatchEvent(new Event("edubridge-notifications-updated"));
+    }
+
+    function openDetail(notificationId) {
+      var item = getVisibleNotifications().find(function (entry) {
+        return Number(entry.id || 0) === Number(notificationId || 0);
+      });
+      if (!item) return;
+
+      updateNotificationReadState(item.id, true);
+      detailTextEl.textContent = item.text || "(Không có nội dung)";
+      detailTimeEl.textContent = "Thời gian: " + formatTime(item.createdAt) + " • Loại: " + (item.type || "general");
+      detailPayloadEl.textContent = item.payload ? JSON.stringify(item.payload, null, 2) : "Không có dữ liệu bổ sung.";
+      detailModalEl.hidden = false;
+      render();
+    }
+
+    function closeDetail() {
+      detailModalEl.hidden = true;
     }
 
     function updateTutorStatus(tutorEmail, status, reason) {
@@ -141,30 +205,59 @@
     }
 
     function render() {
-      var notifications = readNotifications().filter(function (item) {
-        return item.userEmail === currentEmail;
-      });
+      var notifications = getVisibleNotifications();
 
       listEl.innerHTML = notifications.length
         ? notifications.map(function (item) {
             var unreadTag = item.read ? "" : " <strong>(Mới)</strong>";
-            if (isAdmin && item.type === "tutor-approval-request" && item.payload && item.payload.tutorEmail) {
+            var toggleReadLabel = item.read ? "Đánh dấu chưa đọc" : "Đánh dấu đã đọc";
+            var toggleReadValue = item.read ? "false" : "true";
+            if (canReviewTutor && item.type === "tutor-approval-request" && item.payload && item.payload.tutorEmail) {
               return (
                 '<li class="history-item">' +
                 item.text + unreadTag +
                 '<br><small>' + formatTime(item.createdAt) + "</small>" +
                 '<div class="request-modal-actions">' +
+                '<a class="btn btn-secondary" href="admin.html?tutorEmail=' + encodeURIComponent(String(item.payload.tutorEmail || "").toLowerCase()) + '">Mở trang quản trị</a>' +
+                '<button type="button" class="btn btn-secondary notify-detail-btn" data-id="' + item.id + '">Xem chi tiết</button>' +
+                '<button type="button" class="btn btn-secondary notify-toggle-read-btn" data-id="' + item.id + '" data-read="' + toggleReadValue + '">' + toggleReadLabel + "</button>" +
                 '<button type="button" class="btn btn-primary notify-approve-btn" data-email="' + item.payload.tutorEmail + '">Duyệt hồ sơ</button>' +
                 '<button type="button" class="btn btn-secondary notify-reject-btn" data-email="' + item.payload.tutorEmail + '">Từ chối</button>' +
                 "</div>" +
                 "</li>"
               );
             }
-            return '<li class="history-item">' + item.text + unreadTag + "<br><small>" + formatTime(item.createdAt) + "</small></li>";
+            return (
+              '<li class="history-item">' + item.text + unreadTag + "<br><small>" + formatTime(item.createdAt) + "</small>" +
+              '<div class="request-modal-actions">' +
+              '<button type="button" class="btn btn-secondary notify-detail-btn" data-id="' + item.id + '">Xem chi tiết</button>' +
+              '<button type="button" class="btn btn-secondary notify-toggle-read-btn" data-id="' + item.id + '" data-read="' + toggleReadValue + '">' + toggleReadLabel + "</button>" +
+              "</div>" +
+              "</li>"
+            );
           }).join("")
         : '<li class="history-item">Bạn chưa có thông báo nào.</li>';
 
-      if (isAdmin) {
+      var detailButtons = document.querySelectorAll(".notify-detail-btn");
+      var toggleReadButtons = document.querySelectorAll(".notify-toggle-read-btn");
+      detailButtons.forEach(function (button) {
+        button.addEventListener("click", function () {
+          var id = Number(button.getAttribute("data-id") || 0);
+          if (!id) return;
+          openDetail(id);
+        });
+      });
+      toggleReadButtons.forEach(function (button) {
+        button.addEventListener("click", function () {
+          var id = Number(button.getAttribute("data-id") || 0);
+          var shouldRead = String(button.getAttribute("data-read") || "") === "true";
+          if (!id) return;
+          updateNotificationReadState(id, shouldRead);
+          render();
+        });
+      });
+
+      if (canReviewTutor) {
         var approveButtons = document.querySelectorAll(".notify-approve-btn");
         var rejectButtons = document.querySelectorAll(".notify-reject-btn");
         approveButtons.forEach(function (button) {
@@ -198,13 +291,19 @@
       window.dispatchEvent(new Event("edubridge-notifications-updated"));
     });
 
+    detailCloseBtn.addEventListener("click", closeDetail);
+    detailModalEl.addEventListener("click", function (event) {
+      if (event.target === detailModalEl) closeDetail();
+    });
+
     onAuthStateChanged(auth, function (user) {
       if (!user || !user.emailVerified) {
         window.location.href = "dang-nhap.html?next=thong-bao.html";
         return;
       }
       currentEmail = user.email || "";
-      isAdmin = String(currentEmail).toLowerCase() === getAdminEmail();
+      var normalizedEmail = String(currentEmail).toLowerCase();
+      canReviewTutor = normalizedEmail === getAdminEmail() || getModeratorEmails().includes(normalizedEmail);
       render();
     });
   </script>

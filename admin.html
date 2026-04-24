@@ -26,7 +26,6 @@
     <section class="wrap tutor-search-section">
       <h1 class="section-title">Quản trị duyệt gia sư</h1>
       <p class="section-intro">Duyệt hồ sơ để gia sư được hiển thị trên bảng tìm gia sư.</p>
-
       <form class="tutor-filters" id="admin-filters">
         <label>
           Trạng thái
@@ -92,6 +91,7 @@
     var disputeEmptyEl = document.getElementById("dispute-empty");
     var currentUserEmail = "";
     var currentRole = "none";
+    var focusTutorEmail = "";
 
     function getAdminEmail() {
       var custom = localStorage.getItem("edubridge_admin_email");
@@ -213,7 +213,7 @@
         : "";
 
       return (
-        '<article class="tutor-card">' +
+        '<article class="tutor-card' + (String(item.email || "").toLowerCase() === focusTutorEmail ? " tutor-card-focus" : "") + '" data-email="' + String(item.email || "").toLowerCase() + '">' +
         '<h3>' + (item.name || "Gia sư") + "</h3>" +
         '<p class="tutor-meta">' + (item.subject || "Chưa cập nhật môn") + " • " + (item.level || "Chưa cập nhật trình độ") + "</p>" +
         '<p class="tutor-bio"><strong>Email:</strong> ' + (item.email || "") + '<br><strong>Khu vực:</strong> ' + (item.location || "Chưa cập nhật") + '<br><strong>Giờ rảnh:</strong> ' + (item.availableTime || "Chưa cập nhật") + "</p>" +
@@ -501,6 +501,22 @@
       renderModerators();
       renderWithdrawals();
       renderDisputes();
+      scrollToFocusedTutor();
+    }
+
+    function applyFocusFromUrl() {
+      var params = new URLSearchParams(window.location.search || "");
+      focusTutorEmail = String(params.get("tutorEmail") || "").trim().toLowerCase();
+      if (!focusTutorEmail) return;
+      keywordEl.value = focusTutorEmail;
+      statusEl.value = "";
+    }
+
+    function scrollToFocusedTutor() {
+      if (!focusTutorEmail) return;
+      var target = document.querySelector('.tutor-card[data-email="' + focusTutorEmail + '"]');
+      if (!target) return;
+      target.scrollIntoView({ behavior: "smooth", block: "center" });
     }
 
     [statusEl, keywordEl].forEach(function (element) {
@@ -545,6 +561,7 @@
         return;
       }
       moderatorFormEl.hidden = currentRole !== "admin";
+      applyFocusFromUrl();
       render();
     });
   </script>
