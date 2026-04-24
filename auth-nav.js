@@ -3,6 +3,8 @@ import { auth } from "./firebase-config.js";
 
 const navAuthLink = document.getElementById("nav-auth-link");
 const nav = navAuthLink ? navAuthLink.closest(".nav") : null;
+const DEFAULT_ADMIN_EMAIL = "admin@edubridge.demo";
+const MODERATOR_KEY = "edubridge_moderator_emails";
 const avatarIconSvg =
   '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
   '<path fill="currentColor" d="M12 12c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5Zm0 2c-4.42 0-8 2.24-8 5v1h16v-1c0-2.76-3.58-5-8-5Z" />' +
@@ -18,6 +20,38 @@ function readNotifications() {
   } catch (e) {
     return [];
   }
+}
+
+function getAdminEmail() {
+  var custom = localStorage.getItem("edubridge_admin_email");
+  return (custom || DEFAULT_ADMIN_EMAIL).trim().toLowerCase();
+}
+
+function getModeratorEmails() {
+  try {
+    var value = JSON.parse(localStorage.getItem(MODERATOR_KEY) || "[]");
+    if (!Array.isArray(value)) return [];
+    return value
+      .map(function (item) { return String(item || "").trim().toLowerCase(); })
+      .filter(function (item, index, arr) { return item && arr.indexOf(item) === index; });
+  } catch (e) {
+    return [];
+  }
+}
+
+function ensureAdminLink() {
+  if (!nav) return null;
+  var adminLink = document.getElementById("nav-admin-link");
+  if (!adminLink) {
+    adminLink = document.createElement("a");
+    adminLink.id = "nav-admin-link";
+    adminLink.href = "admin.html";
+    adminLink.className = "nav-cta";
+    adminLink.textContent = "Quản trị";
+    adminLink.setAttribute("hidden", "");
+    nav.insertBefore(adminLink, navAuthLink);
+  }
+  return adminLink;
 }
 
 function ensureBellLink() {
@@ -54,7 +88,23 @@ function updateBellBadge(user) {
   badge.hidden = unread === 0;
 }
 
+function updateAdminLink(user) {
+  var adminLink = document.getElementById("nav-admin-link");
+  if (!adminLink) return;
+
+  var normalized = String((user && user.email) || "").toLowerCase();
+  var isAdmin = !!(user && user.emailVerified && normalized === getAdminEmail());
+  var isModerator = !!(user && user.emailVerified && getModeratorEmails().includes(normalized));
+  if (isAdmin || isModerator) {
+    adminLink.textContent = isAdmin ? "Quản trị" : "Kiểm duyệt";
+    adminLink.removeAttribute("hidden");
+    return;
+  }
+  adminLink.setAttribute("hidden", "");
+}
+
 if (navAuthLink) {
+  ensureAdminLink();
   ensureBellLink();
   onAuthStateChanged(auth, function (user) {
     if (user && user.emailVerified) {
@@ -64,6 +114,7 @@ if (navAuthLink) {
       navAuthLink.setAttribute("aria-label", "Trang cá nhân");
       navAuthLink.title = "Trang cá nhân";
       updateBellBadge(user);
+      updateAdminLink(user);
       return;
     }
 
@@ -73,12 +124,15 @@ if (navAuthLink) {
     navAuthLink.removeAttribute("aria-label");
     navAuthLink.removeAttribute("title");
     updateBellBadge(null);
+    updateAdminLink(null);
   });
 
   window.addEventListener("storage", function () {
     updateBellBadge(auth.currentUser);
+    updateAdminLink(auth.currentUser);
   });
   window.addEventListener("edubridge-notifications-updated", function () {
     updateBellBadge(auth.currentUser);
+    updateAdminLink(auth.currentUser);
   });
 }

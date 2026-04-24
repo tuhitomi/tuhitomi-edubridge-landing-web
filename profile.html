@@ -36,12 +36,80 @@
           <input type="email" id="profile-email" name="email" readonly />
         </label>
         <button type="submit" class="btn btn-primary btn-block">Lưu thay đổi</button>
+        <h3>Hồ sơ gia sư</h3>
+        <p class="auth-note" id="tutor-status-note">Bạn chưa gửi hồ sơ gia sư.</p>
+        <label>
+          Họ và tên hiển thị
+          <input type="text" id="tutor-name" placeholder="Nguyễn Văn A" />
+        </label>
+        <label>
+          Môn dạy chính
+          <input type="text" id="tutor-subject" placeholder="Toán, Tiếng Anh, Vật lý..." />
+        </label>
+        <label>
+          Trình độ học viên có thể dạy
+          <input type="text" id="tutor-level" placeholder="Tiểu học, THCS, THPT, IELTS..." />
+        </label>
+        <label>
+          Kinh nghiệm giảng dạy
+          <textarea id="tutor-experience" rows="3" placeholder="Mô tả ngắn kinh nghiệm, chứng chỉ..."></textarea>
+        </label>
+        <label>
+          Khu vực / hình thức dạy
+          <input type="text" id="tutor-location" placeholder="Online hoặc khu vực bạn nhận dạy" />
+        </label>
+        <label>
+          Khung giờ rảnh
+          <textarea id="tutor-available-time" rows="3" placeholder="Ví dụ: T2-T6 từ 19h đến 21h"></textarea>
+        </label>
+        <label>
+          Học phí tham khảo (VND/buổi)
+          <input type="number" id="tutor-price" min="0" step="50000" placeholder="Ví dụ: 250000" />
+        </label>
+        <label>
+          Thời lượng 1 buổi (giờ)
+          <input type="number" id="tutor-session-hours" min="1" max="4" step="0.5" placeholder="Ví dụ: 2" />
+        </label>
+        <label>
+          Giới tính
+          <select id="tutor-gender">
+            <option value="female">Nữ</option>
+            <option value="male">Nam</option>
+          </select>
+        </label>
+        <label>
+          Trạng thái hoạt động
+          <select id="tutor-active-state">
+            <option value="available">AVAILABLE (đang tìm lớp)</option>
+            <option value="busy">BUSY (tạm ẩn khỏi tìm kiếm)</option>
+          </select>
+        </label>
+        <label>
+          Đánh giá hiển thị (1-5)
+          <input type="number" id="tutor-rating" min="1" max="5" step="0.1" placeholder="Ví dụ: 4.8" />
+        </label>
+        <button type="button" class="btn btn-secondary btn-block" id="save-tutor-profile-btn">Lưu hồ sơ gia sư</button>
         <button type="button" class="btn btn-secondary btn-block" id="logout-btn">Đăng xuất</button>
         <p class="auth-status" id="profile-status"></p>
+        <h3>Ví hệ thống</h3>
+        <p class="auth-note" id="wallet-note">Admin revenue: 0 VND • Ví gia sư của bạn: 0 VND</p>
+        <button type="button" class="btn btn-secondary btn-block" id="withdraw-btn">Yêu cầu rút tiền về ngân hàng</button>
         <h3>Lịch sử yêu cầu (học viên)</h3>
         <ul id="sent-history" class="history-list"></ul>
         <h3>Lịch sử được yêu cầu (gia sư)</h3>
         <ul id="received-history" class="history-list"></ul>
+        <h3>Báo cáo tranh chấp</h3>
+        <label>
+          Chọn yêu cầu cần report
+          <select id="dispute-request-id">
+            <option value="">-- Chọn yêu cầu --</option>
+          </select>
+        </label>
+        <label>
+          Nội dung báo cáo
+          <textarea id="dispute-reason" rows="3" placeholder="Mô tả vấn đề, bằng chứng, mong muốn xử lý..."></textarea>
+        </label>
+        <button type="button" class="btn btn-secondary btn-block" id="create-dispute-btn">Gửi report tranh chấp</button>
       </form>
     </section>
   </main>
@@ -63,9 +131,28 @@
     var emailInput = document.getElementById("profile-email");
     var statusEl = document.getElementById("profile-status");
     var logoutBtn = document.getElementById("logout-btn");
+    var tutorStatusNoteEl = document.getElementById("tutor-status-note");
+    var tutorNameEl = document.getElementById("tutor-name");
+    var tutorSubjectEl = document.getElementById("tutor-subject");
+    var tutorLevelEl = document.getElementById("tutor-level");
+    var tutorExperienceEl = document.getElementById("tutor-experience");
+    var tutorLocationEl = document.getElementById("tutor-location");
+    var tutorAvailableTimeEl = document.getElementById("tutor-available-time");
+    var tutorPriceEl = document.getElementById("tutor-price");
+    var tutorSessionHoursEl = document.getElementById("tutor-session-hours");
+    var tutorGenderEl = document.getElementById("tutor-gender");
+    var tutorActiveStateEl = document.getElementById("tutor-active-state");
+    var tutorRatingEl = document.getElementById("tutor-rating");
+    var saveTutorProfileBtn = document.getElementById("save-tutor-profile-btn");
     var sentHistoryEl = document.getElementById("sent-history");
     var receivedHistoryEl = document.getElementById("received-history");
+    var walletNoteEl = document.getElementById("wallet-note");
+    var withdrawBtn = document.getElementById("withdraw-btn");
+    var disputeSelectEl = document.getElementById("dispute-request-id");
+    var disputeReasonEl = document.getElementById("dispute-reason");
+    var createDisputeBtn = document.getElementById("create-dispute-btn");
     var currentUser = null;
+    var SERVICE_FEE = 50000;
 
     function setStatus(message) {
       statusEl.textContent = message;
@@ -79,6 +166,145 @@
       }
     }
 
+    function writeRequests(requests) {
+      localStorage.setItem("edubridge_requests", JSON.stringify(requests));
+    }
+
+    function readTutorRegistrations() {
+      try {
+        return JSON.parse(localStorage.getItem("edubridge_tutor_registrations") || "[]");
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function writeTutorRegistrations(registrations) {
+      localStorage.setItem("edubridge_tutor_registrations", JSON.stringify(registrations));
+    }
+
+    function readNotifications() {
+      try {
+        return JSON.parse(localStorage.getItem("edubridge_notifications") || "[]");
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function writeNotifications(notifications) {
+      localStorage.setItem("edubridge_notifications", JSON.stringify(notifications));
+    }
+
+    function readWallets() {
+      try {
+        return JSON.parse(localStorage.getItem("edubridge_wallets") || '{"adminRevenue":0,"tutorBalances":{}}');
+      } catch (e) {
+        return { adminRevenue: 0, tutorBalances: {} };
+      }
+    }
+
+    function writeWallets(wallets) {
+      localStorage.setItem("edubridge_wallets", JSON.stringify(wallets));
+    }
+
+    function readDisputes() {
+      try {
+        return JSON.parse(localStorage.getItem("edubridge_disputes") || "[]");
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function writeDisputes(disputes) {
+      localStorage.setItem("edubridge_disputes", JSON.stringify(disputes));
+    }
+
+    function getReviewerEmails() {
+      var adminEmail = (localStorage.getItem("edubridge_admin_email") || "admin@edubridge.demo").trim().toLowerCase();
+      var moderators = [];
+      try {
+        var raw = JSON.parse(localStorage.getItem("edubridge_moderator_emails") || "[]");
+        moderators = Array.isArray(raw) ? raw : [];
+      } catch (e) {
+        moderators = [];
+      }
+      var all = [adminEmail].concat(moderators).map(function (item) {
+        return String(item || "").trim().toLowerCase();
+      });
+      return all.filter(function (item, index, arr) {
+        return item && arr.indexOf(item) === index;
+      });
+    }
+
+    function formatTutorStatus(status) {
+      if (status === "approved") return "Đã duyệt (đang hiển thị trên bảng tìm gia sư)";
+      if (status === "rejected") return "Bị từ chối (vui lòng cập nhật hồ sơ theo lý do và gửi lại)";
+      return "Đang chờ admin duyệt";
+    }
+
+    function requestStatusLabel(status) {
+      if (status === "waiting_tutor") return "Đang chờ gia sư phản hồi";
+      if (status === "declined") return "Gia sư đã từ chối";
+      if (status === "expired") return "Quá hạn phản hồi 24h";
+      if (status === "accepted_waiting_funds") return "Đã chấp nhận - chờ nạp tiền";
+      if (status === "in_teaching") return "Đang học";
+      if (status === "completed") return "Hoàn thành";
+      if (status === "refunded") return "Đã hoàn tiền";
+      return "Chưa xác định";
+    }
+
+    function requestStatusClass(status) {
+      if (status === "waiting_tutor") return "status-waiting";
+      if (status === "accepted_waiting_funds") return "status-pending-funds";
+      if (status === "in_teaching") return "status-teaching";
+      if (status === "completed") return "status-completed";
+      if (status === "declined" || status === "expired") return "status-declined";
+      if (status === "refunded") return "status-refunded";
+      return "status-default";
+    }
+
+    function getTutorProfileByEmail(email) {
+      var registrations = readTutorRegistrations();
+      var found = registrations.find(function (item) {
+        return String(item.email || "").toLowerCase() === String(email || "").toLowerCase();
+      });
+      return found || null;
+    }
+
+    function renderTutorProfile(email) {
+      var profile = getTutorProfileByEmail(email);
+      if (!profile) {
+        tutorStatusNoteEl.textContent = "Bạn chưa gửi hồ sơ gia sư. Hãy điền thông tin và bấm Lưu hồ sơ gia sư để gửi admin duyệt.";
+        tutorNameEl.value = nameInput.value || "";
+        tutorSubjectEl.value = "";
+        tutorLevelEl.value = "";
+        tutorExperienceEl.value = "";
+        tutorLocationEl.value = "";
+        tutorAvailableTimeEl.value = "";
+        tutorPriceEl.value = "";
+        tutorSessionHoursEl.value = "";
+        tutorGenderEl.value = "female";
+        tutorActiveStateEl.value = "available";
+        tutorRatingEl.value = "";
+        return;
+      }
+
+      var rejectReason = profile.status === "rejected" && profile.rejectReason
+        ? " • Lý do: " + profile.rejectReason
+        : "";
+      tutorStatusNoteEl.textContent = "Trạng thái hồ sơ: " + formatTutorStatus(profile.status || "pending") + rejectReason;
+      tutorNameEl.value = profile.name || "";
+      tutorSubjectEl.value = profile.subject || "";
+      tutorLevelEl.value = profile.level || "";
+      tutorExperienceEl.value = profile.experience || "";
+      tutorLocationEl.value = profile.location || "";
+      tutorAvailableTimeEl.value = profile.availableTime || "";
+      tutorPriceEl.value = Number(profile.price || 0) || "";
+      tutorSessionHoursEl.value = Number(profile.sessionHours || 0) || "";
+      tutorGenderEl.value = profile.gender || "female";
+      tutorActiveStateEl.value = profile.activeState || "available";
+      tutorRatingEl.value = Number(profile.rating || 0) || "";
+    }
+
     function formatTime(value) {
       try {
         return new Date(value).toLocaleString("vi-VN");
@@ -88,25 +314,172 @@
     }
 
     function renderHistories(email) {
-      var requests = readRequests();
+      var requests = readRequests().map(function (item) {
+        if (item.status === "waiting_tutor" && item.respondBy && new Date(item.respondBy).getTime() < Date.now()) {
+          item.status = "expired";
+        }
+        return item;
+      });
+      writeRequests(requests);
       var sent = requests.filter(function (item) {
         return item.studentEmail === email;
       });
       var received = requests.filter(function (item) {
         return item.tutorEmail === email;
       });
+      var disputable = requests.filter(function (item) {
+        var involved = item.studentEmail === email || item.tutorEmail === email;
+        var refundable = item.status === "in_teaching" || item.status === "accepted_waiting_funds";
+        return involved && refundable;
+      });
 
       sentHistoryEl.innerHTML = sent.length
         ? sent.map(function (item) {
-            return '<li class="history-item"><strong>Gia sư:</strong> ' + item.tutorName + '<br><strong>Môn:</strong> ' + item.subject + '<br><strong>Ghi chú:</strong> ' + (item.note || "Không có") + '<br><small>' + formatTime(item.createdAt) + "</small></li>";
+            var payButton = item.status === "accepted_waiting_funds"
+              ? '<div class="request-modal-actions"><button type="button" class="btn btn-primary pay-hold-btn" data-id="' + item.id + '">Nạp tiền vào ví trung gian</button></div>'
+              : "";
+            return '<li class="history-item"><strong>Gia sư:</strong> ' + item.tutorName + '<br><strong>Môn:</strong> ' + item.subject + '<br><strong>Trạng thái:</strong> <span class="status-badge ' + requestStatusClass(item.status) + '">' + requestStatusLabel(item.status) + "</span><br><strong>Ghi chú:</strong> " + (item.note || "Không có") + '<br><small>' + formatTime(item.createdAt) + "</small>" + payButton + "</li>";
           }).join("")
         : '<li class="history-item">Chưa có yêu cầu nào được gửi.</li>';
 
       receivedHistoryEl.innerHTML = received.length
         ? received.map(function (item) {
-            return '<li class="history-item"><strong>Học viên:</strong> ' + item.studentName + '<br><strong>Môn:</strong> ' + item.subject + '<br><strong>Ghi chú:</strong> ' + (item.note || "Không có") + '<br><small>' + formatTime(item.createdAt) + "</small></li>";
+            var actionButtons = "";
+            if (item.status === "waiting_tutor") {
+              actionButtons = '<div class="request-modal-actions"><button type="button" class="btn btn-primary tutor-accept-btn" data-id="' + item.id + '">Chấp nhận</button><button type="button" class="btn btn-secondary tutor-decline-btn" data-id="' + item.id + '">Từ chối</button></div>';
+            } else if (item.status === "in_teaching") {
+              actionButtons = '<div class="request-modal-actions"><button type="button" class="btn btn-primary tutor-release-btn" data-id="' + item.id + '">Xác nhận hoàn thành tuần đầu</button></div>';
+            }
+            return '<li class="history-item"><strong>Học viên:</strong> ' + item.studentName + '<br><strong>Môn:</strong> ' + item.subject + '<br><strong>Trạng thái:</strong> <span class="status-badge ' + requestStatusClass(item.status) + '">' + requestStatusLabel(item.status) + "</span><br><strong>Ghi chú:</strong> " + (item.note || "Không có") + '<br><small>' + formatTime(item.createdAt) + "</small>" + actionButtons + "</li>";
           }).join("")
         : '<li class="history-item">Chưa có yêu cầu nào gửi đến bạn.</li>';
+
+      disputeSelectEl.innerHTML = '<option value="">-- Chọn yêu cầu --</option>' + disputable.map(function (item) {
+        return '<option value="' + item.id + '">#' + item.id + " - " + item.subject + " (" + requestStatusLabel(item.status) + ")</option>";
+      }).join("");
+
+      bindRequestActions(email);
+    }
+
+    function pushNotification(userEmail, text, type, payload) {
+      var notifications = readNotifications();
+      notifications.unshift({
+        id: Date.now() + Math.floor(Math.random() * 1000),
+        userEmail: userEmail,
+        type: type || "general",
+        read: false,
+        createdAt: new Date().toISOString(),
+        text: text,
+        payload: payload || {}
+      });
+      writeNotifications(notifications);
+      window.dispatchEvent(new Event("edubridge-notifications-updated"));
+    }
+
+    function bindRequestActions(email) {
+      var acceptButtons = document.querySelectorAll(".tutor-accept-btn");
+      var declineButtons = document.querySelectorAll(".tutor-decline-btn");
+      var payButtons = document.querySelectorAll(".pay-hold-btn");
+      var releaseButtons = document.querySelectorAll(".tutor-release-btn");
+
+      acceptButtons.forEach(function (button) {
+        button.addEventListener("click", function () {
+          var requestId = Number(button.getAttribute("data-id") || 0);
+          var requests = readRequests().map(function (item) {
+            if (item.id !== requestId || item.tutorEmail !== email) return item;
+            item.status = "accepted_waiting_funds";
+            item.tutorRespondedAt = new Date().toISOString();
+            return item;
+          });
+          writeRequests(requests);
+          var req = requests.find(function (item) { return item.id === requestId; });
+          if (req) {
+            pushNotification(req.studentEmail, "Gia sư " + req.tutorName + " đã chấp nhận yêu cầu. Vui lòng nạp tiền để bắt đầu.", "matching-status", { requestId: requestId, status: "accepted_waiting_funds" });
+          }
+          renderHistories(email);
+        });
+      });
+
+      declineButtons.forEach(function (button) {
+        button.addEventListener("click", function () {
+          var requestId = Number(button.getAttribute("data-id") || 0);
+          var reason = prompt("Lý do từ chối yêu cầu (tùy chọn):", "") || "";
+          var requests = readRequests().map(function (item) {
+            if (item.id !== requestId || item.tutorEmail !== email) return item;
+            item.status = "declined";
+            item.tutorRespondedAt = new Date().toISOString();
+            item.declineReason = reason.trim();
+            return item;
+          });
+          writeRequests(requests);
+          var req = requests.find(function (item) { return item.id === requestId; });
+          if (req) {
+            pushNotification(req.studentEmail, "Gia sư " + req.tutorName + " đã từ chối yêu cầu của bạn.", "matching-status", { requestId: requestId, status: "declined" });
+          }
+          renderHistories(email);
+        });
+      });
+
+      payButtons.forEach(function (button) {
+        button.addEventListener("click", function () {
+          var requestId = Number(button.getAttribute("data-id") || 0);
+          var requests = readRequests().map(function (item) {
+            if (item.id !== requestId || item.studentEmail !== email) return item;
+            var monthlyTuition = Number(item.pricePerSession || 0) * Number(item.monthlySessions || 8);
+            item.escrow = {
+              holdAmount: monthlyTuition + SERVICE_FEE,
+              monthlyTuition: monthlyTuition,
+              serviceFee: SERVICE_FEE,
+              adminAmount: Math.round(monthlyTuition * 0.3 + SERVICE_FEE),
+              tutorAmount: Math.round(monthlyTuition * 0.7),
+              heldAt: new Date().toISOString()
+            };
+            item.status = "in_teaching";
+            return item;
+          });
+          writeRequests(requests);
+          var req = requests.find(function (item) { return item.id === requestId; });
+          if (req) {
+            pushNotification(req.tutorEmail, "Phụ huynh đã nạp tiền vào ví trung gian cho lớp " + req.subject + ". Bạn có thể bắt đầu dạy.", "escrow-update", { requestId: requestId, status: "in_teaching" });
+          }
+          renderHistories(email);
+        });
+      });
+
+      releaseButtons.forEach(function (button) {
+        button.addEventListener("click", function () {
+          var requestId = Number(button.getAttribute("data-id") || 0);
+          var releasedRequest = null;
+          var requests = readRequests().map(function (item) {
+            if (item.id !== requestId || item.tutorEmail !== email) return item;
+            item.status = "completed";
+            item.releasedAt = new Date().toISOString();
+            releasedRequest = item;
+            return item;
+          });
+          if (!releasedRequest || !releasedRequest.escrow) return;
+          writeRequests(requests);
+
+          var wallets = readWallets();
+          wallets.adminRevenue = Number(wallets.adminRevenue || 0) + Number(releasedRequest.escrow.adminAmount || 0);
+          wallets.tutorBalances = wallets.tutorBalances || {};
+          wallets.tutorBalances[email] = Number(wallets.tutorBalances[email] || 0) + Number(releasedRequest.escrow.tutorAmount || 0);
+          writeWallets(wallets);
+
+          pushNotification(releasedRequest.studentEmail, "Lớp học với gia sư " + releasedRequest.tutorName + " đã được hoàn thành và giải ngân thành công.", "escrow-update", { requestId: requestId, status: "completed" });
+          pushNotification(email, "Hệ thống đã giải ngân " + Number(releasedRequest.escrow.tutorAmount || 0).toLocaleString("vi-VN") + " VND vào ví của bạn.", "escrow-update", { requestId: requestId, status: "completed" });
+          renderHistories(email);
+          renderWalletInfo(email);
+        });
+      });
+    }
+
+    function renderWalletInfo(email) {
+      var wallets = readWallets();
+      var adminRevenue = Number(wallets.adminRevenue || 0);
+      var tutorBalance = Number((wallets.tutorBalances && wallets.tutorBalances[email]) || 0);
+      walletNoteEl.textContent = "Admin revenue: " + adminRevenue.toLocaleString("vi-VN") + " VND • Ví gia sư của bạn: " + tutorBalance.toLocaleString("vi-VN") + " VND";
+      withdrawBtn.disabled = tutorBalance <= 0;
     }
 
     onAuthStateChanged(auth, function (user) {
@@ -119,6 +492,8 @@
       nameInput.value = user.displayName || "";
       emailInput.value = user.email || "";
       renderHistories(user.email || "");
+      renderTutorProfile(user.email || "");
+      renderWalletInfo(String(user.email || "").toLowerCase());
     });
 
     form.addEventListener("submit", async function (event) {
@@ -137,6 +512,155 @@
     logoutBtn.addEventListener("click", async function () {
       await signOut(auth);
       window.location.href = "dang-nhap.html";
+    });
+
+    saveTutorProfileBtn.addEventListener("click", function () {
+      if (!currentUser || !currentUser.email) return;
+
+      var email = String(currentUser.email || "").toLowerCase();
+      var nowIso = new Date().toISOString();
+      var registrations = readTutorRegistrations();
+      var currentProfile = getTutorProfileByEmail(email);
+      var nextStatus = currentProfile && currentProfile.status === "approved" ? "approved" : "pending";
+      var profile = {
+        id: currentProfile ? currentProfile.id : Date.now(),
+        email: email,
+        name: (tutorNameEl.value || "").trim() || (nameInput.value || "").trim() || email,
+        subject: (tutorSubjectEl.value || "").trim(),
+        level: (tutorLevelEl.value || "").trim(),
+        experience: (tutorExperienceEl.value || "").trim(),
+        location: (tutorLocationEl.value || "").trim(),
+        availableTime: (tutorAvailableTimeEl.value || "").trim(),
+        price: Number(tutorPriceEl.value || 0),
+        sessionHours: Number(tutorSessionHoursEl.value || 0),
+        gender: tutorGenderEl.value || "female",
+        rating: Number(tutorRatingEl.value || 4),
+        activeState: tutorActiveStateEl.value || "available",
+        status: nextStatus,
+        rejectReason: "",
+        submittedAt: currentProfile && currentProfile.submittedAt ? currentProfile.submittedAt : nowIso,
+        updatedAt: nowIso
+      };
+
+      registrations = registrations.filter(function (item) {
+        return String(item.email || "").toLowerCase() !== email;
+      });
+      registrations.unshift(profile);
+      writeTutorRegistrations(registrations);
+
+      if (nextStatus !== "approved") {
+        var notifications = readNotifications();
+        var reviewerEmails = getReviewerEmails();
+        reviewerEmails.forEach(function (reviewerEmail, index) {
+          notifications.unshift({
+            id: Date.now() + 1 + index,
+            userEmail: reviewerEmail,
+            type: "tutor-approval-request",
+            read: false,
+            createdAt: nowIso,
+            text: "Gia sư " + profile.name + " (" + email + ") vừa cập nhật hồ sơ và cần duyệt.",
+            payload: {
+              tutorEmail: email,
+              tutorName: profile.name
+            }
+          });
+        });
+        notifications.unshift({
+          id: Date.now() + 2,
+          userEmail: email,
+          type: "tutor-approval-status",
+          read: false,
+          createdAt: nowIso,
+          text: "Bạn đã cập nhật hồ sơ gia sư. Hồ sơ đang chờ admin duyệt.",
+          payload: {
+            status: "pending"
+          }
+        });
+        writeNotifications(notifications);
+      }
+
+      window.dispatchEvent(new Event("edubridge-notifications-updated"));
+      renderTutorProfile(email);
+      setStatus(nextStatus === "approved"
+        ? "Đã cập nhật hồ sơ gia sư thành công."
+        : "Đã lưu hồ sơ gia sư và gửi kiểm duyệt.");
+    });
+
+    withdrawBtn.addEventListener("click", function () {
+      if (!currentUser || !currentUser.email) return;
+      var email = String(currentUser.email || "").toLowerCase();
+      var wallets = readWallets();
+      wallets.tutorBalances = wallets.tutorBalances || {};
+      var amount = Number(wallets.tutorBalances[email] || 0);
+      if (amount <= 0) {
+        alert("Ví của bạn hiện không có số dư để rút.");
+        return;
+      }
+      wallets.tutorBalances[email] = 0;
+      writeWallets(wallets);
+
+      var withdrawals = [];
+      try {
+        withdrawals = JSON.parse(localStorage.getItem("edubridge_withdrawals") || "[]");
+      } catch (e) {
+        withdrawals = [];
+      }
+      withdrawals.unshift({
+        id: Date.now(),
+        tutorEmail: email,
+        tutorName: currentUser.displayName || email,
+        amount: amount,
+        status: "pending",
+        createdAt: new Date().toISOString()
+      });
+      localStorage.setItem("edubridge_withdrawals", JSON.stringify(withdrawals));
+      pushNotification(email, "Yêu cầu rút tiền " + amount.toLocaleString("vi-VN") + " VND đã được gửi admin duyệt.", "withdrawal-request", { amount: amount });
+
+      var adminEmail = (localStorage.getItem("edubridge_admin_email") || "admin@edubridge.demo").trim().toLowerCase();
+      pushNotification(adminEmail, "Có yêu cầu rút tiền mới từ " + (currentUser.displayName || email) + " (" + amount.toLocaleString("vi-VN") + " VND).", "withdrawal-admin", { tutorEmail: email, amount: amount });
+
+      renderWalletInfo(email);
+      alert("Đã tạo yêu cầu rút tiền. Chờ admin duyệt.");
+    });
+
+    createDisputeBtn.addEventListener("click", function () {
+      if (!currentUser || !currentUser.email) return;
+      var email = String(currentUser.email || "").toLowerCase();
+      var requestId = Number(disputeSelectEl.value || 0);
+      var reason = String(disputeReasonEl.value || "").trim();
+      if (!requestId) {
+        alert("Vui lòng chọn yêu cầu cần report.");
+        return;
+      }
+      if (!reason) {
+        alert("Vui lòng nhập nội dung báo cáo.");
+        return;
+      }
+      var requests = readRequests();
+      var request = requests.find(function (item) { return Number(item.id || 0) === requestId; });
+      if (!request) {
+        alert("Không tìm thấy yêu cầu.");
+        return;
+      }
+
+      var disputes = readDisputes();
+      disputes.unshift({
+        id: Date.now(),
+        requestId: requestId,
+        reporterEmail: email,
+        reporterRole: request.studentEmail === email ? "student" : "tutor",
+        tutorEmail: request.tutorEmail,
+        studentEmail: request.studentEmail,
+        reason: reason,
+        status: "open",
+        createdAt: new Date().toISOString()
+      });
+      writeDisputes(disputes);
+
+      var adminEmail = (localStorage.getItem("edubridge_admin_email") || "admin@edubridge.demo").trim().toLowerCase();
+      pushNotification(adminEmail, "Có report tranh chấp mới cho yêu cầu #" + requestId + ".", "dispute-opened", { requestId: requestId });
+      disputeReasonEl.value = "";
+      alert("Đã gửi report tranh chấp. Admin sẽ xử lý sớm.");
     });
   </script>
 </body>

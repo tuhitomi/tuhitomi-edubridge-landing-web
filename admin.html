@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Trang quản trị duyệt hồ sơ gia sư EduBridge." />
+  <title>Quản trị - EduBridge</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a class="logo" href="index.html">EduBridge</a>
+      <nav class="nav">
+        <a href="index.html#cach-hoat-dong">Cách hoạt động</a>
+        <a href="index.html#loi-ich">Lợi ích</a>
+        <a id="nav-auth-link" href="dang-nhap.html">Đăng nhập</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="auth-page">
+    <section class="wrap tutor-search-section">
+      <h1 class="section-title">Quản trị duyệt gia sư</h1>
+      <p class="section-intro">Duyệt hồ sơ để gia sư được hiển thị trên bảng tìm gia sư.</p>
+
+      <form class="tutor-filters" id="admin-filters">
+        <label>
+          Trạng thái
+          <select id="filter-status">
+            <option value="">Tất cả</option>
+            <option value="pending">Chờ duyệt</option>
+            <option value="approved">Đã duyệt</option>
+            <option value="rejected">Từ chối</option>
+          </select>
+        </label>
+        <label>
+          Tìm nhanh
+          <input type="text" id="filter-keyword" placeholder="Tên, email, môn dạy..." />
+        </label>
+      </form>
+
+      <form class="auth-form auth-form-single" id="moderator-form" hidden>
+        <h3>Quản lý kiểm duyệt viên</h3>
+        <p class="auth-note">Chỉ admin mới có quyền thêm/xóa tài khoản kiểm duyệt viên.</p>
+        <label>
+          Email kiểm duyệt viên
+          <input type="email" id="moderator-email-input" placeholder="moderator@example.com" />
+        </label>
+        <button type="submit" class="btn btn-primary btn-block">Thêm kiểm duyệt viên</button>
+        <ul id="moderator-list" class="history-list"></ul>
+      </form>
+
+      <div id="admin-tutor-list" class="tutor-list"></div>
+      <p id="admin-empty" class="tutor-empty" hidden>Không có hồ sơ nào phù hợp.</p>
+      <h2 class="section-title">Yêu cầu rút tiền</h2>
+      <div id="withdrawal-list" class="tutor-list"></div>
+      <p id="withdrawal-empty" class="tutor-empty" hidden>Chưa có yêu cầu rút tiền nào.</p>
+      <h2 class="section-title">Tranh chấp cần xử lý</h2>
+      <div id="dispute-list" class="tutor-list"></div>
+      <p id="dispute-empty" class="tutor-empty" hidden>Chưa có tranh chấp mở nào.</p>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-inner">
+      <span class="logo">EduBridge</span>
+      <p>© 2026 — Trang demo kết nối gia sư & học viên.</p>
+    </div>
+  </footer>
+
+  <script type="module" src="auth-nav.js"></script>
+  <script type="module">
+    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+    import { auth } from "./firebase-config.js";
+
+    var DEFAULT_ADMIN_EMAIL = "admin@edubridge.demo";
+    var MODERATOR_KEY = "edubridge_moderator_emails";
+    var statusEl = document.getElementById("filter-status");
+    var keywordEl = document.getElementById("filter-keyword");
+    var listEl = document.getElementById("admin-tutor-list");
+    var emptyEl = document.getElementById("admin-empty");
+    var moderatorFormEl = document.getElementById("moderator-form");
+    var moderatorEmailInputEl = document.getElementById("moderator-email-input");
+    var moderatorListEl = document.getElementById("moderator-list");
+    var withdrawalListEl = document.getElementById("withdrawal-list");
+    var withdrawalEmptyEl = document.getElementById("withdrawal-empty");
+    var disputeListEl = document.getElementById("dispute-list");
+    var disputeEmptyEl = document.getElementById("dispute-empty");
+    var currentUserEmail = "";
+    var currentRole = "none";
+
+    function getAdminEmail() {
+      var custom = localStorage.getItem("edubridge_admin_email");
+      return (custom || DEFAULT_ADMIN_EMAIL).trim().toLowerCase();
+    }
+
+    function getModeratorEmails() {
+      try {
+        var value = JSON.parse(localStorage.getItem(MODERATOR_KEY) || "[]");
+        if (!Array.isArray(value)) return [];
+        return value
+          .map(function (item) { return String(item || "").trim().toLowerCase(); })
+          .filter(function (item, index, arr) { return item && arr.indexOf(item) === index; });
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function saveModeratorEmails(emails) {
+      localStorage.setItem(MODERATOR_KEY, JSON.stringify(emails));
+    }
+
+    function getRoleByEmail(email) {
+      var normalized = String(email || "").trim().toLowerCase();
+      if (!normalized) return "none";
+      if (normalized === getAdminEmail()) return "admin";
+      if (getModeratorEmails().includes(normalized)) return "moderator";
+      return "none";
+    }
+
+    function readJson(key) {
+      try {
+        return JSON.parse(localStorage.getItem(key) || "[]");
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function writeJson(key, value) {
+      localStorage.setItem(key, JSON.stringify(value));
+    }
+
+    function formatTime(value) {
+      try {
+        return new Date(value).toLocaleString("vi-VN");
+      } catch (e) {
+        return "";
+      }
+    }
+
+    function statusLabel(status) {
+      if (status === "approved") return "Đã duyệt";
+      if (status === "rejected") return "Từ chối";
+      return "Chờ duyệt";
+    }
+
+    function notifyTutor(tutorEmail, status, tutorName, reason) {
+      var notifications = readJson("edubridge_notifications");
+      notifications.unshift({
+        id: Date.now(),
+        userEmail: tutorEmail,
+        type: "tutor-approval-status",
+        read: false,
+        createdAt: new Date().toISOString(),
+        text: status === "approved"
+          ? "Admin đã duyệt hồ sơ gia sư của bạn. Bạn đã được hiển thị trên bảng tìm gia sư."
+          : "Admin đã từ chối hồ sơ gia sư. Lý do: " + (reason || "Chưa cung cấp") + ". Vui lòng chỉnh sửa và gửi lại.",
+        payload: {
+          status: status,
+          tutorName: tutorName || "",
+          reason: reason || ""
+        }
+      });
+      writeJson("edubridge_notifications", notifications);
+      window.dispatchEvent(new Event("edubridge-notifications-updated"));
+    }
+
+    function updateTutorStatus(tutorEmail, status, reason) {
+      var registrations = readJson("edubridge_tutor_registrations");
+      var next = registrations.map(function (item) {
+        if (String(item.email || "").toLowerCase() !== tutorEmail) return item;
+        return {
+          id: item.id,
+          email: item.email,
+          name: item.name,
+          subject: item.subject,
+          level: item.level,
+          experience: item.experience,
+          location: item.location,
+          availableTime: item.availableTime,
+          price: Number(item.price || 0),
+          sessionHours: Number(item.sessionHours || 0),
+          gender: item.gender || "female",
+          rating: Number(item.rating || 4),
+          activeState: item.activeState || "available",
+          status: status,
+          rejectReason: status === "rejected" ? String(reason || "").trim() : "",
+          submittedAt: item.submittedAt || new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+      });
+      writeJson("edubridge_tutor_registrations", next);
+
+      var found = next.find(function (item) {
+        return String(item.email || "").toLowerCase() === tutorEmail;
+      });
+      notifyTutor(tutorEmail, status, found ? found.name : "", reason);
+      render();
+    }
+
+    function cardTemplate(item) {
+      var status = item.status || "pending";
+      var actionButtons = status === "approved"
+        ? '<button type="button" class="btn btn-secondary admin-reject-btn" data-email="' + item.email + '">Từ chối</button>'
+        : '<button type="button" class="btn btn-primary admin-approve-btn" data-email="' + item.email + '">Duyệt</button>' +
+          '<button type="button" class="btn btn-secondary admin-reject-btn" data-email="' + item.email + '">Từ chối</button>';
+      var rejectReasonLine = status === "rejected" && item.rejectReason
+        ? '<p class="tutor-duration"><strong>Lý do từ chối:</strong> ' + item.rejectReason + "</p>"
+        : "";
+
+      return (
+        '<article class="tutor-card">' +
+        '<h3>' + (item.name || "Gia sư") + "</h3>" +
+        '<p class="tutor-meta">' + (item.subject || "Chưa cập nhật môn") + " • " + (item.level || "Chưa cập nhật trình độ") + "</p>" +
+        '<p class="tutor-bio"><strong>Email:</strong> ' + (item.email || "") + '<br><strong>Khu vực:</strong> ' + (item.location || "Chưa cập nhật") + '<br><strong>Giờ rảnh:</strong> ' + (item.availableTime || "Chưa cập nhật") + "</p>" +
+        '<p class="tutor-duration"><strong>Trạng thái:</strong> ' + statusLabel(status) + "</p>" +
+        rejectReasonLine +
+        '<p class="tutor-duration"><small>Gửi lúc: ' + formatTime(item.submittedAt) + " • Cập nhật: " + formatTime(item.updatedAt) + "</small></p>" +
+        '<div class="request-modal-actions">' + actionButtons + "</div>" +
+        "</article>"
+      );
+    }
+
+    function withdrawalTemplate(item) {
+      var amountLabel = Number(item.amount || 0).toLocaleString("vi-VN") + " VND";
+      var statusLabelText = item.status === "approved" ? "Đã duyệt" : "Chờ duyệt";
+      var action = item.status === "pending"
+        ? '<button type="button" class="btn btn-primary approve-withdraw-btn" data-id="' + item.id + '">Duyệt rút tiền</button>'
+        : "";
+      return (
+        '<article class="tutor-card">' +
+        '<h3>' + (item.tutorName || item.tutorEmail || "Gia sư") + "</h3>" +
+        '<p class="tutor-meta">' + (item.tutorEmail || "") + "</p>" +
+        '<p class="tutor-duration"><strong>Số tiền:</strong> ' + amountLabel + "</p>" +
+        '<p class="tutor-duration"><strong>Trạng thái:</strong> ' + statusLabelText + "</p>" +
+        '<p class="tutor-duration"><small>Tạo lúc: ' + formatTime(item.createdAt) + "</small></p>" +
+        '<div class="request-modal-actions">' + action + "</div>" +
+        "</article>"
+      );
+    }
+
+    function readWithdrawals() {
+      return readJson("edubridge_withdrawals");
+    }
+
+    function writeWithdrawals(withdrawals) {
+      writeJson("edubridge_withdrawals", withdrawals);
+    }
+
+    function notifyByEmail(email, text, type, payload) {
+      var notifications = readJson("edubridge_notifications");
+      notifications.unshift({
+        id: Date.now() + Math.floor(Math.random() * 1000),
+        userEmail: String(email || "").toLowerCase(),
+        type: type || "general",
+        read: false,
+        createdAt: new Date().toISOString(),
+        text: text,
+        payload: payload || {}
+      });
+      writeJson("edubridge_notifications", notifications);
+      window.dispatchEvent(new Event("edubridge-notifications-updated"));
+    }
+
+    function readWallets() {
+      try {
+        return JSON.parse(localStorage.getItem("edubridge_wallets") || '{"adminRevenue":0,"tutorBalances":{}}');
+      } catch (e) {
+        return { adminRevenue: 0, tutorBalances: {} };
+      }
+    }
+
+    function writeWallets(wallets) {
+      localStorage.setItem("edubridge_wallets", JSON.stringify(wallets));
+    }
+
+    function readRequests() {
+      return readJson("edubridge_requests");
+    }
+
+    function writeRequests(requests) {
+      writeJson("edubridge_requests", requests);
+    }
+
+    function readDisputes() {
+      return readJson("edubridge_disputes");
+    }
+
+    function writeDisputes(disputes) {
+      writeJson("edubridge_disputes", disputes);
+    }
+
+    function approveWithdrawal(withdrawId) {
+      var target = null;
+      var next = readWithdrawals().map(function (item) {
+        if (Number(item.id || 0) !== withdrawId) return item;
+        target = item;
+        item.status = "approved";
+        item.approvedAt = new Date().toISOString();
+        return item;
+      });
+      writeWithdrawals(next);
+      if (target) {
+        notifyByEmail(target.tutorEmail, "Yêu cầu rút tiền " + Number(target.amount || 0).toLocaleString("vi-VN") + " VND đã được admin duyệt.", "withdrawal-approved", { amount: target.amount });
+      }
+      renderWithdrawals();
+    }
+
+    function renderWithdrawals() {
+      if (currentRole === "none") return;
+      var items = readWithdrawals();
+      withdrawalListEl.innerHTML = items.map(withdrawalTemplate).join("");
+      withdrawalEmptyEl.hidden = items.length !== 0;
+
+      var approveButtons = document.querySelectorAll(".approve-withdraw-btn");
+      approveButtons.forEach(function (button) {
+        button.addEventListener("click", function () {
+          var id = Number(button.getAttribute("data-id") || 0);
+          if (!id) return;
+          approveWithdrawal(id);
+          alert("Đã duyệt yêu cầu rút tiền.");
+        });
+      });
+    }
+
+    function disputeTemplate(item) {
+      return (
+        '<article class="tutor-card">' +
+        '<h3>Yêu cầu #' + Number(item.requestId || 0) + "</h3>" +
+        '<p class="tutor-meta">Reporter: ' + (item.reporterEmail || "") + " (" + (item.reporterRole || "unknown") + ")</p>" +
+        '<p class="tutor-bio">' + (item.reason || "Không có nội dung") + "</p>" +
+        '<p class="tutor-duration"><small>Tạo lúc: ' + formatTime(item.createdAt) + "</small></p>" +
+        '<div class="request-modal-actions">' +
+        '<button type="button" class="btn btn-primary dispute-refund-btn" data-id="' + item.id + '">Refund cho phụ huynh</button>' +
+        '<button type="button" class="btn btn-secondary dispute-close-btn" data-id="' + item.id + '">Đóng không hoàn tiền</button>' +
+        "</div>" +
+        "</article>"
+      );
+    }
+
+    function closeDispute(disputeId, nextStatus) {
+      var disputes = readDisputes().map(function (item) {
+        if (Number(item.id || 0) !== disputeId) return item;
+        item.status = nextStatus;
+        item.resolvedAt = new Date().toISOString();
+        return item;
+      });
+      writeDisputes(disputes);
+    }
+
+    function resolveWithRefund(disputeId) {
+      var disputes = readDisputes();
+      var dispute = disputes.find(function (item) { return Number(item.id || 0) === disputeId; });
+      if (!dispute) return;
+      var requestId = Number(dispute.requestId || 0);
+
+      var requests = readRequests();
+      var targetRequest = null;
+      requests = requests.map(function (item) {
+        if (Number(item.id || 0) !== requestId) return item;
+        targetRequest = item;
+        item.status = "refunded";
+        item.refundedAt = new Date().toISOString();
+        return item;
+      });
+      writeRequests(requests);
+
+      if (targetRequest && targetRequest.escrow) {
+        var wallets = readWallets();
+        wallets.adminRevenue = Math.max(0, Number(wallets.adminRevenue || 0) - Number(targetRequest.escrow.adminAmount || 0));
+        wallets.tutorBalances = wallets.tutorBalances || {};
+        var tutorEmail = String(targetRequest.tutorEmail || "").toLowerCase();
+        wallets.tutorBalances[tutorEmail] = Math.max(0, Number(wallets.tutorBalances[tutorEmail] || 0) - Number(targetRequest.escrow.tutorAmount || 0));
+        writeWallets(wallets);
+      }
+
+      closeDispute(disputeId, "resolved_refunded");
+      notifyByEmail(dispute.studentEmail, "Admin đã xử lý tranh chấp yêu cầu #" + requestId + " và hoàn tiền thành công.", "dispute-resolved", { requestId: requestId, result: "refunded" });
+      notifyByEmail(dispute.tutorEmail, "Tranh chấp yêu cầu #" + requestId + " đã được admin xử lý với quyết định hoàn tiền cho phụ huynh.", "dispute-resolved", { requestId: requestId, result: "refunded" });
+      renderDisputes();
+    }
+
+    function resolveWithoutRefund(disputeId) {
+      var dispute = readDisputes().find(function (item) { return Number(item.id || 0) === disputeId; });
+      closeDispute(disputeId, "resolved_no_refund");
+      if (dispute) {
+        notifyByEmail(dispute.reporterEmail, "Admin đã đóng tranh chấp yêu cầu #" + Number(dispute.requestId || 0) + " (không hoàn tiền).", "dispute-resolved", { requestId: dispute.requestId, result: "closed" });
+      }
+      renderDisputes();
+    }
+
+    function renderDisputes() {
+      if (currentRole === "none") return;
+      var items = readDisputes().filter(function (item) {
+        return item.status === "open";
+      });
+      disputeListEl.innerHTML = items.map(disputeTemplate).join("");
+      disputeEmptyEl.hidden = items.length !== 0;
+
+      var refundButtons = document.querySelectorAll(".dispute-refund-btn");
+      var closeButtons = document.querySelectorAll(".dispute-close-btn");
+
+      refundButtons.forEach(function (button) {
+        button.addEventListener("click", function () {
+          var id = Number(button.getAttribute("data-id") || 0);
+          if (!id) return;
+          resolveWithRefund(id);
+          alert("Đã xử lý refund cho tranh chấp.");
+        });
+      });
+
+      closeButtons.forEach(function (button) {
+        button.addEventListener("click", function () {
+          var id = Number(button.getAttribute("data-id") || 0);
+          if (!id) return;
+          resolveWithoutRefund(id);
+          alert("Đã đóng tranh chấp.");
+        });
+      });
+    }
+
+    function getFilteredItems() {
+      var items = readJson("edubridge_tutor_registrations");
+      var status = statusEl.value;
+      var keyword = (keywordEl.value || "").trim().toLowerCase();
+
+      return items.filter(function (item) {
+        var byStatus = !status || (item.status || "pending") === status;
+        var byKeyword = !keyword
+          || String(item.name || "").toLowerCase().includes(keyword)
+          || String(item.email || "").toLowerCase().includes(keyword)
+          || String(item.subject || "").toLowerCase().includes(keyword);
+        return byStatus && byKeyword;
+      });
+    }
+
+    function bindActions() {
+      var approveButtons = document.querySelectorAll(".admin-approve-btn");
+      var rejectButtons = document.querySelectorAll(".admin-reject-btn");
+
+      approveButtons.forEach(function (button) {
+        button.addEventListener("click", function () {
+          var email = String(button.getAttribute("data-email") || "").toLowerCase();
+          if (!email) return;
+          updateTutorStatus(email, "approved", "");
+          alert("Đã duyệt hồ sơ gia sư.");
+        });
+      });
+
+      rejectButtons.forEach(function (button) {
+        button.addEventListener("click", function () {
+          var email = String(button.getAttribute("data-email") || "").toLowerCase();
+          if (!email) return;
+          var reason = prompt("Nhập lý do từ chối hồ sơ:", "") || "";
+          updateTutorStatus(email, "rejected", reason);
+          alert("Đã từ chối hồ sơ gia sư.");
+        });
+      });
+    }
+
+    function renderModerators() {
+      if (currentRole !== "admin") return;
+      var moderators = getModeratorEmails();
+      moderatorListEl.innerHTML = moderators.length
+        ? moderators.map(function (email) {
+            return (
+              '<li class="history-item">' +
+              '<strong>' + email + "</strong>" +
+              '<div class="request-modal-actions">' +
+              '<button type="button" class="btn btn-secondary remove-moderator-btn" data-email="' + email + '">Xóa quyền</button>' +
+              "</div>" +
+              "</li>"
+            );
+          }).join("")
+        : '<li class="history-item">Chưa có kiểm duyệt viên nào.</li>';
+
+      var removeButtons = document.querySelectorAll(".remove-moderator-btn");
+      removeButtons.forEach(function (button) {
+        button.addEventListener("click", function () {
+          var email = String(button.getAttribute("data-email") || "").toLowerCase();
+          if (!email) return;
+          var next = getModeratorEmails().filter(function (item) {
+            return item !== email;
+          });
+          saveModeratorEmails(next);
+          renderModerators();
+          alert("Đã xóa quyền kiểm duyệt của " + email + ".");
+        });
+      });
+    }
+
+    function render() {
+      var items = getFilteredItems();
+      listEl.innerHTML = items.map(cardTemplate).join("");
+      emptyEl.hidden = items.length !== 0;
+      bindActions();
+      renderModerators();
+      renderWithdrawals();
+      renderDisputes();
+    }
+
+    [statusEl, keywordEl].forEach(function (element) {
+      element.addEventListener("input", render);
+      element.addEventListener("change", render);
+    });
+
+    moderatorFormEl.addEventListener("submit", function (event) {
+      event.preventDefault();
+      if (currentRole !== "admin") return;
+      var email = String(moderatorEmailInputEl.value || "").trim().toLowerCase();
+      if (!email || email.indexOf("@") === -1) {
+        alert("Vui lòng nhập email hợp lệ.");
+        return;
+      }
+      if (email === getAdminEmail()) {
+        alert("Không thể thêm admin vào danh sách kiểm duyệt viên.");
+        return;
+      }
+
+      var moderators = getModeratorEmails();
+      if (!moderators.includes(email)) {
+        moderators.unshift(email);
+        saveModeratorEmails(moderators);
+      }
+      moderatorEmailInputEl.value = "";
+      renderModerators();
+      alert("Đã thêm kiểm duyệt viên " + email + ".");
+    });
+
+    onAuthStateChanged(auth, function (user) {
+      if (!user || !user.emailVerified) {
+        window.location.href = "dang-nhap.html?next=admin.html";
+        return;
+      }
+
+      currentUserEmail = String(user.email || "").toLowerCase();
+      currentRole = getRoleByEmail(currentUserEmail);
+      if (currentRole === "none") {
+        alert("Bạn không có quyền truy cập trang quản trị/kiểm duyệt.");
+        window.location.href = "index.html";
+        return;
+      }
+      moderatorFormEl.hidden = currentRole !== "admin";
+      render();
+    });
+  </script>
+</body>
+</html>

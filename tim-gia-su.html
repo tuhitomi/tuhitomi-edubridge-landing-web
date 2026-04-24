@@ -56,6 +56,27 @@
           <input type="number" id="filter-price" min="0" step="50000" placeholder="Ví dụ: 300000" />
         </label>
         <label>
+          Khu vực
+          <input type="text" id="filter-area" placeholder="Quận/Huyện hoặc Online" />
+        </label>
+        <label>
+          Giới tính
+          <select id="filter-gender">
+            <option value="">Tất cả</option>
+            <option value="female">Nữ</option>
+            <option value="male">Nam</option>
+          </select>
+        </label>
+        <label>
+          Đánh giá tối thiểu
+          <select id="filter-rating">
+            <option value="0">Tất cả</option>
+            <option value="3">Từ 3 sao</option>
+            <option value="4">Từ 4 sao</option>
+            <option value="4.5">Từ 4.5 sao</option>
+          </select>
+        </label>
+        <label>
           Thời lượng 1 buổi
           <select id="filter-duration">
             <option value="">Tất cả</option>
@@ -101,11 +122,11 @@
 
     (function () {
       var tutors = [
-        { id: 1, name: "Nguyễn Minh Anh", email: "gia-su1@edubridge.demo", subject: "toan", subjectLabel: "Toán", mode: "online", modeLabel: "Online", price: 220000, sessionHours: 2, level: "THCS - THPT", bio: "3 năm kinh nghiệm ôn thi vào 10 và THPT Quốc gia." },
-        { id: 2, name: "Trần Thu Hà", email: "gia-su2@edubridge.demo", subject: "tieng-anh", subjectLabel: "Tiếng Anh", mode: "offline", modeLabel: "Offline", price: 300000, sessionHours: 1.5, level: "IELTS 5.5 - 7.0", bio: "Chuyên luyện giao tiếp và kỹ năng Speaking." },
-        { id: 3, name: "Lê Quang Huy", email: "gia-su3@edubridge.demo", subject: "vat-ly", subjectLabel: "Vật lý", mode: "online", modeLabel: "Online", price: 250000, sessionHours: 2.5, level: "Lớp 10 - 12", bio: "Dạy bám sát chương trình SGK và luyện đề." },
-        { id: 4, name: "Phạm Ngọc Linh", email: "gia-su4@edubridge.demo", subject: "hoa", subjectLabel: "Hóa học", mode: "offline", modeLabel: "Offline", price: 280000, sessionHours: 2, level: "THPT", bio: "Tập trung nền tảng và giải nhanh bài tập trắc nghiệm." },
-        { id: 5, name: "Đỗ Khánh Vy", email: "gia-su5@edubridge.demo", subject: "van", subjectLabel: "Ngữ văn", mode: "online", modeLabel: "Online", price: 200000, sessionHours: 3, level: "THCS", bio: "Giúp học sinh nắm bố cục và cải thiện kỹ năng viết." }
+        { id: 1, name: "Nguyễn Minh Anh", email: "gia-su1@edubridge.demo", subject: "toan", subjectLabel: "Toán", mode: "online", modeLabel: "Online", price: 220000, sessionHours: 2, level: "THCS - THPT", bio: "3 năm kinh nghiệm ôn thi vào 10 và THPT Quốc gia.", area: "Online", gender: "male", rating: 4.7, activeState: "available" },
+        { id: 2, name: "Trần Thu Hà", email: "gia-su2@edubridge.demo", subject: "tieng-anh", subjectLabel: "Tiếng Anh", mode: "offline", modeLabel: "Offline", price: 300000, sessionHours: 1.5, level: "IELTS 5.5 - 7.0", bio: "Chuyên luyện giao tiếp và kỹ năng Speaking.", area: "Quận 1", gender: "female", rating: 4.9, activeState: "available" },
+        { id: 3, name: "Lê Quang Huy", email: "gia-su3@edubridge.demo", subject: "vat-ly", subjectLabel: "Vật lý", mode: "online", modeLabel: "Online", price: 250000, sessionHours: 2.5, level: "Lớp 10 - 12", bio: "Dạy bám sát chương trình SGK và luyện đề.", area: "Online", gender: "male", rating: 4.5, activeState: "available" },
+        { id: 4, name: "Phạm Ngọc Linh", email: "gia-su4@edubridge.demo", subject: "hoa", subjectLabel: "Hóa học", mode: "offline", modeLabel: "Offline", price: 280000, sessionHours: 2, level: "THPT", bio: "Tập trung nền tảng và giải nhanh bài tập trắc nghiệm.", area: "Quận 7", gender: "female", rating: 4.6, activeState: "busy" },
+        { id: 5, name: "Đỗ Khánh Vy", email: "gia-su5@edubridge.demo", subject: "van", subjectLabel: "Ngữ văn", mode: "online", modeLabel: "Online", price: 200000, sessionHours: 3, level: "THCS", bio: "Giúp học sinh nắm bố cục và cải thiện kỹ năng viết.", area: "Online", gender: "female", rating: 4.3, activeState: "available" }
       ];
 
       var listEl = document.getElementById("tutor-list");
@@ -114,6 +135,9 @@
       var subjectEl = document.getElementById("filter-subject");
       var modeEl = document.getElementById("filter-mode");
       var priceEl = document.getElementById("filter-price");
+      var areaEl = document.getElementById("filter-area");
+      var genderEl = document.getElementById("filter-gender");
+      var ratingEl = document.getElementById("filter-rating");
       var durationEl = document.getElementById("filter-duration");
       var activeUser = null;
       var selectedTutor = null;
@@ -143,7 +167,11 @@
         localStorage.setItem(key, JSON.stringify(value));
       }
 
-      var registeredTutors = readJson("edubridge_tutors").map(function (item, index) {
+      var registeredTutors = readJson("edubridge_tutor_registrations")
+        .filter(function (item) {
+          return item && item.status === "approved";
+        })
+        .map(function (item, index) {
         return {
           id: 1000 + index,
           name: item.name || "Gia sư mới",
@@ -152,10 +180,14 @@
           subjectLabel: item.subject || "Môn học khác",
           mode: item.location && item.location.toLowerCase().indexOf("online") !== -1 ? "online" : "offline",
           modeLabel: item.location && item.location.toLowerCase().indexOf("online") !== -1 ? "Online" : "Offline",
+          area: item.location || "Chưa cập nhật",
+          gender: String(item.gender || "").toLowerCase() || "male",
+          rating: Number(item.rating || 4),
           price: Number(item.price || 250000),
           sessionHours: Number(item.sessionHours || 2),
           level: item.level || "Nhiều cấp độ",
-          bio: item.experience || "Gia sư đã đăng ký trên hệ thống EduBridge."
+          bio: item.experience || "Gia sư đã đăng ký trên hệ thống EduBridge.",
+          activeState: item.activeState || "available"
         };
       });
 
@@ -186,7 +218,12 @@
           studentEmail: activeUser.email,
           studentName: activeUser.displayName || activeUser.email,
           note: note,
-          createdAt: new Date().toISOString()
+          createdAt: new Date().toISOString(),
+          respondBy: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+          status: "waiting_tutor",
+          pricePerSession: Number(selectedTutor.price || 0),
+          sessionHours: Number(selectedTutor.sessionHours || 2),
+          monthlySessions: 8
         });
         writeJson("edubridge_requests", requests);
 
@@ -215,6 +252,7 @@
           '<h3>' + tutor.name + "</h3>" +
           '<p class="tutor-meta">' + tutor.subjectLabel + " • " + tutor.modeLabel + " • " + tutor.level + "</p>" +
           '<p class="tutor-bio">' + tutor.bio + "</p>" +
+          '<p class="tutor-duration">Khu vực: ' + (tutor.area || "Chưa cập nhật") + ' • Đánh giá: ' + Number(tutor.rating || 0).toFixed(1) + " sao</p>" +
           '<p class="tutor-duration">1 buổi: ' + tutor.sessionHours + " giờ</p>" +
           '<p class="tutor-price">' + formatPrice(tutor.price) + "</p>" +
           '<button type="button" class="btn btn-primary btn-block tutor-request-btn" data-id="' + tutor.id + '" data-name="' + tutor.name + '">Gửi yêu cầu gia sư</button>' +
@@ -227,15 +265,22 @@
         var subject = subjectEl.value;
         var mode = modeEl.value;
         var maxPrice = Number(priceEl.value || 0);
+        var area = (areaEl.value || "").toLowerCase().trim();
+        var gender = genderEl.value;
+        var minRating = Number(ratingEl.value || 0);
         var sessionHours = Number(durationEl.value || 0);
 
         return tutors.filter(function (tutor) {
+          if ((tutor.activeState || "available") !== "available") return false;
           var byKeyword = !keyword || tutor.name.toLowerCase().includes(keyword) || tutor.subjectLabel.toLowerCase().includes(keyword);
           var bySubject = !subject || tutor.subject === subject;
           var byMode = !mode || tutor.mode === mode;
           var byPrice = !maxPrice || tutor.price <= maxPrice;
+          var byArea = !area || String(tutor.area || "").toLowerCase().includes(area);
+          var byGender = !gender || tutor.gender === gender;
+          var byRating = !minRating || Number(tutor.rating || 0) >= minRating;
           var byDuration = !sessionHours || tutor.sessionHours === sessionHours;
-          return byKeyword && bySubject && byMode && byPrice && byDuration;
+          return byKeyword && bySubject && byMode && byPrice && byArea && byGender && byRating && byDuration;
         });
       }
 
@@ -268,7 +313,7 @@
         });
       }
 
-      [keywordEl, subjectEl, modeEl, priceEl, durationEl].forEach(function (element) {
+      [keywordEl, subjectEl, modeEl, priceEl, areaEl, genderEl, ratingEl, durationEl].forEach(function (element) {
         element.addEventListener("input", render);
         element.addEventListener("change", render);
       });
