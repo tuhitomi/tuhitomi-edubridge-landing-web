@@ -40,7 +40,7 @@ class AdminManager {
 
   setupAuth() {
     onAuthStateChanged(auth, (user) => {
-      if (!user || !user.emailVerified) {
+      if (!user) {
         window.location.href = "dang-nhap.html?next=" + encodeURIComponent("admin.html");
       }
     });

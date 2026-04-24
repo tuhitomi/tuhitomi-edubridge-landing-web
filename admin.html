@@ -627,7 +627,7 @@
     });
 
     onAuthStateChanged(auth, function (user) {
-      if (!user || !user.emailVerified) {
+      if (!user) {
         window.location.href = "dang-nhap.html?next=admin.html";
         return;
       }

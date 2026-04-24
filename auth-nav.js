@@ -75,7 +75,7 @@ function updateBellBadge(user) {
   var badge = document.getElementById("nav-bell-badge");
   if (!bellLink || !badge) return;
 
-  if (!user || !user.emailVerified) {
+  if (!user) {
     bellLink.setAttribute("hidden", "");
     return;
   }
@@ -93,8 +93,8 @@ function updateAdminLink(user) {
   if (!adminLink) return;
 
   var normalized = String((user && user.email) || "").toLowerCase();
-  var isAdmin = !!(user && user.emailVerified && normalized === getAdminEmail());
-  var isModerator = !!(user && user.emailVerified && getModeratorEmails().includes(normalized));
+  var isAdmin = !!(user && normalized === getAdminEmail());
+  var isModerator = !!(user && getModeratorEmails().includes(normalized));
   if (isAdmin || isModerator) {
     adminLink.textContent = isAdmin ? "Quản trị" : "Kiểm duyệt";
     adminLink.removeAttribute("hidden");
@@ -107,12 +107,20 @@ if (navAuthLink) {
   ensureAdminLink();
   ensureBellLink();
   onAuthStateChanged(auth, function (user) {
-    if (user && user.emailVerified) {
-      navAuthLink.href = "profile.html";
-      navAuthLink.innerHTML = avatarIconSvg;
-      navAuthLink.classList.add("nav-auth-icon");
-      navAuthLink.setAttribute("aria-label", "Trang cá nhân");
-      navAuthLink.title = "Trang cá nhân";
+    if (user) {
+      if (user.emailVerified) {
+        navAuthLink.href = "profile.html";
+        navAuthLink.innerHTML = avatarIconSvg;
+        navAuthLink.classList.add("nav-auth-icon");
+        navAuthLink.setAttribute("aria-label", "Trang cá nhân");
+        navAuthLink.title = "Trang cá nhân";
+      } else {
+        navAuthLink.href = "dang-nhap.html";
+        navAuthLink.textContent = "Đăng nhập";
+        navAuthLink.classList.remove("nav-auth-icon");
+        navAuthLink.removeAttribute("aria-label");
+        navAuthLink.removeAttribute("title");
+      }
       updateBellBadge(user);
       updateAdminLink(user);
       return;
