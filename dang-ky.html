@@ -98,7 +98,7 @@
           await updateProfile(credential.user, { displayName: name });
         }
         await sendEmailVerification(credential.user);
-        setStatus("Đã gửi email kích hoạt. Vui lòng mở email và bấm vào link kích hoạt trước khi đăng nhập.");
+        setStatus("Đã gửi email kích hoạt. Vui lòng mở email (check cả phần spam và thư rác) và bấm vào link kích hoạt trước khi đăng nhập.");
         form.reset();
       } catch (error) {
         setStatus("Đăng ký thất bại: " + (error && error.message ? error.message : "lỗi không xác định."));

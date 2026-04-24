@@ -118,6 +118,23 @@ class TutorBrowser {
     localStorage.setItem(key, JSON.stringify(value));
   }
 
+  getAdminEmail() {
+    var custom = localStorage.getItem("edubridge_admin_email");
+    return (custom || "tu620014@gmail.com").trim().toLowerCase();
+  }
+
+  getModeratorEmails() {
+    try {
+      var value = JSON.parse(localStorage.getItem("edubridge_moderator_emails") || "[]");
+      if (!Array.isArray(value)) return [];
+      return value
+        .map(function (item) { return String(item || "").trim().toLowerCase(); })
+        .filter(function (item, index, arr) { return item && arr.indexOf(item) === index; });
+    } catch (e) {
+      return [];
+    }
+  }
+
   getStatusBadge(activeState) {
     const state = (activeState || "available").toLowerCase();
     if (state === "busy") {
@@ -300,6 +317,7 @@ class TutorBrowser {
       id: Date.now() + 1,
       userEmail: this.selectedTutor.email,
       text: `Bạn có yêu cầu mới từ ${this.activeUser.displayName || this.activeUser.email} cho môn ${this.selectedTutor.subjectLabel}.`,
+      type: "tutor-request",
       read: false,
       createdAt: new Date().toISOString()
     });
@@ -307,9 +325,28 @@ class TutorBrowser {
       id: Date.now() + 2,
       userEmail: this.activeUser.email,
       text: `Bạn đã gửi yêu cầu đến gia sư ${this.selectedTutor.name}.`,
+      type: "student-request",
       read: false,
       createdAt: new Date().toISOString()
     });
+
+    var adminEmail = this.getAdminEmail();
+    var moderatorEmails = this.getModeratorEmails();
+    var recipients = [adminEmail].concat(moderatorEmails || []);
+    recipients = recipients.map(function (item) { return String(item || "").trim().toLowerCase(); })
+      .filter(function (item, index, arr) { return item && arr.indexOf(item) === index; });
+
+    recipients.forEach(function (email, index) {
+      notifications.unshift({
+        id: Date.now() + 3 + index,
+        userEmail: email,
+        text: `Học viên ${this.activeUser.displayName || this.activeUser.email} đã gửi yêu cầu đến gia sư ${this.selectedTutor.name}.`,
+        type: "admin-request",
+        read: false,
+        createdAt: new Date().toISOString()
+      });
+    }, this);
+
     this.writeJson("edubridge_notifications", notifications);
     window.dispatchEvent(new Event("edubridge-notifications-updated"));
   }

@@ -57,7 +57,7 @@
     import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
     import { auth } from "./firebase-config.js";
 
-    var DEFAULT_ADMIN_EMAIL = "admin@edubridge.demo";
+    var DEFAULT_ADMIN_EMAIL = "tu620014@gmail.com";
     var listEl = document.getElementById("notify-list");
     var markReadBtn = document.getElementById("mark-read-btn");
     var detailModalEl = document.getElementById("notify-detail-modal");
@@ -297,13 +297,17 @@
     });
 
     onAuthStateChanged(auth, function (user) {
-      if (!user || !user.emailVerified) {
+      if (!user) {
         window.location.href = "dang-nhap.html?next=thong-bao.html";
         return;
       }
       currentEmail = user.email || "";
       var normalizedEmail = String(currentEmail).toLowerCase();
       canReviewTutor = normalizedEmail === getAdminEmail() || getModeratorEmails().includes(normalizedEmail);
+      if (!user.emailVerified && !canReviewTutor) {
+        window.location.href = "dang-nhap.html?next=thong-bao.html";
+        return;
+      }
       render();
     });
   </script>
