@@ -434,17 +434,40 @@ class AdminManager {
     const request = requests.find((item) => item.id === requestId);
     
     if (request) {
-      // Update request status
-      request.status = "approved";
-      request.approvedAt = new Date().toISOString();
-      this.writeJson("edubridge_requests", requests);
+      // Add tutor to tutor registrations with approved status
+      const registrations = this.readJson("edubridge_tutor_registrations") || [];
       
-      // Add tutor to student's profile (simplified: can be enhanced with student tutor list)
+      // Check if tutor already exists
+      const existingTutor = registrations.find((r) => r.email?.toLowerCase() === request.tutorEmail?.toLowerCase());
+      if (!existingTutor) {
+        registrations.push({
+          id: Date.now(),
+          email: request.tutorEmail,
+          name: request.tutorName,
+          subject: request.subject,
+          level: "Chưa cập nhật",
+          experience: "Gia sư được kết nối qua yêu cầu học viên",
+          location: "Chưa cập nhật",
+          availableTime: "Chưa cập nhật",
+          price: request.pricePerSession || 250000,
+          sessionHours: request.sessionHours || 2,
+          gender: "female",
+          rating: 4,
+          activeState: "available",
+          status: "approved",
+          rejectReason: "",
+          submittedAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        });
+        this.writeJson("edubridge_tutor_registrations", registrations);
+      }
+      
+      // Add tutor to student's profile
       const students = this.readJson("edubridge_students") || [];
       const student = students.find((s) => s.email?.toLowerCase() === request.studentEmail?.toLowerCase());
       if (student) {
         student.assignedTutors = student.assignedTutors || [];
-        if (!student.assignedTutors.find((t) => t.email === request.tutorEmail)) {
+        if (!student.assignedTutors.find((t) => t.email?.toLowerCase() === request.tutorEmail?.toLowerCase())) {
           student.assignedTutors.push({
             name: request.tutorName,
             email: request.tutorEmail,
@@ -455,22 +478,23 @@ class AdminManager {
         this.writeJson("edubridge_students", students);
       }
       
+      // DELETE the request
+      const filtered = requests.filter((item) => item.id !== requestId);
+      this.writeJson("edubridge_requests", filtered);
+      
       this.renderRequests();
-      alert("Đã duyệt yêu cầu!");
+      this.renderTutors();
+      alert("Đã duyệt yêu cầu! Gia sư được thêm vào danh sách quản lý.");
     }
   }
 
   rejectRequest(requestId) {
     const requests = this.readJson("edubridge_requests") || [];
-    const request = requests.find((item) => item.id === requestId);
-    
-    if (request) {
-      request.status = "rejected";
-      request.rejectedAt = new Date().toISOString();
-      this.writeJson("edubridge_requests", requests);
-      this.renderRequests();
-      alert("Đã từ chối yêu cầu!");
-    }
+    // DELETE the request immediately when rejected
+    const filtered = requests.filter((item) => item.id !== requestId);
+    this.writeJson("edubridge_requests", filtered);
+    this.renderRequests();
+    alert("Đã từ chối yêu cầu!");
   }
 
   deleteRequest(requestId) {
