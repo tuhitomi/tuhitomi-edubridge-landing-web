@@ -262,6 +262,20 @@ class TutorBrowser {
   saveRequest(note) {
     if (!this.selectedTutor || !this.activeUser) return;
 
+    // Ensure student record exists
+    const students = this.readJson("edubridge_students") || [];
+    const studentEmail = this.activeUser.email.toLowerCase();
+    if (!students.find((s) => s.email?.toLowerCase() === studentEmail)) {
+      students.push({
+        email: this.activeUser.email,
+        name: this.activeUser.displayName || this.activeUser.email,
+        joinedAt: new Date().toISOString(),
+        status: "active",
+        assignedTutors: []
+      });
+      this.writeJson("edubridge_students", students);
+    }
+
     const requests = this.readJson("edubridge_requests");
     requests.unshift({
       id: Date.now(),

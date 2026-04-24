@@ -24,43 +24,122 @@
 
   <main class="auth-page">
     <section class="wrap tutor-search-section">
-      <h1 class="section-title">Quản trị duyệt gia sư</h1>
-      <p class="section-intro">Duyệt hồ sơ để gia sư được hiển thị trên bảng tìm gia sư.</p>
-      <form class="tutor-filters" id="admin-filters">
-        <label>
-          Trạng thái
-          <select id="filter-status">
-            <option value="">Tất cả</option>
-            <option value="pending">Chờ duyệt</option>
-            <option value="approved">Đã duyệt</option>
-            <option value="rejected">Từ chối</option>
-          </select>
-        </label>
-        <label>
-          Tìm nhanh
-          <input type="text" id="filter-keyword" placeholder="Tên, email, môn dạy..." />
-        </label>
-      </form>
+      <div class="admin-tabs">
+        <button type="button" class="admin-tab-btn admin-tab-btn-active" data-tab="tutor-approvals">Duyệt gia sư</button>
+        <button type="button" class="admin-tab-btn" data-tab="tutor-list">Quản lý gia sư</button>
+        <button type="button" class="admin-tab-btn" data-tab="student-list">Quản lý học viên</button>
+        <button type="button" class="admin-tab-btn" data-tab="requests">Yêu cầu kết nối</button>
+        <button type="button" class="admin-tab-btn" data-tab="withdrawals">Yêu cầu rút tiền</button>
+        <button type="button" class="admin-tab-btn" data-tab="disputes">Tranh chấp</button>
+      </div>
 
-      <form class="auth-form auth-form-single" id="moderator-form" hidden>
-        <h3>Quản lý kiểm duyệt viên</h3>
-        <p class="auth-note">Chỉ admin mới có quyền thêm/xóa tài khoản kiểm duyệt viên.</p>
-        <label>
-          Email kiểm duyệt viên
-          <input type="email" id="moderator-email-input" placeholder="moderator@example.com" />
-        </label>
-        <button type="submit" class="btn btn-primary btn-block">Thêm kiểm duyệt viên</button>
-        <ul id="moderator-list" class="history-list"></ul>
-      </form>
+      <!-- Tab: Duyệt gia sư -->
+      <div id="tab-tutor-approvals" class="admin-tab-content admin-tab-content-active">
+        <h1 class="section-title">Quản trị duyệt gia sư</h1>
+        <p class="section-intro">Duyệt hồ sơ để gia sư được hiển thị trên bảng tìm gia sư.</p>
+        <form class="tutor-filters" id="admin-filters">
+          <label>
+            Trạng thái
+            <select id="filter-status">
+              <option value="">Tất cả</option>
+              <option value="pending">Chờ duyệt</option>
+              <option value="approved">Đã duyệt</option>
+              <option value="rejected">Từ chối</option>
+            </select>
+          </label>
+          <label>
+            Tìm nhanh
+            <input type="text" id="filter-keyword" placeholder="Tên, email, môn dạy..." />
+          </label>
+        </form>
 
-      <div id="admin-tutor-list" class="tutor-list"></div>
-      <p id="admin-empty" class="tutor-empty" hidden>Không có hồ sơ nào phù hợp.</p>
-      <h2 class="section-title">Yêu cầu rút tiền</h2>
-      <div id="withdrawal-list" class="tutor-list"></div>
-      <p id="withdrawal-empty" class="tutor-empty" hidden>Chưa có yêu cầu rút tiền nào.</p>
-      <h2 class="section-title">Tranh chấp cần xử lý</h2>
-      <div id="dispute-list" class="tutor-list"></div>
-      <p id="dispute-empty" class="tutor-empty" hidden>Chưa có tranh chấp mở nào.</p>
+        <form class="auth-form auth-form-single" id="moderator-form" hidden>
+          <h3>Quản lý kiểm duyệt viên</h3>
+          <p class="auth-note">Chỉ admin mới có quyền thêm/xóa tài khoản kiểm duyệt viên.</p>
+          <label>
+            Email kiểm duyệt viên
+            <input type="email" id="moderator-email-input" placeholder="moderator@example.com" />
+          </label>
+          <button type="submit" class="btn btn-primary btn-block">Thêm kiểm duyệt viên</button>
+          <ul id="moderator-list" class="history-list"></ul>
+        </form>
+
+        <div id="admin-tutor-list" class="tutor-list"></div>
+        <p id="admin-empty" class="tutor-empty" hidden>Không có hồ sơ nào phù hợp.</p>
+      </div>
+
+      <!-- Tab: Quản lý gia sư -->
+      <div id="tab-tutor-list" class="admin-tab-content">
+        <h1 class="section-title">Quản lý gia sư</h1>
+        <p class="section-intro">Danh sách tất cả gia sư đã duyệt.</p>
+        <form class="tutor-filters" id="tutor-search-filters">
+          <label>
+            Tìm nhanh
+            <input type="text" id="tutor-search-keyword" placeholder="Tên, email, môn dạy..." />
+          </label>
+          <label>
+            Trạng thái
+            <select id="tutor-search-status">
+              <option value="">Tất cả</option>
+              <option value="available">Có sẵn</option>
+              <option value="busy">Đang bận</option>
+            </select>
+          </label>
+        </form>
+        <div id="tutor-manage-list" class="tutor-list"></div>
+        <p id="tutor-manage-empty" class="tutor-empty">Chưa có gia sư nào.</p>
+      </div>
+
+      <!-- Tab: Quản lý học viên -->
+      <div id="tab-student-list" class="admin-tab-content">
+        <h1 class="section-title">Quản lý học viên</h1>
+        <p class="section-intro">Danh sách tất cả học viên đã đăng ký.</p>
+        <form class="tutor-filters" id="student-search-filters">
+          <label>
+            Tìm nhanh
+            <input type="text" id="student-search-keyword" placeholder="Tên, email..." />
+          </label>
+        </form>
+        <div id="student-manage-list" class="tutor-list"></div>
+        <p id="student-manage-empty" class="tutor-empty">Chưa có học viên nào.</p>
+      </div>
+
+      <!-- Tab: Yêu cầu kết nối -->
+      <div id="tab-requests" class="admin-tab-content">
+        <h1 class="section-title">Yêu cầu kết nối</h1>
+        <p class="section-intro">Yêu cầu học viên gửi đến gia sư. Admin có thể duyệt hoặc từ chối.</p>
+        <form class="tutor-filters" id="request-search-filters">
+          <label>
+            Trạng thái
+            <select id="request-search-status">
+              <option value="">Tất cả</option>
+              <option value="waiting_tutor">Chờ gia sư trả lời</option>
+              <option value="approved">Đã duyệt</option>
+              <option value="rejected">Từ chối</option>
+            </select>
+          </label>
+          <label>
+            Tìm nhanh
+            <input type="text" id="request-search-keyword" placeholder="Tên gia sư, học viên, email..." />
+          </label>
+        </form>
+        <div id="request-manage-list" class="tutor-list"></div>
+        <p id="request-manage-empty" class="tutor-empty">Không có yêu cầu nào.</p>
+      </div>
+
+      <!-- Tab: Yêu cầu rút tiền -->
+      <div id="tab-withdrawals" class="admin-tab-content">
+        <h2 class="section-title">Yêu cầu rút tiền</h2>
+        <div id="withdrawal-list" class="tutor-list"></div>
+        <p id="withdrawal-empty" class="tutor-empty" hidden>Chưa có yêu cầu rút tiền nào.</p>
+      </div>
+
+      <!-- Tab: Tranh chấp -->
+      <div id="tab-disputes" class="admin-tab-content">
+        <h2 class="section-title">Tranh chấp cần xử lý</h2>
+        <div id="dispute-list" class="tutor-list"></div>
+        <p id="dispute-empty" class="tutor-empty" hidden>Chưa có tranh chấp mở nào.</p>
+      </div>
     </section>
   </main>
 
@@ -565,5 +644,6 @@
       render();
     });
   </script>
+  <script type="module" src="admin-manager.js"></script>
 </body>
 </html>

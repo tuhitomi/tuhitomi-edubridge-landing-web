@@ -84,10 +84,6 @@
             <option value="busy">BUSY (tạm ẩn khỏi tìm kiếm)</option>
           </select>
         </label>
-        <label>
-          Đánh giá hiển thị (1-5)
-          <input type="number" id="tutor-rating" min="1" max="5" step="0.1" placeholder="Ví dụ: 4.8" />
-        </label>
         <button type="button" class="btn btn-secondary btn-block" id="save-tutor-profile-btn">Lưu hồ sơ gia sư</button>
         <button type="button" class="btn btn-secondary btn-block" id="logout-btn">Đăng xuất</button>
         <p class="auth-status" id="profile-status"></p>
@@ -142,7 +138,6 @@
     var tutorSessionHoursEl = document.getElementById("tutor-session-hours");
     var tutorGenderEl = document.getElementById("tutor-gender");
     var tutorActiveStateEl = document.getElementById("tutor-active-state");
-    var tutorRatingEl = document.getElementById("tutor-rating");
     var saveTutorProfileBtn = document.getElementById("save-tutor-profile-btn");
     var sentHistoryEl = document.getElementById("sent-history");
     var receivedHistoryEl = document.getElementById("received-history");
@@ -284,7 +279,6 @@
         tutorSessionHoursEl.value = "";
         tutorGenderEl.value = "female";
         tutorActiveStateEl.value = "available";
-        tutorRatingEl.value = "";
         return;
       }
 
@@ -302,7 +296,6 @@
       tutorSessionHoursEl.value = Number(profile.sessionHours || 0) || "";
       tutorGenderEl.value = profile.gender || "female";
       tutorActiveStateEl.value = profile.activeState || "available";
-      tutorRatingEl.value = Number(profile.rating || 0) || "";
     }
 
     function formatTime(value) {
@@ -534,7 +527,7 @@
         price: Number(tutorPriceEl.value || 0),
         sessionHours: Number(tutorSessionHoursEl.value || 0),
         gender: tutorGenderEl.value || "female",
-        rating: Number(tutorRatingEl.value || 4),
+        rating: 4,
         activeState: tutorActiveStateEl.value || "available",
         status: nextStatus,
         rejectReason: "",
