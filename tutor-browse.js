@@ -313,18 +313,23 @@ class TutorBrowser {
     this.writeJson("edubridge_requests", requests);
 
     const notifications = this.readJson("edubridge_notifications");
+    const studentEmail = String(this.activeUser.email || "").trim().toLowerCase();
+    const tutorEmail = String(this.selectedTutor.email || "").trim().toLowerCase();
+    const studentName = this.activeUser.displayName || this.activeUser.email;
+    const tutorName = this.selectedTutor.name;
+
     notifications.unshift({
       id: Date.now() + 1,
-      userEmail: this.selectedTutor.email,
-      text: `Bạn có yêu cầu mới từ ${this.activeUser.displayName || this.activeUser.email} cho môn ${this.selectedTutor.subjectLabel}.`,
+      userEmail: tutorEmail,
+      text: `Bạn có yêu cầu mới từ ${studentName} cho môn ${this.selectedTutor.subjectLabel}.`,
       type: "tutor-request",
       read: false,
       createdAt: new Date().toISOString()
     });
     notifications.unshift({
       id: Date.now() + 2,
-      userEmail: this.activeUser.email,
-      text: `Bạn đã gửi yêu cầu đến gia sư ${this.selectedTutor.name}.`,
+      userEmail: studentEmail,
+      text: `Bạn đã gửi yêu cầu đến gia sư ${tutorName}.`,
       type: "student-request",
       read: false,
       createdAt: new Date().toISOString()
@@ -340,12 +345,12 @@ class TutorBrowser {
       notifications.unshift({
         id: Date.now() + 3 + index,
         userEmail: email,
-        text: `Học viên ${this.activeUser.displayName || this.activeUser.email} đã gửi yêu cầu đến gia sư ${this.selectedTutor.name}.`,
+        text: `Học viên ${studentName} đã gửi yêu cầu đến gia sư ${tutorName}.`,
         type: "admin-request",
         read: false,
         createdAt: new Date().toISOString()
       });
-    }, this);
+    });
 
     this.writeJson("edubridge_notifications", notifications);
     window.dispatchEvent(new Event("edubridge-notifications-updated"));

@@ -120,13 +120,13 @@
 
     function getVisibleNotifications() {
       return readNotifications().filter(function (item) {
-        return item.userEmail === currentEmail;
+        return String(item.userEmail || "").trim().toLowerCase() === currentEmail;
       });
     }
 
     function updateNotificationReadState(notificationId, shouldRead) {
       var notifications = readNotifications().map(function (item) {
-        if (Number(item.id || 0) !== Number(notificationId || 0) || item.userEmail !== currentEmail) return item;
+        if (Number(item.id || 0) !== Number(notificationId || 0) || String(item.userEmail || "").trim().toLowerCase() !== currentEmail) return item;
         item.read = !!shouldRead;
         return item;
       });
@@ -301,8 +301,8 @@
         window.location.href = "dang-nhap.html?next=thong-bao.html";
         return;
       }
-      currentEmail = user.email || "";
-      var normalizedEmail = String(currentEmail).toLowerCase();
+      currentEmail = String(user.email || "").trim().toLowerCase();
+      var normalizedEmail = currentEmail;
       canReviewTutor = normalizedEmail === getAdminEmail() || getModeratorEmails().includes(normalizedEmail);
       if (!user.emailVerified && !canReviewTutor) {
         window.location.href = "dang-nhap.html?next=thong-bao.html";
