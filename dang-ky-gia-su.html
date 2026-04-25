@@ -151,65 +151,70 @@
       event.preventDefault();
       if (!activeUser || !activeUser.email) return;
 
-      var nowIso = new Date().toISOString();
-      var formData = new FormData(form);
-      var registrations = await readJson("edubridge_tutor_registrations", []);
-      var notifications = await readJson("edubridge_notifications", []);
-      var userEmail = String(activeUser.email || "").toLowerCase();
-      var reviewerEmails = await getReviewerEmails();
+      try {
+        var nowIso = new Date().toISOString();
+        var formData = new FormData(form);
+        var registrations = await readJson("edubridge_tutor_registrations", []);
+        var notifications = await readJson("edubridge_notifications", []);
+        var userEmail = String(activeUser.email || "").toLowerCase();
+        var reviewerEmails = await getReviewerEmails();
 
-      var tutorRecord = {
-        id: Date.now(),
-        email: userEmail,
-        name: String(formData.get("full_name") || "").trim(),
-        subject: String(formData.get("subject") || "").trim(),
-        level: String(formData.get("level") || "").trim(),
-        experience: String(formData.get("experience") || "").trim(),
-        location: String(formData.get("location") || "").trim(),
-        availableTime: String(formData.get("available_time") || "").trim(),
-        price: Number(formData.get("price") || 0),
-        sessionHours: Number(formData.get("session_hours") || 0),
-        status: "pending",
-        submittedAt: nowIso,
-        updatedAt: nowIso
-      };
+        var tutorRecord = {
+          id: Date.now(),
+          email: userEmail,
+          name: String(formData.get("full_name") || "").trim(),
+          subject: String(formData.get("subject") || "").trim(),
+          level: String(formData.get("level") || "").trim(),
+          experience: String(formData.get("experience") || "").trim(),
+          location: String(formData.get("location") || "").trim(),
+          availableTime: String(formData.get("available_time") || "").trim(),
+          price: Number(formData.get("price") || 0),
+          sessionHours: Number(formData.get("session_hours") || 0),
+          status: "pending",
+          submittedAt: nowIso,
+          updatedAt: nowIso
+        };
 
-      registrations = registrations.filter(function (item) {
-        return String(item.email || "").toLowerCase() !== userEmail;
-      });
-      registrations.unshift(tutorRecord);
-      await writeJson("edubridge_tutor_registrations", registrations);
+        registrations = registrations.filter(function (item) {
+          return String(item.email || "").toLowerCase() !== userEmail;
+        });
+        registrations.unshift(tutorRecord);
+        await writeJson("edubridge_tutor_registrations", registrations);
 
-      reviewerEmails.forEach(function (reviewerEmail, index) {
+        reviewerEmails.forEach(function (reviewerEmail, index) {
+          notifications.unshift({
+            id: Date.now() + 1 + index,
+            userEmail: reviewerEmail,
+            type: "tutor-approval-request",
+            read: false,
+            createdAt: nowIso,
+            text: "Có hồ sơ gia sư mới cần duyệt từ " + tutorRecord.name + " (" + userEmail + ").",
+            payload: {
+              tutorEmail: userEmail,
+              tutorName: tutorRecord.name
+            }
+          });
+        });
         notifications.unshift({
-          id: Date.now() + 1 + index,
-          userEmail: reviewerEmail,
-          type: "tutor-approval-request",
+          id: Date.now() + 2,
+          userEmail: userEmail,
+          type: "tutor-approval-status",
           read: false,
           createdAt: nowIso,
-          text: "Có hồ sơ gia sư mới cần duyệt từ " + tutorRecord.name + " (" + userEmail + ").",
+          text: "Hồ sơ gia sư của bạn đã được gửi. Vui lòng chờ admin duyệt để hiển thị trên bảng tìm gia sư.",
           payload: {
-            tutorEmail: userEmail,
-            tutorName: tutorRecord.name
+            status: "pending"
           }
         });
-      });
-      notifications.unshift({
-        id: Date.now() + 2,
-        userEmail: userEmail,
-        type: "tutor-approval-status",
-        read: false,
-        createdAt: nowIso,
-        text: "Hồ sơ gia sư của bạn đã được gửi. Vui lòng chờ admin duyệt để hiển thị trên bảng tìm gia sư.",
-        payload: {
-          status: "pending"
-        }
-      });
-      await writeJson("edubridge_notifications", notifications);
-      window.dispatchEvent(new Event("edubridge-notifications-updated"));
+        await writeJson("edubridge_notifications", notifications);
+        window.dispatchEvent(new Event("edubridge-notifications-updated"));
 
-      alert("Đăng ký thành công! Hồ sơ đã gửi tới admin/kiểm duyệt viên để duyệt.");
-      window.location.href = "profile.html";
+        alert("Đăng ký thành công! Hồ sơ đã gửi tới admin/kiểm duyệt viên để duyệt.");
+        window.location.href = "profile.html";
+      } catch (error) {
+        console.error("Lỗi khi đăng ký:", error);
+        alert("Có lỗi xảy ra khi gửi đăng ký: " + error.message);
+      }
     });
   </script>
 </body>
