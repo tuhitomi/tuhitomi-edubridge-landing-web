@@ -121,25 +121,14 @@
     }
 
     async function getAdminEmail() {
-      try {
-        const doc = await db.collection('settings').doc('edubridge_admin_email').get();
-        return (doc.exists ? doc.data().value : DEFAULT_ADMIN_EMAIL).trim().toLowerCase();
-      } catch (e) {
-        return DEFAULT_ADMIN_EMAIL;
-      }
+      // Tạm thời dùng mặc định để tránh lỗi offline
+      return DEFAULT_ADMIN_EMAIL;
     }
 
     async function getReviewerEmails() {
       var adminEmail = await getAdminEmail();
+      // Tạm thời bỏ qua moderator để tránh lỗi offline
       var moderatorEmails = [];
-      try {
-        var moderatorDoc = await db.collection('settings').doc('edubridge_moderator_emails').get();
-        moderatorEmails = Array.isArray(moderatorDoc.exists ? moderatorDoc.data().value : [])
-          ? moderatorDoc.data().value
-          : [];
-      } catch (e) {
-        console.warn('Không thể đọc moderator emails, dùng mặc định:', e);
-      }
       var all = [adminEmail].concat(moderatorEmails).map(function (item) {
         return String(item || "").trim().toLowerCase();
       });

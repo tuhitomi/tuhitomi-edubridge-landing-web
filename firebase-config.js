@@ -25,7 +25,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const firestore = initializeFirestore(app, {
-  localCache: persistentLocalCache()
+  localCache: persistentLocalCache({})
 });
 
 function wrapDocReference(docRef) {
