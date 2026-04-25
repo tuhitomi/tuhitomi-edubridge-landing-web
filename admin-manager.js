@@ -113,10 +113,12 @@ class AdminManager {
       } else {
         const collectionName = key.replace('edubridge_', '');
         const batch = db.batch();
-        // Clear existing
-        const snapshot = await db.collection(collectionName).get();
-        snapshot.docs.forEach(doc => batch.delete(doc.ref));
-        // Add new
+        try {
+          const snapshot = await db.collection(collectionName).get();
+          snapshot.docs.forEach(doc => batch.delete(doc.ref));
+        } catch (e) {
+          console.warn('Không thể đọc trước khi ghi', collectionName, e);
+        }
         value.forEach(item => {
           const docRef = db.collection(collectionName).doc(item.id || Date.now().toString());
           batch.set(docRef, item);

@@ -135,9 +135,13 @@ class TutorBrowser {
     }
     const collectionName = key.replace('edubridge_', '');
     const collectionRef = db.collection(collectionName);
-    const snapshot = await collectionRef.get();
     const batch = db.batch();
-    snapshot.docs.forEach(doc => batch.delete(doc.ref));
+    try {
+      const snapshot = await collectionRef.get();
+      snapshot.docs.forEach(doc => batch.delete(doc.ref));
+    } catch (e) {
+      console.warn('Không thể đọc trước khi ghi', collectionName, e);
+    }
     await batch.commit();
     for (const item of value) {
       await collectionRef.doc(item.id).set(item);
