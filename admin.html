@@ -17,13 +17,64 @@
       <nav class="nav">
         <a href="index.html#cach-hoat-dong">Cách hoạt động</a>
         <a href="index.html#loi-ich">Lợi ích</a>
-        <a id="nav-auth-link" href="dang-nhap.html">Đăng nhập</a>
+        <div class="header-actions">
+          <button id="notification-btn" class="notification-btn" title="Thông báo">
+            <span class="notification-icon">🔔</span>
+            <span id="notification-count" class="notification-count" style="display: none;">0</span>
+          </button>
+          <a id="nav-auth-link" href="dang-nhap.html">Đăng xuất</a>
+        </div>
       </nav>
     </div>
   </header>
 
   <main class="auth-page">
+    <!-- Notification Dropdown -->
+    <div id="notification-dropdown" class="notification-dropdown" style="display: none;">
+      <div class="notification-header">
+        <h3>Thông báo</h3>
+        <button id="mark-all-read" class="btn btn-small">Đánh dấu tất cả đã đọc</button>
+      </div>
+      <div id="notification-list" class="notification-list">
+        <!-- Notifications will be populated here -->
+      </div>
+      <div class="notification-footer">
+        <a href="#" id="view-all-notifications">Xem tất cả thông báo</a>
+      </div>
+    </div>
+
     <section class="wrap tutor-search-section">
+      <!-- Dashboard Cards -->
+      <div class="dashboard-cards">
+        <div class="dashboard-card">
+          <div class="card-icon">👨‍🏫</div>
+          <div class="card-content">
+            <h3 id="total-tutors">0</h3>
+            <p>Tổng gia sư</p>
+          </div>
+        </div>
+        <div class="dashboard-card">
+          <div class="card-icon">⏳</div>
+          <div class="card-content">
+            <h3 id="pending-approvals">0</h3>
+            <p>Hồ sơ chờ duyệt</p>
+          </div>
+        </div>
+        <div class="dashboard-card">
+          <div class="card-icon">🤝</div>
+          <div class="card-content">
+            <h3 id="successful-connections">0</h3>
+            <p>Lượt kết nối thành công</p>
+          </div>
+        </div>
+        <div class="dashboard-card">
+          <div class="card-icon">📊</div>
+          <div class="card-content">
+            <h3 id="total-students">0</h3>
+            <p>Tổng học viên</p>
+          </div>
+        </div>
+      </div>
       <div class="admin-tabs">
         <button type="button" class="admin-tab-btn admin-tab-btn-active" data-tab="tutor-approvals">Duyệt gia sư</button>
         <button type="button" class="admin-tab-btn" data-tab="tutor-list">Quản lý gia sư</button>
@@ -141,6 +192,24 @@
         <p id="dispute-empty" class="tutor-empty" hidden>Chưa có tranh chấp mở nào.</p>
       </div>
     </section>
+
+    <!-- Tutor Detail Modal -->
+    <div id="tutor-detail-modal" class="modal" style="display: none;">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 id="modal-tutor-name">Chi tiết gia sư</h2>
+          <button id="close-modal" class="close-modal">&times;</button>
+        </div>
+        <div class="modal-body" id="modal-tutor-details">
+          <!-- Tutor details will be populated here -->
+        </div>
+        <div class="modal-footer">
+          <button id="modal-approve-btn" class="btn btn-primary">Duyệt</button>
+          <button id="modal-reject-btn" class="btn btn-secondary">Từ chối</button>
+          <button id="modal-close-btn" class="btn btn-outline">Đóng</button>
+        </div>
+      </div>
+    </div>
   </main>
 
   <footer class="site-footer">
