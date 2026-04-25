@@ -71,7 +71,7 @@
 
     async function readNotifications() {
       try {
-        const snapshot = await db.collection('users').doc(currentEmail).collection('notifications').get();
+        const snapshot = await db.collection('notifications').get();
         return snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
       } catch (e) {
         return [];
@@ -79,13 +79,17 @@
     }
 
     async function writeNotifications(notifications) {
-      const collectionRef = db.collection('users').doc(currentEmail).collection('notifications');
-      const snapshot = await collectionRef.get();
-      const batch = db.batch();
-      snapshot.docs.forEach(doc => batch.delete(doc.ref));
-      await batch.commit();
+      const collectionRef = db.collection('notifications');
+      try {
+        const snapshot = await collectionRef.get();
+        const batch = db.batch();
+        snapshot.docs.forEach(doc => batch.delete(doc.ref));
+        await batch.commit();
+      } catch (e) {
+        console.warn('Không thể xóa thông báo cũ', e);
+      }
       for (const item of notifications) {
-        await collectionRef.doc(item.id).set(item);
+        await collectionRef.doc(String(item.id)).set(item);
       }
     }
 
@@ -118,23 +122,11 @@
     }
 
     async function getAdminEmail() {
-      try {
-        const doc = await db.collection('settings').doc('edubridge_admin_email').get();
-        return (doc.exists ? doc.data().value : DEFAULT_ADMIN_EMAIL).trim().toLowerCase();
-      } catch (e) {
-        return DEFAULT_ADMIN_EMAIL;
-      }
+      return DEFAULT_ADMIN_EMAIL;
     }
 
     async function getModeratorEmails() {
-      try {
-        const doc = await db.collection('settings').doc('edubridge_moderator_emails').get();
-        const emails = doc.exists ? doc.data().value : [];
-        if (!Array.isArray(emails)) return [];
-        return emails.map(email => String(email || "").trim().toLowerCase()).filter(email => email);
-      } catch (e) {
-        return [];
-      }
+      return [];
     }
 
     async function getVisibleNotifications() {
@@ -222,7 +214,6 @@
       });
       await writeNotifications(notifications);
       window.dispatchEvent(new Event("edubridge-notifications-updated"));
-      alert((status === "approved" ? "Đã duyệt" : "Đã từ chối") + " hồ sơ của " + updatedName + ".");
       await render();
     }
 
