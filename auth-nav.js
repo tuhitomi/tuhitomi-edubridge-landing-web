@@ -36,15 +36,6 @@ async function getAdminEmail() {
 async function getModeratorEmails() {
   try {
     const doc = await db.collection('settings').doc('edubridge_moderator_emails').get();
-    return doc.exists ? doc.data().value : [];
-  } catch (e) {
-    return [];
-  }
-}
-
-async function getModeratorEmails() {
-  try {
-    const doc = await db.collection('settings').doc('moderator_emails').get();
     const value = doc.exists ? doc.data().value : [];
     if (!Array.isArray(value)) return [];
     return value
