@@ -97,9 +97,12 @@
     async function readJson(key, fallback) {
       try {
         const collectionName = key.replace('edubridge_', '');
+        console.log('readJson start', collectionName);
         const snapshot = await db.collection(collectionName).get();
+        console.log('readJson done', collectionName, snapshot.docs.length);
         return snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
       } catch (e) {
+        console.warn('readJson fallback', key, e);
         return fallback;
       }
     }
@@ -108,16 +111,20 @@
       const collectionName = key.replace('edubridge_', '');
       const collectionRef = db.collection(collectionName);
       const batch = db.batch();
+      console.log('writeJson start', collectionName, value.length);
       try {
         const snapshot = await collectionRef.get();
         snapshot.docs.forEach(doc => batch.delete(doc.ref));
       } catch (e) {
         console.warn('Không thể đọc trước khi ghi', collectionName, e);
       }
+      console.log('writeJson commit delete batch', collectionName);
       await batch.commit();
+      console.log('writeJson after commit delete', collectionName);
       for (const item of value) {
         await collectionRef.doc(item.id).set(item);
       }
+      console.log('writeJson done', collectionName);
     }
 
     async function getAdminEmail() {
@@ -135,6 +142,17 @@
       return all.filter(function (item, index, arr) {
         return item && arr.indexOf(item) === index;
       });
+    }
+
+    async function setDocNoRead(collectionName, docId, data) {
+      try {
+        console.log('setDocNoRead', collectionName, docId, data);
+        await db.collection(collectionName).doc(docId).set(data);
+        console.log('setDocNoRead done', collectionName, docId);
+      } catch (e) {
+        console.error('setDocNoRead failed', collectionName, docId, e);
+        throw e;
+      }
     }
 
     onAuthStateChanged(auth, function (user) {
@@ -156,10 +174,10 @@
       try {
         var nowIso = new Date().toISOString();
         var formData = new FormData(form);
-        var registrations = await readJson("edubridge_tutor_registrations", []);
-        var notifications = await readJson("edubridge_notifications", []);
         var userEmail = String(activeUser.email || "").toLowerCase();
+        alert('Đang lấy reviewer emails...');
         var reviewerEmails = await getReviewerEmails();
+        alert('Reviewer emails: ' + reviewerEmails.join(", "));
 
         var tutorRecord = {
           id: Date.now(),
@@ -177,14 +195,11 @@
           updatedAt: nowIso
         };
 
-        registrations = registrations.filter(function (item) {
-          return String(item.email || "").toLowerCase() !== userEmail;
-        });
-        registrations.unshift(tutorRecord);
-        await writeJson("edubridge_tutor_registrations", registrations);
+        await setDocNoRead('tutor_registrations', activeUser.uid, tutorRecord);
 
-        reviewerEmails.forEach(function (reviewerEmail, index) {
-          notifications.unshift({
+        for (var index = 0; index < reviewerEmails.length; index++) {
+          var reviewerEmail = reviewerEmails[index];
+          var notification = {
             id: Date.now() + 1 + index,
             userEmail: reviewerEmail,
             type: "tutor-approval-request",
@@ -195,9 +210,11 @@
               tutorEmail: userEmail,
               tutorName: tutorRecord.name
             }
-          });
-        });
-        notifications.unshift({
+          };
+          await setDocNoRead('notifications', notification.id.toString(), notification);
+        }
+
+        var userNotification = {
           id: Date.now() + 2,
           userEmail: userEmail,
           type: "tutor-approval-status",
@@ -207,8 +224,8 @@
           payload: {
             status: "pending"
           }
-        });
-        await writeJson("edubridge_notifications", notifications);
+        };
+        await setDocNoRead('notifications', userNotification.id.toString(), userNotification);
         window.dispatchEvent(new Event("edubridge-notifications-updated"));
 
         alert("Đăng ký thành công! Hồ sơ đã gửi tới admin/kiểm duyệt viên để duyệt.");
