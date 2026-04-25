@@ -1,20 +1,25 @@
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
-import { auth } from "./firebase-config.js";
+import { auth, db } from "./firebase-config.js";
 
 const STORAGE_KEY = "edubridge_tutor_filters";
 const DEBOUNCE_DELAY = 500;
 
 class TutorBrowser {
   constructor() {
+    this.init();
+  }
+
+  async init() {
     this.tutors = [];
     this.activeUser = null;
     this.selectedTutor = null;
     this.debounceTimer = null;
 
     this.initElements();
-    this.loadTutors();
+    await this.loadTutors();
     this.setupAuth();
     this.setupEventListeners();
+    this.setupModalListeners();
     this.restoreFilters();
     this.render();
   }
@@ -38,8 +43,8 @@ class TutorBrowser {
     this.modalCancelBtn = document.getElementById("request-cancel-btn");
   }
 
-  loadTutors() {
-    const registered = this.readJson("edubridge_tutor_registrations")
+  async loadTutors() {
+    const registered = await this.readJson("edubridge_tutor_registrations");
       .filter((item) => item && item.status === "approved")
       .map((item, index) => ({
         id: 1000 + index,
@@ -106,28 +111,58 @@ class TutorBrowser {
     return price.toLocaleString("vi-VN") + " VND/buổi";
   }
 
-  readJson(key) {
+  async readJson(key) {
+    if (key === STORAGE_KEY) {
+      try {
+        return JSON.parse(localStorage.getItem(key) || "{}");
+      } catch (e) {
+        return {};
+      }
+    }
     try {
-      return JSON.parse(localStorage.getItem(key) || "[]");
+      const collectionName = key.replace('edubridge_', '');
+      const snapshot = await db.collection(collectionName).get();
+      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     } catch (e) {
       return [];
     }
   }
 
-  writeJson(key, value) {
-    localStorage.setItem(key, JSON.stringify(value));
+  async writeJson(key, value) {
+    if (key === STORAGE_KEY) {
+      localStorage.setItem(key, JSON.stringify(value));
+      return;
+    }
+    const collectionName = key.replace('edubridge_', '');
+    const collectionRef = db.collection(collectionName);
+    const snapshot = await collectionRef.get();
+    const batch = db.batch();
+    snapshot.docs.forEach(doc => batch.delete(doc.ref));
+    await batch.commit();
+    for (const item of value) {
+      await collectionRef.doc(item.id).set(item);
+    }
   }
 
-  getAdminEmail() {
-    var custom = localStorage.getItem("edubridge_admin_email");
-    return (custom || "tu620014@gmail.com").trim().toLowerCase();
-  }
-
-  getModeratorEmails() {
+  async getAdminEmail() {
     try {
-      var value = JSON.parse(localStorage.getItem("edubridge_moderator_emails") || "[]");
-      if (!Array.isArray(value)) return [];
-      return value
+      const doc = await db.collection('settings').doc('adminEmail').get();
+      return (doc.data()?.email || "tu620014@gmail.com").trim().toLowerCase();
+    } catch (e) {
+      return "tu620014@gmail.com";
+    }
+  }
+
+  async getModeratorEmails() {
+    try {
+      const doc = await db.collection('settings').doc('moderatorEmails').get();
+      const emails = doc.data()?.emails || [];
+      if (!Array.isArray(emails)) return [];
+      return emails.map(email => String(email || "").trim().toLowerCase()).filter(email => email);
+    } catch (e) {
+      return [];
+    }
+  }
         .map(function (item) { return String(item || "").trim().toLowerCase(); })
         .filter(function (item, index, arr) { return item && arr.indexOf(item) === index; });
     } catch (e) {
@@ -276,11 +311,11 @@ class TutorBrowser {
     return true;
   }
 
-  saveRequest(note) {
+  async saveRequest(note) {
     if (!this.selectedTutor || !this.activeUser) return;
 
     // Ensure student record exists
-    const students = this.readJson("edubridge_students") || [];
+    const students = await this.readJson("edubridge_students") || [];
     const studentEmail = this.activeUser.email.toLowerCase();
     if (!students.find((s) => s.email?.toLowerCase() === studentEmail)) {
       students.push({
@@ -290,10 +325,10 @@ class TutorBrowser {
         status: "active",
         assignedTutors: []
       });
-      this.writeJson("edubridge_students", students);
+      await this.writeJson("edubridge_students", students);
     }
 
-    const requests = this.readJson("edubridge_requests");
+    const requests = await this.readJson("edubridge_requests");
     requests.unshift({
       id: Date.now(),
       tutorId: this.selectedTutor.id,
@@ -310,10 +345,10 @@ class TutorBrowser {
       sessionHours: Number(this.selectedTutor.sessionHours || 2),
       monthlySessions: 8
     });
-    this.writeJson("edubridge_requests", requests);
+    await this.writeJson("edubridge_requests", requests);
 
-    const notifications = this.readJson("edubridge_notifications");
-    const studentEmail = String(this.activeUser.email || "").trim().toLowerCase();
+    const notifications = await this.readJson("edubridge_notifications");
+    const studentEmailLower = String(this.activeUser.email || "").trim().toLowerCase();
     const tutorEmail = String(this.selectedTutor.email || "").trim().toLowerCase();
     const studentName = this.activeUser.displayName || this.activeUser.email;
     const tutorName = this.selectedTutor.name;
@@ -328,15 +363,15 @@ class TutorBrowser {
     });
     notifications.unshift({
       id: Date.now() + 2,
-      userEmail: studentEmail,
+      userEmail: studentEmailLower,
       text: `Bạn đã gửi yêu cầu đến gia sư ${tutorName}.`,
       type: "student-request",
       read: false,
       createdAt: new Date().toISOString()
     });
 
-    var adminEmail = this.getAdminEmail();
-    var moderatorEmails = this.getModeratorEmails();
+    var adminEmail = await this.getAdminEmail();
+    var moderatorEmails = await this.getModeratorEmails();
     var recipients = [adminEmail].concat(moderatorEmails || []);
     recipients = recipients.map(function (item) { return String(item || "").trim().toLowerCase(); })
       .filter(function (item, index, arr) { return item && arr.indexOf(item) === index; });
@@ -352,7 +387,7 @@ class TutorBrowser {
       });
     });
 
-    this.writeJson("edubridge_notifications", notifications);
+    await this.writeJson("edubridge_notifications", notifications);
     window.dispatchEvent(new Event("edubridge-notifications-updated"));
   }
 
@@ -386,6 +421,39 @@ class TutorBrowser {
     this.listEl.innerHTML = filtered.map((tutor) => this.cardTemplate(tutor)).join("");
     this.emptyEl.hidden = filtered.length !== 0;
     this.attachButtonListeners();
+  }
+
+  setupEventListeners() {
+    // Debounced render for filter inputs
+    const debouncedRender = () => {
+      clearTimeout(this.debounceTimer);
+      this.debounceTimer = setTimeout(() => {
+        this.saveFilters();
+        this.render();
+      }, DEBOUNCE_DELAY);
+    };
+
+    this.keywordEl.addEventListener("input", debouncedRender);
+    this.subjectEl.addEventListener("change", debouncedRender);
+    this.modeEl.addEventListener("change", debouncedRender);
+    this.priceEl.addEventListener("input", debouncedRender);
+    this.areaEl.addEventListener("input", debouncedRender);
+    this.genderEl.addEventListener("change", debouncedRender);
+    this.ratingEl.addEventListener("input", debouncedRender);
+    this.durationEl.addEventListener("input", debouncedRender);
+    if (this.sortEl) this.sortEl.addEventListener("change", debouncedRender);
+  }
+
+  setupModalListeners() {
+    this.modalSubmitBtn.addEventListener("click", async () => {
+      if (this.validateAndSubmit()) {
+        const note = (this.noteEl.value || "").trim();
+        await this.saveRequest(note);
+        this.closeModal();
+        alert("Yêu cầu đã được gửi thành công!");
+      }
+    });
+    this.modalCancelBtn.addEventListener("click", () => this.closeModal());
   }
 }
 

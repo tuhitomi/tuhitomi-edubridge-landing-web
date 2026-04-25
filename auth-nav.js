@@ -1,5 +1,5 @@
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
-import { auth } from "./firebase-config.js";
+import { auth, db } from "./firebase-config.js";
 
 const navAuthLink = document.getElementById("nav-auth-link");
 const nav = navAuthLink ? navAuthLink.closest(".nav") : null;
@@ -14,22 +14,29 @@ const bellIconSvg =
   '<path fill="currentColor" d="M12 22a2.5 2.5 0 0 0 2.45-2h-4.9A2.5 2.5 0 0 0 12 22Zm7-6v-1l-1.5-1.5V10a5.5 5.5 0 0 0-11 0v3.5L5 15v1h14Z" />' +
   "</svg>";
 
-function readNotifications() {
+async function readNotifications(userId) {
   try {
-    return JSON.parse(localStorage.getItem("edubridge_notifications") || "[]");
+    if (!userId) return [];
+    const snapshot = await db.collection('users').doc(userId).collection('notifications').get();
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
   } catch (e) {
     return [];
   }
 }
 
-function getAdminEmail() {
-  var custom = localStorage.getItem("edubridge_admin_email");
-  return (custom || DEFAULT_ADMIN_EMAIL).trim().toLowerCase();
+async function getAdminEmail() {
+  try {
+    const doc = await db.collection('settings').doc('admin_email').get();
+    return (doc.exists ? doc.data().value : DEFAULT_ADMIN_EMAIL).trim().toLowerCase();
+  } catch (e) {
+    return DEFAULT_ADMIN_EMAIL.trim().toLowerCase();
+  }
 }
 
-function getModeratorEmails() {
+async function getModeratorEmails() {
   try {
-    var value = JSON.parse(localStorage.getItem(MODERATOR_KEY) || "[]");
+    const doc = await db.collection('settings').doc('moderator_emails').get();
+    const value = doc.exists ? doc.data().value : [];
     if (!Array.isArray(value)) return [];
     return value
       .map(function (item) { return String(item || "").trim().toLowerCase(); })
@@ -70,7 +77,7 @@ function ensureBellLink() {
   return bellLink;
 }
 
-function updateBellBadge(user) {
+async function updateBellBadge(user) {
   var bellLink = document.getElementById("nav-bell-link");
   var badge = document.getElementById("nav-bell-badge");
   if (!bellLink || !badge) return;
@@ -81,20 +88,23 @@ function updateBellBadge(user) {
   }
 
   bellLink.removeAttribute("hidden");
-  var unread = readNotifications().filter(function (item) {
+  var notifications = await readNotifications(user.uid);
+  var unread = notifications.filter(function (item) {
     return item.userEmail === user.email && !item.read;
   }).length;
   badge.textContent = String(unread);
   badge.hidden = unread === 0;
 }
 
-function updateAdminLink(user) {
+async function updateAdminLink(user) {
   var adminLink = document.getElementById("nav-admin-link");
   if (!adminLink) return;
 
   var normalized = String((user && user.email) || "").toLowerCase();
-  var isAdmin = !!(user && normalized === getAdminEmail());
-  var isModerator = !!(user && getModeratorEmails().includes(normalized));
+  var adminEmail = await getAdminEmail();
+  var moderatorEmails = await getModeratorEmails();
+  var isAdmin = !!(user && normalized === adminEmail);
+  var isModerator = !!(user && moderatorEmails.includes(normalized));
   if (isAdmin || isModerator) {
     adminLink.textContent = isAdmin ? "Quản trị" : "Kiểm duyệt";
     adminLink.removeAttribute("hidden");
@@ -106,7 +116,7 @@ function updateAdminLink(user) {
 if (navAuthLink) {
   ensureAdminLink();
   ensureBellLink();
-  onAuthStateChanged(auth, function (user) {
+  onAuthStateChanged(auth, async function (user) {
     if (user) {
       if (user.emailVerified) {
         navAuthLink.href = "profile.html";
@@ -121,8 +131,8 @@ if (navAuthLink) {
         navAuthLink.removeAttribute("aria-label");
         navAuthLink.removeAttribute("title");
       }
-      updateBellBadge(user);
-      updateAdminLink(user);
+      await updateBellBadge(user);
+      await updateAdminLink(user);
       return;
     }
 
@@ -131,16 +141,16 @@ if (navAuthLink) {
     navAuthLink.classList.remove("nav-auth-icon");
     navAuthLink.removeAttribute("aria-label");
     navAuthLink.removeAttribute("title");
-    updateBellBadge(null);
-    updateAdminLink(null);
+    await updateBellBadge(null);
+    await updateAdminLink(null);
   });
 
-  window.addEventListener("storage", function () {
-    updateBellBadge(auth.currentUser);
-    updateAdminLink(auth.currentUser);
+  window.addEventListener("storage", async function () {
+    await updateBellBadge(auth.currentUser);
+    await updateAdminLink(auth.currentUser);
   });
-  window.addEventListener("edubridge-notifications-updated", function () {
-    updateBellBadge(auth.currentUser);
-    updateAdminLink(auth.currentUser);
+  window.addEventListener("edubridge-notifications-updated", async function () {
+    await updateBellBadge(auth.currentUser);
+    await updateAdminLink(auth.currentUser);
   });
 }

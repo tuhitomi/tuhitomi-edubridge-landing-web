@@ -85,7 +85,7 @@
   <script type="module" src="auth-nav.js"></script>
   <script type="module">
     import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
-    import { auth } from "./firebase-config.js";
+    import { auth, db } from "./firebase-config.js";
 
     var DEFAULT_ADMIN_EMAIL = "admin@edubridge.demo";
     var form = document.getElementById("tutor-register-form");
@@ -94,26 +94,40 @@
       throw new Error("Form đăng ký gia sư không tồn tại.");
     }
 
-    function readJson(key, fallback) {
+    async function readJson(key, fallback) {
       try {
-        return JSON.parse(localStorage.getItem(key) || JSON.stringify(fallback));
+        const collectionName = key.replace('edubridge_', '');
+        const snapshot = await db.collection(collectionName).get();
+        return snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
       } catch (e) {
         return fallback;
       }
     }
 
-    function writeJson(key, value) {
-      localStorage.setItem(key, JSON.stringify(value));
+    async function writeJson(key, value) {
+      const collectionName = key.replace('edubridge_', '');
+      const collectionRef = db.collection(collectionName);
+      const snapshot = await collectionRef.get();
+      const batch = db.batch();
+      snapshot.docs.forEach(doc => batch.delete(doc.ref));
+      await batch.commit();
+      for (const item of value) {
+        await collectionRef.doc(item.id).set(item);
+      }
     }
 
-    function getAdminEmail() {
-      var custom = localStorage.getItem("edubridge_admin_email");
-      return (custom || DEFAULT_ADMIN_EMAIL).trim().toLowerCase();
+    async function getAdminEmail() {
+      try {
+        const doc = await db.collection('settings').doc('adminEmail').get();
+        return (doc.data()?.email || DEFAULT_ADMIN_EMAIL).trim().toLowerCase();
+      } catch (e) {
+        return DEFAULT_ADMIN_EMAIL;
+      }
     }
 
-    function getReviewerEmails() {
-      var adminEmail = getAdminEmail();
-      var moderators = readJson("edubridge_moderator_emails", []);
+    async function getReviewerEmails() {
+      var adminEmail = await getAdminEmail();
+      var moderators = await readJson("edubridge_moderator_emails", []);
       var moderatorEmails = Array.isArray(moderators) ? moderators : [];
       var all = [adminEmail].concat(moderatorEmails).map(function (item) {
         return String(item || "").trim().toLowerCase();
@@ -131,16 +145,16 @@
       activeUser = user;
     });
 
-    form.addEventListener("submit", function (event) {
+    form.addEventListener("submit", async function (event) {
       event.preventDefault();
       if (!activeUser || !activeUser.email) return;
 
       var nowIso = new Date().toISOString();
       var formData = new FormData(form);
-      var registrations = readJson("edubridge_tutor_registrations", []);
-      var notifications = readJson("edubridge_notifications", []);
+      var registrations = await readJson("edubridge_tutor_registrations", []);
+      var notifications = await readJson("edubridge_notifications", []);
       var userEmail = String(activeUser.email || "").toLowerCase();
-      var reviewerEmails = getReviewerEmails();
+      var reviewerEmails = await getReviewerEmails();
 
       var tutorRecord = {
         id: Date.now(),
@@ -162,7 +176,7 @@
         return String(item.email || "").toLowerCase() !== userEmail;
       });
       registrations.unshift(tutorRecord);
-      writeJson("edubridge_tutor_registrations", registrations);
+      await writeJson("edubridge_tutor_registrations", registrations);
 
       reviewerEmails.forEach(function (reviewerEmail, index) {
         notifications.unshift({
@@ -189,7 +203,7 @@
           status: "pending"
         }
       });
-      writeJson("edubridge_notifications", notifications);
+      await writeJson("edubridge_notifications", notifications);
       window.dispatchEvent(new Event("edubridge-notifications-updated"));
 
       alert("Đăng ký thành công! Hồ sơ đã gửi tới admin/kiểm duyệt viên để duyệt.");

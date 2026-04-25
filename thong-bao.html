@@ -55,7 +55,7 @@
   <script type="module" src="auth-nav.js"></script>
   <script type="module">
     import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
-    import { auth } from "./firebase-config.js";
+    import { auth, db } from "./firebase-config.js";
 
     var DEFAULT_ADMIN_EMAIL = "tu620014@gmail.com";
     var listEl = document.getElementById("notify-list");
@@ -69,16 +69,24 @@
     var currentEmail = "";
     var canReviewTutor = false;
 
-    function readNotifications() {
+    async function readNotifications() {
       try {
-        return JSON.parse(localStorage.getItem("edubridge_notifications") || "[]");
+        const snapshot = await db.collection('users').doc(currentEmail).collection('notifications').get();
+        return snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
       } catch (e) {
         return [];
       }
     }
 
-    function writeNotifications(notifications) {
-      localStorage.setItem("edubridge_notifications", JSON.stringify(notifications));
+    async function writeNotifications(notifications) {
+      const collectionRef = db.collection('users').doc(currentEmail).collection('notifications');
+      const snapshot = await collectionRef.get();
+      const batch = db.batch();
+      snapshot.docs.forEach(doc => batch.delete(doc.ref));
+      await batch.commit();
+      for (const item of notifications) {
+        await collectionRef.doc(item.id).set(item);
+      }
     }
 
     function formatTime(value) {
@@ -89,53 +97,67 @@
       }
     }
 
-    function readTutorRegistrations() {
+    async function readTutorRegistrations() {
       try {
-        return JSON.parse(localStorage.getItem("edubridge_tutor_registrations") || "[]");
+        const snapshot = await db.collection('tutor_registrations').get();
+        return snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
       } catch (e) {
         return [];
       }
     }
 
-    function writeTutorRegistrations(registrations) {
-      localStorage.setItem("edubridge_tutor_registrations", JSON.stringify(registrations));
+    async function writeTutorRegistrations(registrations) {
+      const collectionRef = db.collection('tutor_registrations');
+      const snapshot = await collectionRef.get();
+      const batch = db.batch();
+      snapshot.docs.forEach(doc => batch.delete(doc.ref));
+      await batch.commit();
+      for (const item of registrations) {
+        await collectionRef.doc(item.id).set(item);
+      }
     }
 
-    function getAdminEmail() {
-      var custom = localStorage.getItem("edubridge_admin_email");
-      return (custom || DEFAULT_ADMIN_EMAIL).trim().toLowerCase();
-    }
-
-    function getModeratorEmails() {
+    async function getAdminEmail() {
       try {
-        var value = JSON.parse(localStorage.getItem(MODERATOR_KEY) || "[]");
-        if (!Array.isArray(value)) return [];
-        return value
-          .map(function (item) { return String(item || "").trim().toLowerCase(); })
-          .filter(function (item, index, arr) { return item && arr.indexOf(item) === index; });
+        const doc = await db.collection('settings').doc('adminEmail').get();
+        return (doc.data()?.email || DEFAULT_ADMIN_EMAIL).trim().toLowerCase();
+      } catch (e) {
+        return DEFAULT_ADMIN_EMAIL;
+      }
+    }
+
+    async function getModeratorEmails() {
+      try {
+        const doc = await db.collection('settings').doc('moderatorEmails').get();
+        const emails = doc.data()?.emails || [];
+        if (!Array.isArray(emails)) return [];
+        return emails.map(email => String(email || "").trim().toLowerCase()).filter(email => email);
       } catch (e) {
         return [];
       }
     }
 
-    function getVisibleNotifications() {
-      return readNotifications().filter(function (item) {
+    async function getVisibleNotifications() {
+      const all = await readNotifications();
+      return all.filter(function (item) {
         return String(item.userEmail || "").trim().toLowerCase() === currentEmail;
       });
     }
 
-    function updateNotificationReadState(notificationId, shouldRead) {
-      var notifications = readNotifications().map(function (item) {
+    async function updateNotificationReadState(notificationId, shouldRead) {
+      const all = await readNotifications();
+      const notifications = all.map(function (item) {
         if (Number(item.id || 0) !== Number(notificationId || 0) || String(item.userEmail || "").trim().toLowerCase() !== currentEmail) return item;
         item.read = !!shouldRead;
         return item;
       });
-      writeNotifications(notifications);
+      await writeNotifications(notifications);
       window.dispatchEvent(new Event("edubridge-notifications-updated"));
     }
 
-    function openDetail(notificationId) {
-      var item = getVisibleNotifications().find(function (entry) {
+    async function openDetail(notificationId) {
+      const notifications = await getVisibleNotifications();
+      var item = notifications.find(function (entry) {
         return Number(entry.id || 0) === Number(notificationId || 0);
       });
       if (!item) return;
@@ -152,9 +174,9 @@
       detailModalEl.hidden = true;
     }
 
-    function updateTutorStatus(tutorEmail, status, reason) {
+    async function updateTutorStatus(tutorEmail, status, reason) {
       var nowIso = new Date().toISOString();
-      var registrations = readTutorRegistrations();
+      var registrations = await readTutorRegistrations();
       var updatedName = "Gia sư";
       registrations = registrations.map(function (item) {
         if (String(item.email || "").toLowerCase() !== tutorEmail) {
@@ -181,9 +203,9 @@
           updatedAt: nowIso
         };
       });
-      writeTutorRegistrations(registrations);
+      await writeTutorRegistrations(registrations);
 
-      var notifications = readNotifications();
+      var notifications = await readNotifications();
       notifications.unshift({
         id: Date.now(),
         userEmail: tutorEmail,
@@ -198,14 +220,14 @@
           reason: reason || ""
         }
       });
-      writeNotifications(notifications);
+      await writeNotifications(notifications);
       window.dispatchEvent(new Event("edubridge-notifications-updated"));
       alert((status === "approved" ? "Đã duyệt" : "Đã từ chối") + " hồ sơ của " + updatedName + ".");
-      render();
+      await render();
     }
 
-    function render() {
-      var notifications = getVisibleNotifications();
+    async function render() {
+      var notifications = await getVisibleNotifications();
 
       listEl.innerHTML = notifications.length
         ? notifications.map(function (item) {
@@ -241,19 +263,19 @@
       var detailButtons = document.querySelectorAll(".notify-detail-btn");
       var toggleReadButtons = document.querySelectorAll(".notify-toggle-read-btn");
       detailButtons.forEach(function (button) {
-        button.addEventListener("click", function () {
+        button.addEventListener("click", async function () {
           var id = Number(button.getAttribute("data-id") || 0);
           if (!id) return;
-          openDetail(id);
+          await openDetail(id);
         });
       });
       toggleReadButtons.forEach(function (button) {
-        button.addEventListener("click", function () {
+        button.addEventListener("click", async function () {
           var id = Number(button.getAttribute("data-id") || 0);
           var shouldRead = String(button.getAttribute("data-read") || "") === "true";
           if (!id) return;
-          updateNotificationReadState(id, shouldRead);
-          render();
+          await updateNotificationReadState(id, shouldRead);
+          await render();
         });
       });
 
@@ -261,33 +283,34 @@
         var approveButtons = document.querySelectorAll(".notify-approve-btn");
         var rejectButtons = document.querySelectorAll(".notify-reject-btn");
         approveButtons.forEach(function (button) {
-          button.addEventListener("click", function () {
+          button.addEventListener("click", async function () {
             var tutorEmail = String(button.getAttribute("data-email") || "").toLowerCase();
             if (!tutorEmail) return;
-            updateTutorStatus(tutorEmail, "approved");
+            await updateTutorStatus(tutorEmail, "approved");
           });
         });
         rejectButtons.forEach(function (button) {
-          button.addEventListener("click", function () {
+          button.addEventListener("click", async function () {
             var tutorEmail = String(button.getAttribute("data-email") || "").toLowerCase();
             if (!tutorEmail) return;
             var reason = prompt("Nhập lý do từ chối hồ sơ:", "") || "";
-            updateTutorStatus(tutorEmail, "rejected", reason);
+            await updateTutorStatus(tutorEmail, "rejected", reason);
           });
         });
       }
     }
 
-    markReadBtn.addEventListener("click", function () {
-      var notifications = readNotifications().map(function (item) {
+    markReadBtn.addEventListener("click", async function () {
+      const all = await readNotifications();
+      var notifications = all.map(function (item) {
         if (item.userEmail === currentEmail) {
           item.read = true;
           return item;
         }
         return item;
       });
-      writeNotifications(notifications);
-      render();
+      await writeNotifications(notifications);
+      await render();
       window.dispatchEvent(new Event("edubridge-notifications-updated"));
     });
 
@@ -296,19 +319,21 @@
       if (event.target === detailModalEl) closeDetail();
     });
 
-    onAuthStateChanged(auth, function (user) {
+    onAuthStateChanged(auth, async function (user) {
       if (!user) {
         window.location.href = "dang-nhap.html?next=thong-bao.html";
         return;
       }
       currentEmail = String(user.email || "").trim().toLowerCase();
       var normalizedEmail = currentEmail;
-      canReviewTutor = normalizedEmail === getAdminEmail() || getModeratorEmails().includes(normalizedEmail);
+      var adminEmail = await getAdminEmail();
+      var moderatorEmails = await getModeratorEmails();
+      canReviewTutor = normalizedEmail === adminEmail || moderatorEmails.includes(normalizedEmail);
       if (!user.emailVerified && !canReviewTutor) {
         window.location.href = "dang-nhap.html?next=thong-bao.html";
         return;
       }
-      render();
+      await render();
     });
   </script>
 </body>

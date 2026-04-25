@@ -120,7 +120,7 @@
   <script type="module" src="auth-nav.js"></script>
   <script type="module">
     import { onAuthStateChanged, signOut, updateProfile } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
-    import { auth } from "./firebase-config.js";
+    import { auth, db } from "./firebase-config.js";
 
     var form = document.getElementById("profile-form");
     var nameInput = document.getElementById("profile-name");
@@ -153,75 +153,122 @@
       statusEl.textContent = message;
     }
 
-    function readRequests() {
+    async function readRequests() {
       try {
-        return JSON.parse(localStorage.getItem("edubridge_requests") || "[]");
+        const snapshot = await db.collection('requests').get();
+        return snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
       } catch (e) {
         return [];
       }
     }
 
-    function writeRequests(requests) {
-      localStorage.setItem("edubridge_requests", JSON.stringify(requests));
+    async function writeRequests(requests) {
+      const collectionRef = db.collection('requests');
+      const snapshot = await collectionRef.get();
+      const batch = db.batch();
+      snapshot.docs.forEach(doc => batch.delete(doc.ref));
+      await batch.commit();
+      for (const item of requests) {
+        await collectionRef.doc(item.id).set(item);
+      }
     }
 
-    function readTutorRegistrations() {
+    async function readTutorRegistrations() {
       try {
-        return JSON.parse(localStorage.getItem("edubridge_tutor_registrations") || "[]");
+        const snapshot = await db.collection('tutor_registrations').get();
+        return snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
       } catch (e) {
         return [];
       }
     }
 
-    function writeTutorRegistrations(registrations) {
-      localStorage.setItem("edubridge_tutor_registrations", JSON.stringify(registrations));
+    async function writeTutorRegistrations(registrations) {
+      const collectionRef = db.collection('tutor_registrations');
+      const snapshot = await collectionRef.get();
+      const batch = db.batch();
+      snapshot.docs.forEach(doc => batch.delete(doc.ref));
+      await batch.commit();
+      for (const item of registrations) {
+        await collectionRef.doc(item.id).set(item);
+      }
     }
 
-    function readNotifications() {
+    async function readNotifications() {
       try {
-        return JSON.parse(localStorage.getItem("edubridge_notifications") || "[]");
+        const snapshot = await db.collection('notifications').get();
+        return snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
       } catch (e) {
         return [];
       }
     }
 
-    function writeNotifications(notifications) {
-      localStorage.setItem("edubridge_notifications", JSON.stringify(notifications));
+    async function writeNotifications(notifications) {
+      const collectionRef = db.collection('notifications');
+      const snapshot = await collectionRef.get();
+      const batch = db.batch();
+      snapshot.docs.forEach(doc => batch.delete(doc.ref));
+      await batch.commit();
+      for (const item of notifications) {
+        await collectionRef.doc(item.id).set(item);
+      }
     }
 
-    function readWallets() {
+    async function readWallets() {
       try {
-        return JSON.parse(localStorage.getItem("edubridge_wallets") || '{"adminRevenue":0,"tutorBalances":{}}');
+        const doc = await db.collection('settings').doc('wallets').get();
+        return doc.data() || { adminRevenue: 0, tutorBalances: {} };
       } catch (e) {
         return { adminRevenue: 0, tutorBalances: {} };
       }
     }
 
-    function writeWallets(wallets) {
-      localStorage.setItem("edubridge_wallets", JSON.stringify(wallets));
+    async function writeWallets(wallets) {
+      await db.collection('settings').doc('wallets').set(wallets);
     }
 
-    function readDisputes() {
+    async function readDisputes() {
       try {
-        return JSON.parse(localStorage.getItem("edubridge_disputes") || "[]");
+        const snapshot = await db.collection('disputes').get();
+        return snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
       } catch (e) {
         return [];
       }
     }
 
-    function writeDisputes(disputes) {
-      localStorage.setItem("edubridge_disputes", JSON.stringify(disputes));
+    async function writeDisputes(disputes) {
+      const collectionRef = db.collection('disputes');
+      const snapshot = await collectionRef.get();
+      const batch = db.batch();
+      snapshot.docs.forEach(doc => batch.delete(doc.ref));
+      await batch.commit();
+      for (const item of disputes) {
+        await collectionRef.doc(item.id).set(item);
+      }
     }
 
-    function getReviewerEmails() {
-      var adminEmail = (localStorage.getItem("edubridge_admin_email") || "admin@edubridge.demo").trim().toLowerCase();
-      var moderators = [];
+    async function getAdminEmail() {
       try {
-        var raw = JSON.parse(localStorage.getItem("edubridge_moderator_emails") || "[]");
-        moderators = Array.isArray(raw) ? raw : [];
+        const doc = await db.collection('settings').doc('adminEmail').get();
+        return (doc.data()?.email || "tu620014@gmail.com").trim().toLowerCase();
       } catch (e) {
-        moderators = [];
+        return "tu620014@gmail.com";
       }
+    }
+
+    async function getModeratorEmails() {
+      try {
+        const doc = await db.collection('settings').doc('moderatorEmails').get();
+        const emails = doc.data()?.emails || [];
+        if (!Array.isArray(emails)) return [];
+        return emails.map(email => String(email || "").trim().toLowerCase()).filter(email => email);
+      } catch (e) {
+        return [];
+      }
+    }
+
+    async function getReviewerEmails() {
+      var adminEmail = await getAdminEmail();
+      var moderators = await getModeratorEmails();
       var all = [adminEmail].concat(moderators).map(function (item) {
         return String(item || "").trim().toLowerCase();
       });
@@ -257,16 +304,16 @@
       return "status-default";
     }
 
-    function getTutorProfileByEmail(email) {
-      var registrations = readTutorRegistrations();
+    async function getTutorProfileByEmail(email) {
+      var registrations = await readTutorRegistrations();
       var found = registrations.find(function (item) {
         return String(item.email || "").toLowerCase() === String(email || "").toLowerCase();
       });
       return found || null;
     }
 
-    function renderTutorProfile(email) {
-      var profile = getTutorProfileByEmail(email);
+    async function renderTutorProfile(email) {
+      var profile = await getTutorProfileByEmail(email);
       if (!profile) {
         tutorStatusNoteEl.textContent = "Bạn chưa gửi hồ sơ gia sư. Hãy điền thông tin và bấm Lưu hồ sơ gia sư để gửi admin duyệt.";
         tutorNameEl.value = nameInput.value || "";
@@ -306,14 +353,14 @@
       }
     }
 
-    function renderHistories(email) {
-      var requests = readRequests().map(function (item) {
+    async function renderHistories(email) {
+      var requests = (await readRequests()).map(function (item) {
         if (item.status === "waiting_tutor" && item.respondBy && new Date(item.respondBy).getTime() < Date.now()) {
           item.status = "expired";
         }
         return item;
       });
-      writeRequests(requests);
+      await writeRequests(requests);
       var sent = requests.filter(function (item) {
         return item.studentEmail === email;
       });
@@ -354,8 +401,8 @@
       bindRequestActions(email);
     }
 
-    function pushNotification(userEmail, text, type, payload) {
-      var notifications = readNotifications();
+    async function pushNotification(userEmail, text, type, payload) {
+      var notifications = await readNotifications();
       notifications.unshift({
         id: Date.now() + Math.floor(Math.random() * 1000),
         userEmail: userEmail,
@@ -365,58 +412,58 @@
         text: text,
         payload: payload || {}
       });
-      writeNotifications(notifications);
+      await writeNotifications(notifications);
       window.dispatchEvent(new Event("edubridge-notifications-updated"));
     }
 
-    function bindRequestActions(email) {
+    async function bindRequestActions(email) {
       var acceptButtons = document.querySelectorAll(".tutor-accept-btn");
       var declineButtons = document.querySelectorAll(".tutor-decline-btn");
       var payButtons = document.querySelectorAll(".pay-hold-btn");
       var releaseButtons = document.querySelectorAll(".tutor-release-btn");
 
       acceptButtons.forEach(function (button) {
-        button.addEventListener("click", function () {
+        button.addEventListener("click", async function () {
           var requestId = Number(button.getAttribute("data-id") || 0);
-          var requests = readRequests().map(function (item) {
+          var requests = (await readRequests()).map(function (item) {
             if (item.id !== requestId || item.tutorEmail !== email) return item;
             item.status = "accepted_waiting_funds";
             item.tutorRespondedAt = new Date().toISOString();
             return item;
           });
-          writeRequests(requests);
+          await writeRequests(requests);
           var req = requests.find(function (item) { return item.id === requestId; });
           if (req) {
-            pushNotification(req.studentEmail, "Gia sư " + req.tutorName + " đã chấp nhận yêu cầu. Vui lòng nạp tiền để bắt đầu.", "matching-status", { requestId: requestId, status: "accepted_waiting_funds" });
+            await pushNotification(req.studentEmail, "Gia sư " + req.tutorName + " đã chấp nhận yêu cầu. Vui lòng nạp tiền để bắt đầu.", "matching-status", { requestId: requestId, status: "accepted_waiting_funds" });
           }
-          renderHistories(email);
+          await renderHistories(email);
         });
       });
 
       declineButtons.forEach(function (button) {
-        button.addEventListener("click", function () {
+        button.addEventListener("click", async function () {
           var requestId = Number(button.getAttribute("data-id") || 0);
           var reason = prompt("Lý do từ chối yêu cầu (tùy chọn):", "") || "";
-          var requests = readRequests().map(function (item) {
+          var requests = (await readRequests()).map(function (item) {
             if (item.id !== requestId || item.tutorEmail !== email) return item;
             item.status = "declined";
             item.tutorRespondedAt = new Date().toISOString();
             item.declineReason = reason.trim();
             return item;
           });
-          writeRequests(requests);
+          await writeRequests(requests);
           var req = requests.find(function (item) { return item.id === requestId; });
           if (req) {
-            pushNotification(req.studentEmail, "Gia sư " + req.tutorName + " đã từ chối yêu cầu của bạn.", "matching-status", { requestId: requestId, status: "declined" });
+            await pushNotification(req.studentEmail, "Gia sư " + req.tutorName + " đã từ chối yêu cầu của bạn.", "matching-status", { requestId: requestId, status: "declined" });
           }
-          renderHistories(email);
+          await renderHistories(email);
         });
       });
 
       payButtons.forEach(function (button) {
-        button.addEventListener("click", function () {
+        button.addEventListener("click", async function () {
           var requestId = Number(button.getAttribute("data-id") || 0);
-          var requests = readRequests().map(function (item) {
+          var requests = (await readRequests()).map(function (item) {
             if (item.id !== requestId || item.studentEmail !== email) return item;
             var monthlyTuition = Number(item.pricePerSession || 0) * Number(item.monthlySessions || 8);
             item.escrow = {
@@ -430,20 +477,20 @@
             item.status = "in_teaching";
             return item;
           });
-          writeRequests(requests);
+          await writeRequests(requests);
           var req = requests.find(function (item) { return item.id === requestId; });
           if (req) {
-            pushNotification(req.tutorEmail, "Phụ huynh đã nạp tiền vào ví trung gian cho lớp " + req.subject + ". Bạn có thể bắt đầu dạy.", "escrow-update", { requestId: requestId, status: "in_teaching" });
+            await pushNotification(req.tutorEmail, "Phụ huynh đã nạp tiền vào ví trung gian cho lớp " + req.subject + ". Bạn có thể bắt đầu dạy.", "escrow-update", { requestId: requestId, status: "in_teaching" });
           }
-          renderHistories(email);
+          await renderHistories(email);
         });
       });
 
       releaseButtons.forEach(function (button) {
-        button.addEventListener("click", function () {
+        button.addEventListener("click", async function () {
           var requestId = Number(button.getAttribute("data-id") || 0);
           var releasedRequest = null;
-          var requests = readRequests().map(function (item) {
+          var requests = (await readRequests()).map(function (item) {
             if (item.id !== requestId || item.tutorEmail !== email) return item;
             item.status = "completed";
             item.releasedAt = new Date().toISOString();
@@ -451,31 +498,31 @@
             return item;
           });
           if (!releasedRequest || !releasedRequest.escrow) return;
-          writeRequests(requests);
+          await writeRequests(requests);
 
-          var wallets = readWallets();
+          var wallets = await readWallets();
           wallets.adminRevenue = Number(wallets.adminRevenue || 0) + Number(releasedRequest.escrow.adminAmount || 0);
           wallets.tutorBalances = wallets.tutorBalances || {};
           wallets.tutorBalances[email] = Number(wallets.tutorBalances[email] || 0) + Number(releasedRequest.escrow.tutorAmount || 0);
-          writeWallets(wallets);
+          await writeWallets(wallets);
 
-          pushNotification(releasedRequest.studentEmail, "Lớp học với gia sư " + releasedRequest.tutorName + " đã được hoàn thành và giải ngân thành công.", "escrow-update", { requestId: requestId, status: "completed" });
-          pushNotification(email, "Hệ thống đã giải ngân " + Number(releasedRequest.escrow.tutorAmount || 0).toLocaleString("vi-VN") + " VND vào ví của bạn.", "escrow-update", { requestId: requestId, status: "completed" });
-          renderHistories(email);
-          renderWalletInfo(email);
+          await pushNotification(releasedRequest.studentEmail, "Lớp học với gia sư " + releasedRequest.tutorName + " đã được hoàn thành và giải ngân thành công.", "escrow-update", { requestId: requestId, status: "completed" });
+          await pushNotification(email, "Hệ thống đã giải ngân " + Number(releasedRequest.escrow.tutorAmount || 0).toLocaleString("vi-VN") + " VND vào ví của bạn.", "escrow-update", { requestId: requestId, status: "completed" });
+          await renderHistories(email);
+          await renderWalletInfo(email);
         });
       });
     }
 
-    function renderWalletInfo(email) {
-      var wallets = readWallets();
+    async function renderWalletInfo(email) {
+      var wallets = await readWallets();
       var adminRevenue = Number(wallets.adminRevenue || 0);
       var tutorBalance = Number((wallets.tutorBalances && wallets.tutorBalances[email]) || 0);
       walletNoteEl.textContent = "Admin revenue: " + adminRevenue.toLocaleString("vi-VN") + " VND • Ví gia sư của bạn: " + tutorBalance.toLocaleString("vi-VN") + " VND";
       withdrawBtn.disabled = tutorBalance <= 0;
     }
 
-    onAuthStateChanged(auth, function (user) {
+    onAuthStateChanged(auth, async function (user) {
       if (!user || !user.emailVerified) {
         window.location.href = "dang-nhap.html?next=profile.html";
         return;
@@ -484,9 +531,9 @@
       currentUser = user;
       nameInput.value = user.displayName || "";
       emailInput.value = user.email || "";
-      renderHistories(user.email || "");
-      renderTutorProfile(user.email || "");
-      renderWalletInfo(String(user.email || "").toLowerCase());
+      await renderHistories(user.email || "");
+      await renderTutorProfile(user.email || "");
+      await renderWalletInfo(String(user.email || "").toLowerCase());
     });
 
     form.addEventListener("submit", async function (event) {

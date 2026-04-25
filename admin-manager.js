@@ -1,5 +1,5 @@
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
-import { auth } from "./firebase-config.js";
+import { auth, db } from "./firebase-config.js";
 
 class AdminManager {
   constructor() {
@@ -8,6 +8,11 @@ class AdminManager {
     this.setupAuth();
     this.setupTabs();
     this.setupFilters();
+    this.initAsync();
+  }
+
+  async initAsync() {
+    await this.renderApprovals();
   }
 
   initElements() {
@@ -48,14 +53,14 @@ class AdminManager {
 
   setupTabs() {
     this.tabButtons.forEach((btn) => {
-      btn.addEventListener("click", () => {
+      btn.addEventListener("click", async () => {
         const tabName = btn.getAttribute("data-tab");
-        this.switchTab(tabName);
+        await this.switchTab(tabName);
       });
     });
   }
 
-  switchTab(tabName) {
+  async switchTab(tabName) {
     this.currentTab = tabName;
     
     // Update button states
@@ -75,25 +80,52 @@ class AdminManager {
     });
     
     // Render tab content
-    if (tabName === "tutor-list") {
-      this.renderTutors();
+    if (tabName === "tutor-approvals") {
+      await this.renderApprovals();
+    } else if (tabName === "tutor-list") {
+      await this.renderTutors();
     } else if (tabName === "student-list") {
-      this.renderStudents();
+      await this.renderStudents();
     } else if (tabName === "requests") {
-      this.renderRequests();
+      await this.renderRequests();
     }
   }
 
-  readJson(key) {
+  async readJson(key) {
     try {
-      return JSON.parse(localStorage.getItem(key) || "[]");
+      if (key === "edubridge_wallets") {
+        const doc = await db.collection('settings').doc('wallets').get();
+        return doc.exists ? doc.data().value : {"adminRevenue":0,"tutorBalances":{}};
+      } else {
+        const collectionName = key.replace('edubridge_', '');
+        const snapshot = await db.collection(collectionName).get();
+        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      }
     } catch (e) {
-      return [];
+      return key === "edubridge_wallets" ? {"adminRevenue":0,"tutorBalances":{}} : [];
     }
   }
 
-  writeJson(key, value) {
-    localStorage.setItem(key, JSON.stringify(value));
+  async writeJson(key, value) {
+    try {
+      if (key === "edubridge_wallets") {
+        await db.collection('settings').doc('wallets').set({value});
+      } else {
+        const collectionName = key.replace('edubridge_', '');
+        const batch = db.batch();
+        // Clear existing
+        const snapshot = await db.collection(collectionName).get();
+        snapshot.docs.forEach(doc => batch.delete(doc.ref));
+        // Add new
+        value.forEach(item => {
+          const docRef = db.collection(collectionName).doc(item.id || Date.now().toString());
+          batch.set(docRef, item);
+        });
+        await batch.commit();
+      }
+    } catch (e) {
+      console.error(e);
+    }
   }
 
   setupFilters() {
@@ -122,8 +154,8 @@ class AdminManager {
   }
 
   // === TUTOR APPROVALS ===
-  renderApprovals() {
-    const registrations = this.readJson("edubridge_tutor_registrations");
+  async renderApprovals() {
+    const registrations = await this.readJson("edubridge_tutor_registrations");
     const statusFilter = this.filterStatus?.value || "";
     const keywordFilter = (this.filterKeyword?.value || "").toLowerCase();
 
@@ -220,8 +252,8 @@ class AdminManager {
   }
 
   // === TUTOR MANAGEMENT ===
-  renderTutors() {
-    const registrations = this.readJson("edubridge_tutor_registrations");
+  async renderTutors() {
+    const registrations = await this.readJson("edubridge_tutor_registrations");
     const tutors = registrations.filter((item) => item.status === "approved");
     
     const keywordFilter = (this.tutorSearchKeyword?.value || "").toLowerCase();
@@ -313,8 +345,8 @@ class AdminManager {
   }
 
   // === STUDENT MANAGEMENT ===
-  renderStudents() {
-    const students = this.readJson("edubridge_students") || [];
+  async renderStudents() {
+    const students = await this.readJson("edubridge_students") || [];
     const keywordFilter = (this.studentSearchKeyword?.value || "").toLowerCase();
 
     let filtered = students.filter((item) => {
@@ -345,8 +377,8 @@ class AdminManager {
   }
 
   // === REQUEST MANAGEMENT ===
-  renderRequests() {
-    const requests = this.readJson("edubridge_requests") || [];
+  async renderRequests() {
+    const requests = await this.readJson("edubridge_requests") || [];
     const statusFilter = this.requestSearchStatus?.value || "";
     const keywordFilter = (this.requestSearchKeyword?.value || "").toLowerCase();
 
@@ -406,36 +438,36 @@ class AdminManager {
     const deleteButtons = document.querySelectorAll(".request-delete-btn");
 
     approveButtons.forEach((btn) => {
-      btn.addEventListener("click", () => {
+      btn.addEventListener("click", async () => {
         const id = Number(btn.getAttribute("data-id"));
-        this.approveRequest(id);
+        await this.approveRequest(id);
       });
     });
 
     rejectButtons.forEach((btn) => {
-      btn.addEventListener("click", () => {
+      btn.addEventListener("click", async () => {
         const id = Number(btn.getAttribute("data-id"));
-        this.rejectRequest(id);
+        await this.rejectRequest(id);
       });
     });
 
     deleteButtons.forEach((btn) => {
-      btn.addEventListener("click", () => {
+      btn.addEventListener("click", async () => {
         const id = Number(btn.getAttribute("data-id"));
         if (confirm("Bạn chắc chắn muốn xóa yêu cầu này?")) {
-          this.deleteRequest(id);
+          await this.deleteRequest(id);
         }
       });
     });
   }
 
-  approveRequest(requestId) {
-    const requests = this.readJson("edubridge_requests") || [];
+  async approveRequest(requestId) {
+    const requests = await this.readJson("edubridge_requests") || [];
     const request = requests.find((item) => item.id === requestId);
     
     if (request) {
       // Add tutor to tutor registrations with approved status
-      const registrations = this.readJson("edubridge_tutor_registrations") || [];
+      const registrations = await this.readJson("edubridge_tutor_registrations") || [];
       
       // Check if tutor already exists
       const existingTutor = registrations.find((r) => r.email?.toLowerCase() === request.tutorEmail?.toLowerCase());
@@ -459,11 +491,11 @@ class AdminManager {
           submittedAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
         });
-        this.writeJson("edubridge_tutor_registrations", registrations);
+        await this.writeJson("edubridge_tutor_registrations", registrations);
       }
       
       // Add tutor to student's profile
-      const students = this.readJson("edubridge_students") || [];
+      const students = await this.readJson("edubridge_students") || [];
       const student = students.find((s) => s.email?.toLowerCase() === request.studentEmail?.toLowerCase());
       if (student) {
         student.assignedTutors = student.assignedTutors || [];
@@ -475,33 +507,33 @@ class AdminManager {
             connectedAt: new Date().toISOString()
           });
         }
-        this.writeJson("edubridge_students", students);
+        await this.writeJson("edubridge_students", students);
       }
       
       // DELETE the request
       const filtered = requests.filter((item) => item.id !== requestId);
-      this.writeJson("edubridge_requests", filtered);
+      await this.writeJson("edubridge_requests", filtered);
       
-      this.renderRequests();
-      this.renderTutors();
+      await this.renderRequests();
+      await this.renderTutors();
       alert("Đã duyệt yêu cầu! Gia sư được thêm vào danh sách quản lý.");
     }
   }
 
-  rejectRequest(requestId) {
-    const requests = this.readJson("edubridge_requests") || [];
+  async rejectRequest(requestId) {
+    const requests = await this.readJson("edubridge_requests") || [];
     // DELETE the request immediately when rejected
     const filtered = requests.filter((item) => item.id !== requestId);
-    this.writeJson("edubridge_requests", filtered);
-    this.renderRequests();
+    await this.writeJson("edubridge_requests", filtered);
+    await this.renderRequests();
     alert("Đã từ chối yêu cầu!");
   }
 
-  deleteRequest(requestId) {
-    const requests = this.readJson("edubridge_requests") || [];
+  async deleteRequest(requestId) {
+    const requests = await this.readJson("edubridge_requests") || [];
     const filtered = requests.filter((item) => item.id !== requestId);
-    this.writeJson("edubridge_requests", filtered);
-    this.renderRequests();
+    await this.writeJson("edubridge_requests", filtered);
+    await this.renderRequests();
     alert("Đã xóa yêu cầu!");
   }
 }
