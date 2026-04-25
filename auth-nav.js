@@ -26,10 +26,19 @@ async function readNotifications(userId) {
 
 async function getAdminEmail() {
   try {
-    const doc = await db.collection('settings').doc('admin_email').get();
+    const doc = await db.collection('settings').doc('edubridge_admin_email').get();
     return (doc.exists ? doc.data().value : DEFAULT_ADMIN_EMAIL).trim().toLowerCase();
   } catch (e) {
     return DEFAULT_ADMIN_EMAIL.trim().toLowerCase();
+  }
+}
+
+async function getModeratorEmails() {
+  try {
+    const doc = await db.collection('settings').doc('edubridge_moderator_emails').get();
+    return doc.exists ? doc.data().value : [];
+  } catch (e) {
+    return [];
   }
 }
 

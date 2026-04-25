@@ -153,7 +153,7 @@
   <script type="module" src="auth-nav.js"></script>
   <script type="module">
     import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
-    import { auth } from "./firebase-config.js";
+    import { auth, db } from "./firebase-config.js";
 
     var DEFAULT_ADMIN_EMAIL = "tu620014@gmail.com";
     var MODERATOR_KEY = "edubridge_moderator_emails";
@@ -172,14 +172,19 @@
     var currentRole = "none";
     var focusTutorEmail = "";
 
-    function getAdminEmail() {
-      var custom = localStorage.getItem("edubridge_admin_email");
-      return (custom || DEFAULT_ADMIN_EMAIL).trim().toLowerCase();
+    async function getAdminEmail() {
+      try {
+        const doc = await db.collection('settings').doc('edubridge_admin_email').get();
+        return (doc.exists ? doc.data().value : DEFAULT_ADMIN_EMAIL).trim().toLowerCase();
+      } catch (e) {
+        return DEFAULT_ADMIN_EMAIL.trim().toLowerCase();
+      }
     }
 
-    function getModeratorEmails() {
+    async function getModeratorEmails() {
       try {
-        var value = JSON.parse(localStorage.getItem(MODERATOR_KEY) || "[]");
+        const doc = await db.collection('settings').doc('edubridge_moderator_emails').get();
+        var value = doc.exists ? doc.data().value : [];
         if (!Array.isArray(value)) return [];
         return value
           .map(function (item) { return String(item || "").trim().toLowerCase(); })
@@ -193,11 +198,13 @@
       localStorage.setItem(MODERATOR_KEY, JSON.stringify(emails));
     }
 
-    function getRoleByEmail(email) {
+    async function getRoleByEmail(email) {
       var normalized = String(email || "").trim().toLowerCase();
       if (!normalized) return "none";
-      if (normalized === getAdminEmail()) return "admin";
-      if (getModeratorEmails().includes(normalized)) return "moderator";
+      var adminEmail = await getAdminEmail();
+      if (normalized === adminEmail) return "admin";
+      var moderators = await getModeratorEmails();
+      if (moderators.includes(normalized)) return "moderator";
       return "none";
     }
 
@@ -603,7 +610,7 @@
       element.addEventListener("change", render);
     });
 
-    moderatorFormEl.addEventListener("submit", function (event) {
+    moderatorFormEl.addEventListener("submit", async function (event) {
       event.preventDefault();
       if (currentRole !== "admin") return;
       var email = String(moderatorEmailInputEl.value || "").trim().toLowerCase();
@@ -611,7 +618,8 @@
         alert("Vui lòng nhập email hợp lệ.");
         return;
       }
-      if (email === getAdminEmail()) {
+      var adminEmail = await getAdminEmail();
+      if (email === adminEmail) {
         alert("Không thể thêm admin vào danh sách kiểm duyệt viên.");
         return;
       }
@@ -626,14 +634,14 @@
       alert("Đã thêm kiểm duyệt viên " + email + ".");
     });
 
-    onAuthStateChanged(auth, function (user) {
+    onAuthStateChanged(auth, async function (user) {
       if (!user) {
         window.location.href = "dang-nhap.html?next=admin.html";
         return;
       }
 
       currentUserEmail = String(user.email || "").toLowerCase();
-      currentRole = getRoleByEmail(currentUserEmail);
+      currentRole = await getRoleByEmail(currentUserEmail);
       if (currentRole === "none") {
         alert("Bạn không có quyền truy cập trang quản trị/kiểm duyệt.");
         window.location.href = "index.html";

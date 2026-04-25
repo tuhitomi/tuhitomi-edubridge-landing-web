@@ -248,8 +248,8 @@
 
     async function getAdminEmail() {
       try {
-        const doc = await db.collection('settings').doc('adminEmail').get();
-        return (doc.data()?.email || "tu620014@gmail.com").trim().toLowerCase();
+        const doc = await db.collection('settings').doc('edubridge_admin_email').get();
+        return (doc.exists ? doc.data().value : "tu620014@gmail.com").trim().toLowerCase();
       } catch (e) {
         return "tu620014@gmail.com";
       }
@@ -626,7 +626,7 @@
         : "Đã lưu hồ sơ gia sư và gửi kiểm duyệt.");
     });
 
-    withdrawBtn.addEventListener("click", function () {
+    withdrawBtn.addEventListener("click", async function () {
       if (!currentUser || !currentUser.email) return;
       var email = String(currentUser.email || "").toLowerCase();
       var wallets = readWallets();
@@ -656,14 +656,14 @@
       localStorage.setItem("edubridge_withdrawals", JSON.stringify(withdrawals));
       pushNotification(email, "Yêu cầu rút tiền " + amount.toLocaleString("vi-VN") + " VND đã được gửi admin duyệt.", "withdrawal-request", { amount: amount });
 
-      var adminEmail = (localStorage.getItem("edubridge_admin_email") || "admin@edubridge.demo").trim().toLowerCase();
+      var adminEmail = await getAdminEmail();
       pushNotification(adminEmail, "Có yêu cầu rút tiền mới từ " + (currentUser.displayName || email) + " (" + amount.toLocaleString("vi-VN") + " VND).", "withdrawal-admin", { tutorEmail: email, amount: amount });
 
       renderWalletInfo(email);
       alert("Đã tạo yêu cầu rút tiền. Chờ admin duyệt.");
     });
 
-    createDisputeBtn.addEventListener("click", function () {
+    createDisputeBtn.addEventListener("click", async function () {
       if (!currentUser || !currentUser.email) return;
       var email = String(currentUser.email || "").toLowerCase();
       var requestId = Number(disputeSelectEl.value || 0);
@@ -697,7 +697,7 @@
       });
       writeDisputes(disputes);
 
-      var adminEmail = (localStorage.getItem("edubridge_admin_email") || "admin@edubridge.demo").trim().toLowerCase();
+      var adminEmail = await getAdminEmail();
       pushNotification(adminEmail, "Có report tranh chấp mới cho yêu cầu #" + requestId + ".", "dispute-opened", { requestId: requestId });
       disputeReasonEl.value = "";
       alert("Đã gửi report tranh chấp. Admin sẽ xử lý sớm.");
