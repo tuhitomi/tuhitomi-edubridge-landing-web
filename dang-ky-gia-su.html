@@ -147,7 +147,11 @@
 
     form.addEventListener("submit", async function (event) {
       event.preventDefault();
-      if (!activeUser || !activeUser.email) return;
+      alert("Bắt đầu xử lý đăng ký...");
+      if (!activeUser || !activeUser.email) {
+        alert("Bạn chưa đăng nhập. Vui lòng đăng nhập trước.");
+        return;
+      }
 
       try {
         var nowIso = new Date().toISOString();
