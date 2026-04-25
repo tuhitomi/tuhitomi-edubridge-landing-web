@@ -257,8 +257,8 @@
 
     async function getModeratorEmails() {
       try {
-        const doc = await db.collection('settings').doc('moderatorEmails').get();
-        const emails = doc.data()?.emails || [];
+        const doc = await db.collection('settings').doc('edubridge_moderator_emails').get();
+        const emails = doc.exists ? doc.data().value : [];
         if (!Array.isArray(emails)) return [];
         return emails.map(email => String(email || "").trim().toLowerCase()).filter(email => email);
       } catch (e) {

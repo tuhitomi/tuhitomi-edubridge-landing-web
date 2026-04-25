@@ -118,8 +118,8 @@
 
     async function getAdminEmail() {
       try {
-        const doc = await db.collection('settings').doc('adminEmail').get();
-        return (doc.data()?.email || DEFAULT_ADMIN_EMAIL).trim().toLowerCase();
+        const doc = await db.collection('settings').doc('edubridge_admin_email').get();
+        return (doc.exists ? doc.data().value : DEFAULT_ADMIN_EMAIL).trim().toLowerCase();
       } catch (e) {
         return DEFAULT_ADMIN_EMAIL;
       }
@@ -127,8 +127,10 @@
 
     async function getReviewerEmails() {
       var adminEmail = await getAdminEmail();
-      var moderators = await readJson("edubridge_moderator_emails", []);
-      var moderatorEmails = Array.isArray(moderators) ? moderators : [];
+      var moderatorDoc = await db.collection('settings').doc('edubridge_moderator_emails').get();
+      var moderatorEmails = Array.isArray(moderatorDoc.exists ? moderatorDoc.data().value : [])
+        ? moderatorDoc.data().value
+        : [];
       var all = [adminEmail].concat(moderatorEmails).map(function (item) {
         return String(item || "").trim().toLowerCase();
       });

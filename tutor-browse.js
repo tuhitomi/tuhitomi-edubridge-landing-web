@@ -146,8 +146,8 @@ class TutorBrowser {
 
   async getAdminEmail() {
     try {
-      const doc = await db.collection('settings').doc('adminEmail').get();
-      return (doc.data()?.email || "tu620014@gmail.com").trim().toLowerCase();
+      const doc = await db.collection('settings').doc('edubridge_admin_email').get();
+      return (doc.exists ? doc.data().value : "tu620014@gmail.com").trim().toLowerCase();
     } catch (e) {
       return "tu620014@gmail.com";
     }
@@ -155,8 +155,8 @@ class TutorBrowser {
 
   async getModeratorEmails() {
     try {
-      const doc = await db.collection('settings').doc('moderatorEmails').get();
-      const emails = doc.data()?.emails || [];
+      const doc = await db.collection('settings').doc('edubridge_moderator_emails').get();
+      const emails = doc.exists ? doc.data().value : [];
       if (!Array.isArray(emails)) return [];
       return emails.map(email => String(email || "").trim().toLowerCase()).filter(email => email);
     } catch (e) {
