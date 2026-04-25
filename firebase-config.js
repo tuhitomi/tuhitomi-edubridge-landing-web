@@ -9,7 +9,7 @@ import {
   getDocs,
   setDoc,
   deleteDoc,
-  writeBatch
+  writeBatch as fireWriteBatch
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -33,7 +33,6 @@ function wrapDocReference(docRef) {
     get: () => getDoc(docRef),
     set: (data) => setDoc(docRef, data),
     delete: () => deleteDoc(docRef),
-    collection: (name) => wrapCollection(fireCollection(docRef, name)),
     ref: docRef
   };
 }
@@ -41,8 +40,7 @@ function wrapDocReference(docRef) {
 function wrapCollection(collectionRef) {
   return {
     get: () => getDocs(collectionRef),
-    doc: (id) => wrapDocReference(fireDoc(collectionRef, String(id))),
-    collection: (name) => wrapCollection(fireCollection(collectionRef, name))
+    doc: (id) => wrapDocReference(fireDoc(collectionRef, String(id)))
   };
 }
 
@@ -58,13 +56,15 @@ function wrapBatch(batch) {
       batch.delete(target);
       return this;
     },
-    commit: () => batch.commit()
+    commit: async () => {
+      return await batch.commit();
+    }
   };
 }
 
 const db = {
   collection: (name) => wrapCollection(fireCollection(firestore, name)),
-  batch: () => wrapBatch(writeBatch(firestore)),
+  batch: () => wrapBatch(fireWriteBatch(firestore)),
   doc: (pathOrRef, id) => {
     if (id !== undefined) {
       return wrapDocReference(fireDoc(pathOrRef, String(id)));
