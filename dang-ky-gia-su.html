@@ -131,10 +131,15 @@
 
     async function getReviewerEmails() {
       var adminEmail = await getAdminEmail();
-      var moderatorDoc = await db.collection('settings').doc('edubridge_moderator_emails').get();
-      var moderatorEmails = Array.isArray(moderatorDoc.exists ? moderatorDoc.data().value : [])
-        ? moderatorDoc.data().value
-        : [];
+      var moderatorEmails = [];
+      try {
+        var moderatorDoc = await db.collection('settings').doc('edubridge_moderator_emails').get();
+        moderatorEmails = Array.isArray(moderatorDoc.exists ? moderatorDoc.data().value : [])
+          ? moderatorDoc.data().value
+          : [];
+      } catch (e) {
+        console.warn('Không thể đọc moderator emails, dùng mặc định:', e);
+      }
       var all = [adminEmail].concat(moderatorEmails).map(function (item) {
         return String(item || "").trim().toLowerCase();
       });

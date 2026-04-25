@@ -1,8 +1,8 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
 import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 import {
-  getFirestore,
-  enableIndexedDbPersistence,
+  initializeFirestore,
+  persistentLocalCache,
   collection as fireCollection,
   doc as fireDoc,
   getDoc,
@@ -24,14 +24,8 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-const firestore = getFirestore(app);
-
-enableIndexedDbPersistence(firestore).catch((err) => {
-  if (err.code == 'failed-precondition') {
-    console.log('Persistence failed: Multiple tabs open');
-  } else if (err.code == 'unimplemented') {
-    console.log('Persistence not supported in this browser');
-  }
+const firestore = initializeFirestore(app, {
+  localCache: persistentLocalCache()
 });
 
 function wrapDocReference(docRef) {
