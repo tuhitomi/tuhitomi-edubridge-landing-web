@@ -34,7 +34,7 @@ class AdminManager {
   }
 
   async initAsync() {
-    await this.renderApprovals();
+    //await this.renderApprovals();
   }
 
   initElements() {
@@ -87,7 +87,7 @@ class AdminManager {
     this.requestManageEmpty = document.getElementById("request-manage-empty");
   }
 
-  setupAuth() {
+    setupAuth() {
     onAuthStateChanged(auth, async (user) => {
       if (!user) {
         window.location.href = "dang-nhap.html?next=" + encodeURIComponent("admin.html");
@@ -138,6 +138,17 @@ class AdminManager {
 
         // 2. Tải dữ liệu thống kê
         await this.loadDashboardStats();
+
+        // --- PHẦN SỬA ĐỔI CHÍNH ---
+        // 3. Tự động render dữ liệu cho tab đang được chọn (thường là tutor-approvals)
+        // Điều này đảm bảo khi vào trang lần đầu, sau khi check Auth xong sẽ thấy dữ liệu ngay
+        if (this.currentTab === "tutor-approvals") {
+          await this.renderApprovals();
+        } else {
+          // Hoặc tổng quát hơn, gọi switchTab với tab hiện tại
+          await this.switchTab(this.currentTab);
+        }
+        // --------------------------
 
       } catch (error) {
         console.error("Error checking admin permissions:", error);
