@@ -12,7 +12,7 @@ import {
 import { auth, db } from "./firebase-config.js";
 
 const navAuthLink = document.getElementById("nav-auth-link");
-const nav = navAuthLink ? navAuthLink.closest(".nav") : null;
+const nav = navAuthLink ? (navAuthLink.closest(".nav") || navAuthLink.closest("nav") || navAuthLink.parentElement) : null;
 const DEFAULT_ADMIN_EMAIL = "tu620014@gmail.com";
 const MODERATOR_KEY = "edubridge_moderator_emails";
 
@@ -82,7 +82,7 @@ function ensureAdminLink() {
     adminLink.className = "nav-cta";
     adminLink.textContent = "Quản trị";
     adminLink.setAttribute("hidden", "");
-    nav.insertBefore(adminLink, navAuthLink);
+    nav.appendChild(adminLink);
   }
   return adminLink;
 }
@@ -98,7 +98,7 @@ function ensureBellLink() {
     bellLink.innerHTML = bellIconSvg + '<span id="nav-bell-badge" class="nav-bell-badge" hidden>0</span>';
     bellLink.setAttribute("aria-label", "Thông báo");
     bellLink.title = "Thông báo";
-    nav.insertBefore(bellLink, navAuthLink);
+    nav.appendChild(bellLink);
   }
   return bellLink;
 }
