@@ -725,25 +725,33 @@ class AdminManager {
       const docRef = doc(db, "tutor_registrations", tutorDoc.id);
       const tutorData = tutorDoc.data();
 
-      // 2. Cập nhật TRỰC TIẾP trạng thái vào Firestore (Không dùng writeJson nữa)
+      // 2. Cập nhật TRỰC TIẾP trạng thái vào Firestore
       await updateDoc(docRef, {
         status: "approved",
         updatedAt: new Date().toISOString()
       });
 
-      // 3. Xử lý các logic bổ trợ
-      
-      // Đánh dấu thông báo liên quan là đã đọc
+      // --- BẮT ĐẦU PHẦN THÊM MỚI: Gửi thông báo cho gia sư vào Firestore ---
+      await addDoc(collection(db, "notifications"), {
+        recipientEmail: email.toLowerCase(), // Email người nhận (gia sư)
+        title: "Hồ sơ gia sư đã được duyệt!",
+        message: `Chúc mừng ${tutorData.name || "bạn"}, hồ sơ gia sư của bạn đã được phê duyệt thành công. Bạn có thể bắt đầu nhận lớp ngay bây giờ.`,
+        type: "success",
+        createdAt: serverTimestamp(), // Sử dụng thời gian phía server
+        isRead: false
+      });
+      // --- KẾT THÚC PHẦN THÊM MỚI ---
+
+      // 3. Xử lý các logic bổ trợ cho Admin
       this.markNotificationAsReadByEmail(email);
 
-      // Ghi nhật ký hoạt động (Activity Log)
       await this.logActivity("approve_tutor", {
         tutorEmail: email,
         tutorName: tutorData.name || "Gia sư",
         action: "approved"
       });
 
-      // Thêm thông báo vào hệ thống UI admin
+      // Thông báo cục bộ trên trình duyệt Admin (nếu có)
       this.addNotification({
         id: Date.now().toString(),
         type: "system",
@@ -757,7 +765,7 @@ class AdminManager {
       await this.renderApprovals();
       await this.loadDashboardStats();
       
-      alert("Đã duyệt gia sư thành công!");
+      alert("Đã duyệt gia sư và gửi thông báo thành công!");
 
     } catch (error) {
       console.error("Error approving tutor:", error);
