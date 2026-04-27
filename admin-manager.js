@@ -634,6 +634,7 @@ class AdminManager {
     // 3. LOGIC QUAN TRỌNG: Chỉ giữ lại những người có trạng thái là "pending" hoặc chưa có trạng thái
     // Những người đã là "approved" (Duyệt) hoặc "rejected" (Từ chối) sẽ bị loại bỏ khỏi danh sách này
     let pendingOnly = registrations.filter(item => item.status === "pending" || !item.status);
+    let filtered = registrations.filter(item => item.status === "pending" || !item.status);
 
     // 4. Các bộ lọc tìm kiếm khác (nếu có)
     const keywordFilter = (this.filterKeyword?.value || "").toLowerCase();
@@ -710,66 +711,43 @@ class AdminManager {
 
   async approveTutorRegistration(email) {
     try {
-      // 1. Tìm bản ghi gia sư trong Firestore dựa trên email
       const registrationsCol = collection(db, "tutor_registrations");
       const q = query(registrationsCol, where("email", "==", email));
       const querySnapshot = await getDocs(q);
 
       if (querySnapshot.empty) {
-        alert("Không tìm thấy thông tin gia sư!");
+        alert("Không tìm thấy hồ sơ gia sư!");
         return;
       }
 
-      // Lấy document reference và dữ liệu hiện tại
       const tutorDoc = querySnapshot.docs[0];
       const docRef = doc(db, "tutor_registrations", tutorDoc.id);
-      const tutorData = tutorDoc.data();
 
-      // 2. Cập nhật TRỰC TIẾP trạng thái vào Firestore
+      // 1. Cập nhật trạng thái duyệt
       await updateDoc(docRef, {
         status: "approved",
         updatedAt: new Date().toISOString()
       });
 
-      // --- BẮT ĐẦU PHẦN THÊM MỚI: Gửi thông báo cho gia sư vào Firestore ---
+      // 2. LƯU THÔNG BÁO VÀO DATABASE (Để gia sư nhận được)
       await addDoc(collection(db, "notifications"), {
-        recipientEmail: email.toLowerCase(), // Email người nhận (gia sư)
-        title: "Hồ sơ gia sư đã được duyệt!",
-        message: `Chúc mừng ${tutorData.name || "bạn"}, hồ sơ gia sư của bạn đã được phê duyệt thành công. Bạn có thể bắt đầu nhận lớp ngay bây giờ.`,
+        recipientEmail: email.toLowerCase().trim(),
+        title: "Hồ sơ đã được duyệt",
+        message: "Chúc mừng! Bạn đã trở thành gia sư của EduBridge.",
         type: "success",
-        createdAt: serverTimestamp(), // Sử dụng thời gian phía server
-        isRead: false
-      });
-      // --- KẾT THÚC PHẦN THÊM MỚI ---
-
-      // 3. Xử lý các logic bổ trợ cho Admin
-      this.markNotificationAsReadByEmail(email);
-
-      await this.logActivity("approve_tutor", {
-        tutorEmail: email,
-        tutorName: tutorData.name || "Gia sư",
-        action: "approved"
-      });
-
-      // Thông báo cục bộ trên trình duyệt Admin (nếu có)
-      this.addNotification({
-        id: Date.now().toString(),
-        type: "system",
-        title: "Gia sư đã được duyệt",
-        message: `${tutorData.name || email} đã được duyệt thành công`,
-        createdAt: new Date(),
+        createdAt: serverTimestamp(),
         isRead: false
       });
 
-      // 4. Cập nhật lại giao diện ngay lập tức
-      await this.renderApprovals();
+      // 3. Tải lại danh sách (Để card biến mất ngay lập tức)
+      await this.renderApprovals(); 
       await this.loadDashboardStats();
       
-      alert("Đã duyệt gia sư và gửi thông báo thành công!");
+      alert("Đã duyệt và gửi thông báo thành công!");
 
     } catch (error) {
-      console.error("Error approving tutor:", error);
-      alert("Có lỗi xảy ra: " + error.message);
+      console.error("Lỗi khi duyệt:", error);
+      alert("Lỗi hệ thống: " + error.message);
     }
   }
 
