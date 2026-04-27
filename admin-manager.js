@@ -93,42 +93,52 @@ class AdminManager {
         window.location.href = "dang-nhap.html?next=" + encodeURIComponent("admin.html");
         return;
       }
-      
+
       this.currentUser = user;
-      
-      // Check if user is admin
+
       try {
-        const adminDoc = await getDoc(doc(db, 'admins', user.uid));
-        this.isAdmin = adminDoc.exists();
-        
+        const userEmail = (user.email || "").toLowerCase().trim();
+
+        // Lấy Email Admin từ Firestore
+        const adminDoc = await getDoc(doc(db, 'settings', 'edubridge_admin_email'));
+        const adminEmailFromDb = adminDoc.exists() ? adminDoc.data().value.toLowerCase().trim() : "tu620014@gmail.com";
+
+        // Kiểm tra quyền
+        this.isAdmin = (userEmail === adminEmailFromDb);
+
+        if (!this.isAdmin) {
+          // Kiểm tra thêm danh sách Moderator
+          const modDoc = await getDoc(doc(db, 'settings', 'edubridge_moderator_emails'));
+          if (modDoc.exists() && Array.isArray(modDoc.data().value)) {
+            const moderators = modDoc.data().value.map(e => String(e).toLowerCase().trim());
+            if (moderators.includes(userEmail)) {
+              this.isAdmin = true;
+            }
+          }
+        }
+
         if (!this.isAdmin) {
           alert("Bạn không có quyền truy cập trang quản trị!");
           window.location.href = "index.html";
           return;
         }
         
-        // Update logout link
+        // 1. Cập nhật nút đăng xuất
         const logoutLink = document.getElementById("nav-auth-link");
         if (logoutLink) {
           logoutLink.textContent = "Đăng xuất";
           logoutLink.href = "#";
-          logoutLink.addEventListener("click", async (e) => {
+          logoutLink.onclick = async (e) => {
             e.preventDefault();
-            try {
-              await auth.signOut();
-              // Clear read notifications on logout
-              localStorage.removeItem('edubridge_read_notifications');
-              window.location.href = "index.html";
-            } catch (error) {
-              console.error("Error signing out:", error);
-              window.location.href = "index.html";
-            }
-          });
+            await auth.signOut();
+            localStorage.removeItem('edubridge_read_notifications');
+            window.location.href = "index.html";
+          };
         }
-        
-        // Load dashboard data
+
+        // 2. Tải dữ liệu thống kê
         await this.loadDashboardStats();
-        
+
       } catch (error) {
         console.error("Error checking admin permissions:", error);
         alert("Có lỗi khi kiểm tra quyền truy cập!");
