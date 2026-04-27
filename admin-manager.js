@@ -705,41 +705,58 @@ class AdminManager {
 
   async approveTutorRegistration(email) {
     try {
-      const registrations = await this.readJson("edubridge_tutor_registrations");
-      const tutor = registrations.find((item) => item.email?.toLowerCase() === email.toLowerCase());
-      
-      if (tutor) {
-        tutor.status = "approved";
-        tutor.updatedAt = new Date().toISOString();
-        await this.writeJson("edubridge_tutor_registrations", registrations);
-        
-        // Mark related notification as read
-        this.markNotificationAsReadByEmail(email);
-        
-        // Log activity
-        await this.logActivity("approve_tutor", {
-          tutorEmail: email,
-          tutorName: tutor.name,
-          action: "approved"
-        });
-        
-        // Send notification to tutor (placeholder for email integration)
-        this.addNotification({
-          id: Date.now().toString(),
-          type: "system",
-          title: "Gia sư đã được duyệt",
-          message: `${tutor.name} đã được duyệt thành công`,
-          createdAt: new Date(),
-          isRead: false
-        });
-        
-        await this.renderApprovals();
-        await this.loadDashboardStats();
-        alert("Đã duyệt gia sư!");
+      // 1. Tìm bản ghi gia sư trong Firestore dựa trên email
+      const registrationsCol = collection(db, "tutor_registrations");
+      const q = query(registrationsCol, where("email", "==", email));
+      const querySnapshot = await getDocs(q);
+
+      if (querySnapshot.empty) {
+        alert("Không tìm thấy thông tin gia sư!");
+        return;
       }
+
+      // Lấy document reference và dữ liệu hiện tại
+      const tutorDoc = querySnapshot.docs[0];
+      const docRef = doc(db, "tutor_registrations", tutorDoc.id);
+      const tutorData = tutorDoc.data();
+
+      // 2. Cập nhật TRỰC TIẾP trạng thái vào Firestore (Không dùng writeJson nữa)
+      await updateDoc(docRef, {
+        status: "approved",
+        updatedAt: new Date().toISOString()
+      });
+
+      // 3. Xử lý các logic bổ trợ
+      
+      // Đánh dấu thông báo liên quan là đã đọc
+      this.markNotificationAsReadByEmail(email);
+
+      // Ghi nhật ký hoạt động (Activity Log)
+      await this.logActivity("approve_tutor", {
+        tutorEmail: email,
+        tutorName: tutorData.name || "Gia sư",
+        action: "approved"
+      });
+
+      // Thêm thông báo vào hệ thống UI admin
+      this.addNotification({
+        id: Date.now().toString(),
+        type: "system",
+        title: "Gia sư đã được duyệt",
+        message: `${tutorData.name || email} đã được duyệt thành công`,
+        createdAt: new Date(),
+        isRead: false
+      });
+
+      // 4. Cập nhật lại giao diện ngay lập tức
+      await this.renderApprovals();
+      await this.loadDashboardStats();
+      
+      alert("Đã duyệt gia sư thành công!");
+
     } catch (error) {
       console.error("Error approving tutor:", error);
-      alert("Có lỗi xảy ra khi duyệt gia sư!");
+      alert("Có lỗi xảy ra: " + error.message);
     }
   }
 
