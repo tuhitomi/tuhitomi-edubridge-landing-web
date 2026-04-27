@@ -911,12 +911,35 @@ class AdminManager {
     this.renderTutors();
   }
 
-  removeTutor(email) {
-    const registrations = this.readJson("edubridge_tutor_registrations");
-    const filtered = registrations.filter((item) => item.email?.toLowerCase() !== email.toLowerCase());
-    this.writeJson("edubridge_tutor_registrations", filtered);
-    this.renderTutors();
-    alert("Đã xóa gia sư!");
+  async removeTutor(email) {
+    try {
+      // 1. Lấy dữ liệu
+      let registrations = await this.readJson("edubridge_tutor_registrations");
+
+      // 2. Kiểm tra nếu registrations không phải là mảng thì chuyển nó về mảng
+      // Đây là bước quan trọng để sửa lỗi .filter is not a function
+      if (!Array.isArray(registrations)) {
+        console.warn("Dữ liệu không phải mảng, đang chuyển đổi...");
+        registrations = registrations ? Object.values(registrations) : [];
+      }
+
+      // 3. Tiến hành lọc để xóa
+      const filtered = registrations.filter(
+        (item) => item.email?.toLowerCase() !== email.toLowerCase()
+      );
+
+      // 4. Ghi lại dữ liệu mới
+      await this.writeJson("edubridge_tutor_registrations", filtered);
+
+      // 5. Cập nhật giao diện
+      alert("Đã xóa gia sư thành công!");
+      await this.renderTutors();
+      await this.loadDashboardStats();
+
+    } catch (error) {
+      console.error("Lỗi khi xóa gia sư:", error);
+      alert("Có lỗi xảy ra khi thực hiện xóa!");
+    }
   }
 
   // === STUDENT MANAGEMENT ===
