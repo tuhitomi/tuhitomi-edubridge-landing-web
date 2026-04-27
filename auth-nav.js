@@ -3,7 +3,9 @@ import {
   collection, 
   query, 
   where, 
-  onSnapshot 
+  orderBy,
+  onSnapshot,
+  getDocs 
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 import { auth, db } from "./firebase-config.js";
 
@@ -26,9 +28,13 @@ const bellIconSvg =
 async function readNotifications(userEmail) {
   try {
     if (!userEmail) return [];
-    const snapshot = await db.collection('notifications')
-      .where('userEmail', '==', userEmail.toLowerCase())
-      .get();
+    const normalizedEmail = userEmail.toLowerCase().trim();
+    const q = query(
+      collection(db, 'notifications'),
+      where('userEmail', '==', normalizedEmail),
+      orderBy('createdAt', 'desc')
+    );
+    const snapshot = await getDocs(q);
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
   } catch (e) {
     console.error('Error reading notifications:', e);
@@ -108,10 +114,11 @@ async function updateBellBadge(user) {
   bellLink.removeAttribute("hidden");
   
   // Set up real-time listener for notifications
-  const userEmail = user.email.toLowerCase();
+  const normalizedEmail = user.email.toLowerCase().trim();
   const q = query(
     collection(db, 'notifications'),
-    where('userEmail', '==', userEmail)
+    where('userEmail', '==', normalizedEmail),
+    orderBy('createdAt', 'desc')
   );
   
   notificationsUnsubscribe = onSnapshot(q, (snapshot) => {
@@ -126,7 +133,7 @@ async function updateBellBadge(user) {
       badge.textContent = String(unreadCount);
       badge.hidden = unreadCount === 0;
       
-      console.log(`Notifications updated for ${userEmail}: ${unreadCount} unread`);
+      console.log(`Notifications updated for ${normalizedEmail}: ${unreadCount} unread`);
     } catch (error) {
       console.error('Error updating notification badge:', error);
       badge.textContent = "0";
@@ -143,7 +150,7 @@ async function updateAdminLink(user) {
   var adminLink = document.getElementById("nav-admin-link");
   if (!adminLink) return;
 
-  var normalized = String((user && user.email) || "").toLowerCase();
+  var normalized = String((user && user.email) || "").toLowerCase().trim();
   var adminEmail = await getAdminEmail();
   var moderatorEmails = await getModeratorEmails();
   var isAdmin = !!(user && normalized === adminEmail);

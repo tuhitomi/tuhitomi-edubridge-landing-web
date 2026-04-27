@@ -63,7 +63,8 @@
       addDoc, 
       updateDoc, 
       doc, 
-      writeBatch 
+      writeBatch,
+      orderBy 
     } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
     import { auth, db } from "./firebase-config.js";
 
@@ -82,10 +83,14 @@
     async function readNotifications(userEmail) {
       try {
         if (!userEmail) return [];
-        const snapshot = await db.collection('notifications')
-          .where('userEmail', '==', userEmail.toLowerCase())
-          .get();
-        return snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
+        const normalizedEmail = userEmail.toLowerCase().trim();
+        const q = query(
+          collection(db, 'notifications'),
+          where('userEmail', '==', normalizedEmail),
+          orderBy('createdAt', 'desc')
+        );
+        const snapshot = await getDocs(q);
+        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       } catch (e) {
         console.error('Error reading notifications:', e);
         return [];
@@ -149,9 +154,9 @@
 
     async function updateNotificationReadState(notificationId, shouldRead) {
       try {
-        // Update the specific notification document
-        const notificationRef = db.collection('notifications').doc(notificationId.toString());
-        await notificationRef.update({ read: !!shouldRead });
+        // Atomic update: Update the specific notification document
+        const notificationRef = doc(db, 'notifications', String(notificationId));
+        await updateDoc(notificationRef, { read: !!shouldRead });
         
         // Dispatch event to update badge
         window.dispatchEvent(new Event("edubridge-notifications-updated"));
@@ -163,7 +168,7 @@
     async function openDetail(notificationId) {
       const notifications = await getVisibleNotifications();
       var item = notifications.find(function (entry) {
-        return Number(entry.id || 0) === Number(notificationId || 0);
+        return String(entry.id || "") === String(notificationId || "");
       });
       if (!item) return;
 
@@ -180,36 +185,60 @@
     }
 
     async function updateTutorStatus(tutorEmail, status, reason) {
-      var nowIso = new Date().toISOString();
-      
-      // Find and update the specific tutor registration
-      const registrations = await readTutorRegistrations();
-      var updatedName = "Gia sư";
-      var tutorDoc = null;
-      
-      for (const item of registrations) {
-        if (String(item.email || "").toLowerCase() === tutorEmail) {
-          updatedName = item.name || updatedName;
-          tutorDoc = item;
-          break;
-        }
+      // Kiểm tra quyền Admin/Moderator trước khi thực thi
+      const currentUser = auth.currentUser;
+      if (!currentUser || !currentUser.email) {
+        alert('Bạn cần đăng nhập để thực hiện thao tác này.');
+        return;
       }
       
-      if (tutorDoc) {
-        // Update the tutor registration document
-        const tutorRef = db.collection('tutor_registrations').doc(tutorDoc.id);
-        await tutorRef.update({
+      const normalizedUserEmail = currentUser.email.toLowerCase().trim();
+      const adminEmail = await getAdminEmail();
+      const moderatorEmails = await getModeratorEmails();
+      const isAdmin = normalizedUserEmail === adminEmail;
+      const isModerator = moderatorEmails.includes(normalizedUserEmail);
+      
+      if (!isAdmin && !isModerator) {
+        alert('Bạn không có quyền duyệt hồ sơ gia sư.');
+        return;
+      }
+      
+      try {
+        const normalizedTutorEmail = tutorEmail.toLowerCase().trim();
+        var nowIso = new Date().toISOString();
+        
+        // Tìm tutor registration document
+        const registrations = await readTutorRegistrations();
+        var updatedName = "Gia sư";
+        var tutorDoc = null;
+        
+        for (const item of registrations) {
+          if (String(item.email || "").toLowerCase().trim() === normalizedTutorEmail) {
+            updatedName = item.name || updatedName;
+            tutorDoc = item;
+            break;
+          }
+        }
+        
+        if (!tutorDoc) {
+          alert('Không tìm thấy hồ sơ gia sư.');
+          return;
+        }
+        
+        // Atomic update: Update tutor registration document
+        const tutorRef = doc(db, 'tutor_registrations', String(tutorDoc.id));
+        await updateDoc(tutorRef, {
           status: status,
           rejectReason: status === "rejected" ? String(reason || "").trim() : "",
           updatedAt: nowIso
         });
         
-        // Add notification for the tutor
+        // Atomic update: Add notification for the tutor
         const notificationData = {
-          userEmail: tutorEmail,
+          userEmail: normalizedTutorEmail,
           type: "tutor-approval-status",
           text: status === "approved"
-            ? "Hồ sơ gia sư của bạn đã được admin duyệt. Bạn có thể chỉnh sửa và đăng lên bảng tìm gia sư."
+            ? "Hồ sơ gia sư của bạn đã được duyệt. Bạn có thể chỉnh sửa và đăng lên bảng tìm gia sư."
             : "Hồ sơ gia sư của bạn chưa được duyệt. Lý do: " + (reason || "Chưa cung cấp") + ".",
           read: false,
           createdAt: nowIso,
@@ -219,10 +248,15 @@
           }
         };
         
-        await db.collection('notifications').add(notificationData);
+        await addDoc(collection(db, 'notifications'), notificationData);
         
         window.dispatchEvent(new Event("edubridge-notifications-updated"));
         await render();
+        
+        alert(status === "approved" ? "Đã duyệt hồ sơ gia sư thành công." : "Đã từ chối hồ sơ gia sư.");
+      } catch (error) {
+        console.error('Error updating tutor status:', error);
+        alert('Có lỗi xảy ra khi cập nhật trạng thái hồ sơ.');
       }
     }
 
@@ -240,11 +274,11 @@
                 item.text + unreadTag +
                 '<br><small>' + formatTime(item.createdAt) + "</small>" +
                 '<div class="request-modal-actions">' +
-                '<a class="btn btn-secondary" href="admin.html?tutorEmail=' + encodeURIComponent(String(item.payload.tutorEmail || "").toLowerCase()) + '">Mở trang quản trị</a>' +
-                '<button type="button" class="btn btn-secondary notify-detail-btn" data-id="' + item.id + '">Xem chi tiết</button>' +
-                '<button type="button" class="btn btn-secondary notify-toggle-read-btn" data-id="' + item.id + '" data-read="' + toggleReadValue + '">' + toggleReadLabel + "</button>" +
-                '<button type="button" class="btn btn-primary notify-approve-btn" data-email="' + item.payload.tutorEmail + '">Duyệt hồ sơ</button>' +
-                '<button type="button" class="btn btn-secondary notify-reject-btn" data-email="' + item.payload.tutorEmail + '">Từ chối</button>' +
+                '<a class="btn btn-secondary" href="admin.html?tutorEmail=' + encodeURIComponent(String(item.payload.tutorEmail || "").toLowerCase().trim()) + '">Mở trang quản trị</a>' +
+                '<button type="button" class="btn btn-secondary notify-detail-btn" data-id="' + String(item.id) + '">Xem chi tiết</button>' +
+                '<button type="button" class="btn btn-secondary notify-toggle-read-btn" data-id="' + String(item.id) + '" data-read="' + toggleReadValue + '">' + toggleReadLabel + "</button>" +
+                '<button type="button" class="btn btn-primary notify-approve-btn" data-email="' + String(item.payload.tutorEmail || "").toLowerCase().trim() + '">Duyệt hồ sơ</button>' +
+                '<button type="button" class="btn btn-secondary notify-reject-btn" data-email="' + String(item.payload.tutorEmail || "").toLowerCase().trim() + '">Từ chối</button>' +
                 "</div>" +
                 "</li>"
               );
@@ -252,8 +286,8 @@
             return (
               '<li class="history-item">' + item.text + unreadTag + "<br><small>" + formatTime(item.createdAt) + "</small>" +
               '<div class="request-modal-actions">' +
-              '<button type="button" class="btn btn-secondary notify-detail-btn" data-id="' + item.id + '">Xem chi tiết</button>' +
-              '<button type="button" class="btn btn-secondary notify-toggle-read-btn" data-id="' + item.id + '" data-read="' + toggleReadValue + '">' + toggleReadLabel + "</button>" +
+              '<button type="button" class="btn btn-secondary notify-detail-btn" data-id="' + String(item.id) + '">Xem chi tiết</button>' +
+              '<button type="button" class="btn btn-secondary notify-toggle-read-btn" data-id="' + String(item.id) + '" data-read="' + toggleReadValue + '">' + toggleReadLabel + "</button>" +
               "</div>" +
               "</li>"
             );
@@ -264,14 +298,14 @@
       var toggleReadButtons = document.querySelectorAll(".notify-toggle-read-btn");
       detailButtons.forEach(function (button) {
         button.addEventListener("click", async function () {
-          var id = Number(button.getAttribute("data-id") || 0);
+          var id = String(button.getAttribute("data-id") || "");
           if (!id) return;
           await openDetail(id);
         });
       });
       toggleReadButtons.forEach(function (button) {
         button.addEventListener("click", async function () {
-          var id = Number(button.getAttribute("data-id") || 0);
+          var id = String(button.getAttribute("data-id") || "");
           var shouldRead = String(button.getAttribute("data-read") || "") === "true";
           if (!id) return;
           await updateNotificationReadState(id, shouldRead);
