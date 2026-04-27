@@ -248,23 +248,34 @@
     async function getAdminEmail() {
       try {
         const docSnap = await getDoc(doc(db, 'settings', 'edubridge_admin_email'));
-        return (docSnap.exists() ? docSnap.data().value : DEFAULT_ADMIN_EMAIL).trim().toLowerCase();
+        if (docSnap.exists()) {
+          const email = docSnap.data().value.trim().toLowerCase();
+          localStorage.setItem('edubridge_admin_email', email); // Đồng bộ lại local
+          return email;
+        }
       } catch (e) {
-        return DEFAULT_ADMIN_EMAIL.trim().toLowerCase();
+        console.error('Firestore Error:', e);
       }
+      return DEFAULT_ADMIN_EMAIL.trim().toLowerCase(); // Fallback về email mặc định trong code
     }
 
     async function getModeratorEmails() {
       try {
         const docSnap = await getDoc(doc(db, 'settings', 'edubridge_moderator_emails'));
-        var value = docSnap.exists() ? docSnap.data().value : [];
-        if (!Array.isArray(value)) return [];
-        return value
-          .map(function (item) { return String(item || "").trim().toLowerCase(); })
-          .filter(function (item, index, arr) { return item && arr.indexOf(item) === index; });
+        if (docSnap.exists()) {
+          var value = docSnap.data().value;
+          if (Array.isArray(value)) {
+            const emails = value
+              .map(function (item) { return String(item || "").trim().toLowerCase(); })
+              .filter(function (item, index, arr) { return item && arr.indexOf(item) === index; });
+            localStorage.setItem(MODERATOR_KEY, JSON.stringify(emails)); // Đồng bộ lại local
+            return emails;
+          }
+        }
       } catch (e) {
-        return [];
+        console.error('Firestore Error:', e);
       }
+      return []; // Fallback
     }
 
     function saveModeratorEmails(emails) {
@@ -713,9 +724,25 @@
         return;
       }
 
-      currentUserEmail = String(user.email || "").toLowerCase();
+      currentUserEmail = String(user.email || "").toLowerCase().trim();
+      
+      // Đảm bảo dữ liệu quyền hạn đã được tải xong từ server
+      var adminEmail = await getAdminEmail();
+      var moderatorEmails = await getModeratorEmails();
+      
+      // Debug: in ra email hiện tại và email admin để kiểm tra
+      console.log("[ADMIN PERMISSION DEBUG]");
+      console.log("Current User Email:", currentUserEmail);
+      console.log("Admin Email from Firestore:", adminEmail);
+      console.log("Moderator Emails from Firestore:", moderatorEmails);
+      console.log("Email Match (Admin):", currentUserEmail === adminEmail);
+      console.log("Email in Moderators:", moderatorEmails.includes(currentUserEmail));
+      
       currentRole = await getRoleByEmail(currentUserEmail);
+      console.log("Current Role:", currentRole);
+      
       if (currentRole === "none") {
+        console.error("Access Denied: User is not admin or moderator");
         alert("Bạn không có quyền truy cập trang quản trị/kiểm duyệt.");
         window.location.href = "index.html";
         return;

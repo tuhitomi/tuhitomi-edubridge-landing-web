@@ -47,11 +47,15 @@ async function readNotifications(userEmail) {
 async function getAdminEmail() {
   try {
     const docSnap = await getDoc(doc(db, 'settings', 'edubridge_admin_email'));
-    return (docSnap.exists() ? docSnap.data().value : DEFAULT_ADMIN_EMAIL).trim().toLowerCase();
+    if (docSnap.exists()) {
+      const email = docSnap.data().value.trim().toLowerCase();
+      localStorage.setItem('edubridge_admin_email', email); // Đồng bộ lại local
+      return email;
+    }
   } catch (e) {
-    console.error('Error getting admin email:', e);
-    return DEFAULT_ADMIN_EMAIL.trim().toLowerCase();
+    console.error('Firestore Error:', e);
   }
+  return DEFAULT_ADMIN_EMAIL.trim().toLowerCase(); // Fallback về email mặc định trong code
 }
 
 async function getModeratorEmails() {
