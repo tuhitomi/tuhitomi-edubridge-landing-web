@@ -65,7 +65,8 @@
       doc, 
       writeBatch,
       orderBy,
-      onSnapshot 
+      onSnapshot,
+      getDoc
     } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
     import { auth, db } from "./firebase-config.js";
 
@@ -97,10 +98,8 @@
 
     async function getAdminEmail() {
       try {
-        const docSnap = await getDocs(query(collection(db, 'settings'), where('key', '==', 'edubridge_admin_email')));
-        if (!docSnap.empty) {
-          return docSnap.docs[0].data().value.trim().toLowerCase();
-        }
+        const docSnap = await getDoc(doc(db, 'settings', 'edubridge_admin_email'));
+        return (docSnap.exists() ? docSnap.data().value : DEFAULT_ADMIN_EMAIL).trim().toLowerCase();
       } catch (e) {
         console.error('Error getting admin email:', e);
       }
@@ -109,12 +108,10 @@
 
     async function getModeratorEmails() {
       try {
-        const docSnap = await getDocs(query(collection(db, 'settings'), where('key', '==', 'edubridge_moderator_emails')));
-        if (!docSnap.empty) {
-          const value = docSnap.docs[0].data().value;
-          if (Array.isArray(value)) {
-            return value.map(email => String(email || "").trim().toLowerCase()).filter(email => email);
-          }
+        const docSnap = await getDoc(doc(db, 'settings', 'edubridge_moderator_emails'));
+        const value = docSnap.exists() ? docSnap.data().value : [];
+        if (Array.isArray(value)) {
+          return value.map(email => String(email || "").trim().toLowerCase()).filter(email => email);
         }
       } catch (e) {
         console.error('Error getting moderator emails:', e);
