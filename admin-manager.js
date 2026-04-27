@@ -228,7 +228,9 @@ class AdminManager {
           console.warn('Không thể đọc trước khi ghi', collectionName, e);
         }
         value.forEach(item => {
-          const docRef = doc(db, collectionName, item.id || Date.now().toString());
+          // Đảm bảo id luôn là string bằng cách dùng String()
+          const id = item.id ? String(item.id) : Date.now().toString() + Math.random().toString(36).substr(2, 5);
+          const docRef = doc(db, collectionName, id);
           batch.set(docRef, item);
         });
         await batch.commit();
