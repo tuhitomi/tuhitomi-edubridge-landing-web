@@ -55,6 +55,16 @@
   <script type="module" src="auth-nav.js?v=1"></script>
   <script type="module">
     import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+    import { 
+      collection, 
+      query, 
+      where, 
+      getDocs, 
+      addDoc, 
+      updateDoc, 
+      doc, 
+      writeBatch 
+    } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
     import { auth, db } from "./firebase-config.js";
 
     var DEFAULT_ADMIN_EMAIL = "tu620014@gmail.com";
@@ -69,11 +79,15 @@
     var currentEmail = "";
     var canReviewTutor = false;
 
-    async function readNotifications() {
+    async function readNotifications(userEmail) {
       try {
-        const snapshot = await db.collection('notifications').get();
+        if (!userEmail) return [];
+        const snapshot = await db.collection('notifications')
+          .where('userEmail', '==', userEmail.toLowerCase())
+          .get();
         return snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
       } catch (e) {
+        console.error('Error reading notifications:', e);
         return [];
       }
     }
@@ -130,21 +144,20 @@
     }
 
     async function getVisibleNotifications() {
-      const all = await readNotifications();
-      return all.filter(function (item) {
-        return String(item.userEmail || "").trim().toLowerCase() === currentEmail;
-      });
+      return await readNotifications(currentEmail);
     }
 
     async function updateNotificationReadState(notificationId, shouldRead) {
-      const all = await readNotifications();
-      const notifications = all.map(function (item) {
-        if (Number(item.id || 0) !== Number(notificationId || 0) || String(item.userEmail || "").trim().toLowerCase() !== currentEmail) return item;
-        item.read = !!shouldRead;
-        return item;
-      });
-      await writeNotifications(notifications);
-      window.dispatchEvent(new Event("edubridge-notifications-updated"));
+      try {
+        // Update the specific notification document
+        const notificationRef = db.collection('notifications').doc(notificationId.toString());
+        await notificationRef.update({ read: !!shouldRead });
+        
+        // Dispatch event to update badge
+        window.dispatchEvent(new Event("edubridge-notifications-updated"));
+      } catch (error) {
+        console.error('Error updating notification read state:', error);
+      }
     }
 
     async function openDetail(notificationId) {
@@ -168,53 +181,49 @@
 
     async function updateTutorStatus(tutorEmail, status, reason) {
       var nowIso = new Date().toISOString();
-      var registrations = await readTutorRegistrations();
+      
+      // Find and update the specific tutor registration
+      const registrations = await readTutorRegistrations();
       var updatedName = "Gia sư";
-      registrations = registrations.map(function (item) {
-        if (String(item.email || "").toLowerCase() !== tutorEmail) {
-          return item;
+      var tutorDoc = null;
+      
+      for (const item of registrations) {
+        if (String(item.email || "").toLowerCase() === tutorEmail) {
+          updatedName = item.name || updatedName;
+          tutorDoc = item;
+          break;
         }
-        updatedName = item.name || updatedName;
-        return {
-          id: item.id,
-          email: item.email,
-          name: item.name,
-          subject: item.subject,
-          level: item.level,
-          experience: item.experience,
-          location: item.location,
-          availableTime: item.availableTime,
-          price: Number(item.price || 0),
-          sessionHours: Number(item.sessionHours || 0),
-          gender: item.gender || "female",
-          rating: Number(item.rating || 4),
-          activeState: item.activeState || "available",
+      }
+      
+      if (tutorDoc) {
+        // Update the tutor registration document
+        const tutorRef = db.collection('tutor_registrations').doc(tutorDoc.id);
+        await tutorRef.update({
           status: status,
           rejectReason: status === "rejected" ? String(reason || "").trim() : "",
-          submittedAt: item.submittedAt || nowIso,
           updatedAt: nowIso
+        });
+        
+        // Add notification for the tutor
+        const notificationData = {
+          userEmail: tutorEmail,
+          type: "tutor-approval-status",
+          text: status === "approved"
+            ? "Hồ sơ gia sư của bạn đã được admin duyệt. Bạn có thể chỉnh sửa và đăng lên bảng tìm gia sư."
+            : "Hồ sơ gia sư của bạn chưa được duyệt. Lý do: " + (reason || "Chưa cung cấp") + ".",
+          read: false,
+          createdAt: nowIso,
+          payload: {
+            status: status,
+            reason: reason || ""
+          }
         };
-      });
-      await writeTutorRegistrations(registrations);
-
-      var notifications = await readNotifications();
-      notifications.unshift({
-        id: Date.now(),
-        userEmail: tutorEmail,
-        type: "tutor-approval-status",
-        text: status === "approved"
-          ? "Hồ sơ gia sư của bạn đã được admin duyệt. Bạn có thể chỉnh sửa và đăng lên bảng tìm gia sư."
-          : "Hồ sơ gia sư của bạn chưa được duyệt. Lý do: " + (reason || "Chưa cung cấp") + ".",
-        read: false,
-        createdAt: nowIso,
-        payload: {
-          status: status,
-          reason: reason || ""
-        }
-      });
-      await writeNotifications(notifications);
-      window.dispatchEvent(new Event("edubridge-notifications-updated"));
-      await render();
+        
+        await db.collection('notifications').add(notificationData);
+        
+        window.dispatchEvent(new Event("edubridge-notifications-updated"));
+        await render();
+      }
     }
 
     async function render() {
@@ -292,17 +301,25 @@
     }
 
     markReadBtn.addEventListener("click", async function () {
-      const all = await readNotifications();
-      var notifications = all.map(function (item) {
-        if (item.userEmail === currentEmail) {
-          item.read = true;
-          return item;
-        }
-        return item;
-      });
-      await writeNotifications(notifications);
-      await render();
-      window.dispatchEvent(new Event("edubridge-notifications-updated"));
+      try {
+        // Get all unread notifications for current user
+        const notifications = await readNotifications(currentEmail);
+        const unreadNotifications = notifications.filter(item => !item.read);
+        
+        // Update each unread notification
+        const batch = db.batch();
+        unreadNotifications.forEach(notification => {
+          const notificationRef = db.collection('notifications').doc(notification.id);
+          batch.update(notificationRef, { read: true });
+        });
+        
+        await batch.commit();
+        
+        window.dispatchEvent(new Event("edubridge-notifications-updated"));
+        await render();
+      } catch (error) {
+        console.error('Error marking all notifications as read:', error);
+      }
     });
 
     detailCloseBtn.addEventListener("click", closeDetail);
