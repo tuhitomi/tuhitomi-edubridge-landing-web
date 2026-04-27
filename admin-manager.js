@@ -913,22 +913,30 @@ class AdminManager {
 
   async removeTutor(email) {
     try {
-      // 1. Lấy dữ liệu
-      let registrations = await this.readJson("edubridge_tutor_registrations");
-
-      // 2. Kiểm tra nếu registrations không phải là mảng thì chuyển nó về mảng
-      // Đây là bước quan trọng để sửa lỗi .filter is not a function
-      if (!Array.isArray(registrations)) {
-        console.warn("Dữ liệu không phải mảng, đang chuyển đổi...");
-        registrations = registrations ? Object.values(registrations) : [];
+      // 1. Phải có await ở đây
+      const rawData = await this.readJson("edubridge_tutor_registrations");
+      
+      // 2. ÉP KIỂU DỮ LIỆU (Sửa lỗi registrations.filter is not a function)
+      let registrations = [];
+      if (Array.isArray(rawData)) {
+        registrations = rawData;
+      } else if (rawData && typeof rawData === 'object') {
+        // Nếu nó là object bọc mảng (ví dụ { value: [...] }) hoặc object các bản ghi
+        registrations = rawData.value || Object.values(rawData);
       }
 
-      // 3. Tiến hành lọc để xóa
+      // Kiểm tra lại lần nữa, nếu vẫn không phải mảng thì báo lỗi rõ ràng
+      if (!Array.isArray(registrations)) {
+        console.error("Dữ liệu trả về không thể chuyển sang mảng:", rawData);
+        throw new Error("Cấu trúc dữ liệu không hợp lệ");
+      }
+
+      // 3. Thực hiện lọc (Dòng 916 của bạn)
       const filtered = registrations.filter(
-        (item) => item.email?.toLowerCase() !== email.toLowerCase()
+        (item) => item && item.email && item.email.toLowerCase() !== email.toLowerCase()
       );
 
-      // 4. Ghi lại dữ liệu mới
+      // 4. Ghi lại dữ liệu
       await this.writeJson("edubridge_tutor_registrations", filtered);
 
       // 5. Cập nhật giao diện
@@ -937,8 +945,8 @@ class AdminManager {
       await this.loadDashboardStats();
 
     } catch (error) {
-      console.error("Lỗi khi xóa gia sư:", error);
-      alert("Có lỗi xảy ra khi thực hiện xóa!");
+      console.error("Lỗi chi tiết tại removeTutor:", error);
+      alert("Không thể xóa: " + error.message);
     }
   }
 
