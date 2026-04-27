@@ -64,7 +64,8 @@
       updateDoc, 
       doc, 
       writeBatch,
-      orderBy 
+      orderBy,
+      onSnapshot 
     } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
     import { auth, db } from "./firebase-config.js";
 
@@ -79,38 +80,7 @@
     var MODERATOR_KEY = "edubridge_moderator_emails";
     var currentEmail = "";
     var canReviewTutor = false;
-
-    async function readNotifications(userEmail) {
-      try {
-        if (!userEmail) return [];
-        const normalizedEmail = userEmail.toLowerCase().trim();
-        const q = query(
-          collection(db, 'notifications'),
-          where('userEmail', '==', normalizedEmail),
-          orderBy('createdAt', 'desc')
-        );
-        const snapshot = await getDocs(q);
-        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      } catch (e) {
-        console.error('Error reading notifications:', e);
-        return [];
-      }
-    }
-
-    async function writeNotifications(notifications) {
-      const collectionRef = db.collection('notifications');
-      try {
-        const snapshot = await collectionRef.get();
-        const batch = db.batch();
-        snapshot.docs.forEach(doc => batch.delete(doc.ref));
-        await batch.commit();
-      } catch (e) {
-        console.warn('Không thể xóa thông báo cũ', e);
-      }
-      for (const item of notifications) {
-        await collectionRef.doc(String(item.id)).set(item);
-      }
-    }
+    var notificationsUnsubscribe = null;
 
     function formatTime(value) {
       try {
@@ -120,42 +90,49 @@
       }
     }
 
-    async function readTutorRegistrations() {
-      try {
-        const snapshot = await db.collection('tutor_registrations').get();
-        return snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
-      } catch (e) {
-        return [];
-      }
-    }
-
-    async function writeTutorRegistrations(registrations) {
-      const collectionRef = db.collection('tutor_registrations');
-      const snapshot = await collectionRef.get();
-      const batch = db.batch();
-      snapshot.docs.forEach(doc => batch.delete(doc.ref));
-      await batch.commit();
-      for (const item of registrations) {
-        await collectionRef.doc(item.id).set(item);
-      }
-    }
-
     async function getAdminEmail() {
-      return DEFAULT_ADMIN_EMAIL;
+      try {
+        const docSnap = await getDocs(query(collection(db, 'settings'), where('key', '==', 'edubridge_admin_email')));
+        if (!docSnap.empty) {
+          return docSnap.docs[0].data().value.trim().toLowerCase();
+        }
+      } catch (e) {
+        console.error('Error getting admin email:', e);
+      }
+      return DEFAULT_ADMIN_EMAIL.trim().toLowerCase();
     }
 
     async function getModeratorEmails() {
+      try {
+        const docSnap = await getDocs(query(collection(db, 'settings'), where('key', '==', 'edubridge_moderator_emails')));
+        if (!docSnap.empty) {
+          const value = docSnap.docs[0].data().value;
+          if (Array.isArray(value)) {
+            return value.map(email => String(email || "").trim().toLowerCase()).filter(email => email);
+          }
+        }
+      } catch (e) {
+        console.error('Error getting moderator emails:', e);
+      }
       return [];
     }
 
-    async function getVisibleNotifications() {
-      return await readNotifications(currentEmail);
+    async function findTutorByEmail(tutorEmail) {
+      try {
+        const normalizedEmail = tutorEmail.toLowerCase().trim();
+        const q = query(collection(db, 'tutor_registrations'), where('email', '==', normalizedEmail));
+        const snapshot = await getDocs(q);
+        return snapshot.empty ? null : { id: snapshot.docs[0].id, ...snapshot.docs[0].data() };
+      } catch (e) {
+        console.error('Error finding tutor by email:', e);
+        return null;
+      }
     }
 
     async function updateNotificationReadState(notificationId, shouldRead) {
       try {
         // Atomic update: Update the specific notification document
-        const notificationRef = doc(db, 'notifications', String(notificationId));
+        const notificationRef = doc(db, 'notifications', notificationId);
         await updateDoc(notificationRef, { read: !!shouldRead });
         
         // Dispatch event to update badge
@@ -166,18 +143,24 @@
     }
 
     async function openDetail(notificationId) {
-      const notifications = await getVisibleNotifications();
-      var item = notifications.find(function (entry) {
-        return String(entry.id || "") === String(notificationId || "");
-      });
-      if (!item) return;
-
-      updateNotificationReadState(item.id, true);
-      detailTextEl.textContent = item.text || "(Không có nội dung)";
-      detailTimeEl.textContent = "Thời gian: " + formatTime(item.createdAt) + " • Loại: " + (item.type || "general");
-      detailPayloadEl.textContent = item.payload ? JSON.stringify(item.payload, null, 2) : "Không có dữ liệu bổ sung.";
-      detailModalEl.hidden = false;
-      render();
+      try {
+        // Query the specific notification
+        const notificationRef = doc(db, 'notifications', notificationId);
+        const notificationSnap = await getDocs(query(collection(db, 'notifications'), where('__name__', '==', notificationRef)));
+        if (notificationSnap.empty) return;
+        
+        const item = { id: notificationSnap.docs[0].id, ...notificationSnap.docs[0].data() };
+        
+        // Mark as read
+        await updateNotificationReadState(item.id, true);
+        
+        detailTextEl.textContent = item.text || "(Không có nội dung)";
+        detailTimeEl.textContent = "Thời gian: " + formatTime(item.createdAt) + " • Loại: " + (item.type || "general");
+        detailPayloadEl.textContent = item.payload ? JSON.stringify(item.payload, null, 2) : "Không có dữ liệu bổ sung.";
+        detailModalEl.hidden = false;
+      } catch (error) {
+        console.error('Error opening notification detail:', error);
+      }
     }
 
     function closeDetail() {
@@ -205,28 +188,17 @@
       
       try {
         const normalizedTutorEmail = tutorEmail.toLowerCase().trim();
-        var nowIso = new Date().toISOString();
+        const nowIso = new Date().toISOString();
         
-        // Tìm tutor registration document
-        const registrations = await readTutorRegistrations();
-        var updatedName = "Gia sư";
-        var tutorDoc = null;
-        
-        for (const item of registrations) {
-          if (String(item.email || "").toLowerCase().trim() === normalizedTutorEmail) {
-            updatedName = item.name || updatedName;
-            tutorDoc = item;
-            break;
-          }
-        }
-        
+        // Query tutor registration directly by email
+        const tutorDoc = await findTutorByEmail(normalizedTutorEmail);
         if (!tutorDoc) {
           alert('Không tìm thấy hồ sơ gia sư.');
           return;
         }
         
         // Atomic update: Update tutor registration document
-        const tutorRef = doc(db, 'tutor_registrations', String(tutorDoc.id));
+        const tutorRef = doc(db, 'tutor_registrations', tutorDoc.id);
         await updateDoc(tutorRef, {
           status: status,
           rejectReason: status === "rejected" ? String(reason || "").trim() : "",
@@ -251,7 +223,6 @@
         await addDoc(collection(db, 'notifications'), notificationData);
         
         window.dispatchEvent(new Event("edubridge-notifications-updated"));
-        await render();
         
         alert(status === "approved" ? "Đã duyệt hồ sơ gia sư thành công." : "Đã từ chối hồ sơ gia sư.");
       } catch (error) {
@@ -260,9 +231,7 @@
       }
     }
 
-    async function render() {
-      var notifications = await getVisibleNotifications();
-
+    function renderNotifications(notifications) {
       listEl.innerHTML = notifications.length
         ? notifications.map(function (item) {
             var unreadTag = item.read ? "" : " <strong>(Mới)</strong>";
@@ -275,8 +244,8 @@
                 '<br><small>' + formatTime(item.createdAt) + "</small>" +
                 '<div class="request-modal-actions">' +
                 '<a class="btn btn-secondary" href="admin.html?tutorEmail=' + encodeURIComponent(String(item.payload.tutorEmail || "").toLowerCase().trim()) + '">Mở trang quản trị</a>' +
-                '<button type="button" class="btn btn-secondary notify-detail-btn" data-id="' + String(item.id) + '">Xem chi tiết</button>' +
-                '<button type="button" class="btn btn-secondary notify-toggle-read-btn" data-id="' + String(item.id) + '" data-read="' + toggleReadValue + '">' + toggleReadLabel + "</button>" +
+                '<button type="button" class="btn btn-secondary notify-detail-btn" data-id="' + item.id + '">Xem chi tiết</button>' +
+                '<button type="button" class="btn btn-secondary notify-toggle-read-btn" data-id="' + item.id + '" data-read="' + toggleReadValue + '">' + toggleReadLabel + "</button>" +
                 '<button type="button" class="btn btn-primary notify-approve-btn" data-email="' + String(item.payload.tutorEmail || "").toLowerCase().trim() + '">Duyệt hồ sơ</button>' +
                 '<button type="button" class="btn btn-secondary notify-reject-btn" data-email="' + String(item.payload.tutorEmail || "").toLowerCase().trim() + '">Từ chối</button>' +
                 "</div>" +
@@ -286,46 +255,50 @@
             return (
               '<li class="history-item">' + item.text + unreadTag + "<br><small>" + formatTime(item.createdAt) + "</small>" +
               '<div class="request-modal-actions">' +
-              '<button type="button" class="btn btn-secondary notify-detail-btn" data-id="' + String(item.id) + '">Xem chi tiết</button>' +
-              '<button type="button" class="btn btn-secondary notify-toggle-read-btn" data-id="' + String(item.id) + '" data-read="' + toggleReadValue + '">' + toggleReadLabel + "</button>" +
+              '<button type="button" class="btn btn-secondary notify-detail-btn" data-id="' + item.id + '">Xem chi tiết</button>' +
+              '<button type="button" class="btn btn-secondary notify-toggle-read-btn" data-id="' + item.id + '" data-read="' + toggleReadValue + '">' + toggleReadLabel + "</button>" +
               "</div>" +
               "</li>"
             );
           }).join("")
         : '<li class="history-item">Bạn chưa có thông báo nào.</li>';
 
+      // Attach event listeners
       var detailButtons = document.querySelectorAll(".notify-detail-btn");
       var toggleReadButtons = document.querySelectorAll(".notify-toggle-read-btn");
+      
       detailButtons.forEach(function (button) {
         button.addEventListener("click", async function () {
-          var id = String(button.getAttribute("data-id") || "");
+          var id = button.getAttribute("data-id");
           if (!id) return;
           await openDetail(id);
         });
       });
+      
       toggleReadButtons.forEach(function (button) {
         button.addEventListener("click", async function () {
-          var id = String(button.getAttribute("data-id") || "");
-          var shouldRead = String(button.getAttribute("data-read") || "") === "true";
+          var id = button.getAttribute("data-id");
+          var shouldRead = button.getAttribute("data-read") === "true";
           if (!id) return;
           await updateNotificationReadState(id, shouldRead);
-          await render();
         });
       });
 
       if (canReviewTutor) {
         var approveButtons = document.querySelectorAll(".notify-approve-btn");
         var rejectButtons = document.querySelectorAll(".notify-reject-btn");
+        
         approveButtons.forEach(function (button) {
           button.addEventListener("click", async function () {
-            var tutorEmail = String(button.getAttribute("data-email") || "").toLowerCase();
+            var tutorEmail = button.getAttribute("data-email");
             if (!tutorEmail) return;
             await updateTutorStatus(tutorEmail, "approved");
           });
         });
+        
         rejectButtons.forEach(function (button) {
           button.addEventListener("click", async function () {
-            var tutorEmail = String(button.getAttribute("data-email") || "").toLowerCase();
+            var tutorEmail = button.getAttribute("data-email");
             if (!tutorEmail) return;
             var reason = prompt("Nhập lý do từ chối hồ sơ:", "") || "";
             await updateTutorStatus(tutorEmail, "rejected", reason);
@@ -335,22 +308,29 @@
     }
 
     markReadBtn.addEventListener("click", async function () {
+      if (!currentEmail) return;
+      
       try {
-        // Get all unread notifications for current user
-        const notifications = await readNotifications(currentEmail);
-        const unreadNotifications = notifications.filter(item => !item.read);
+        // Query all unread notifications for current user
+        const normalizedEmail = currentEmail.toLowerCase().trim();
+        const q = query(
+          collection(db, 'notifications'),
+          where('userEmail', '==', normalizedEmail),
+          where('read', '==', false)
+        );
+        const snapshot = await getDocs(q);
         
-        // Update each unread notification
-        const batch = db.batch();
-        unreadNotifications.forEach(notification => {
-          const notificationRef = db.collection('notifications').doc(notification.id);
-          batch.update(notificationRef, { read: true });
+        if (snapshot.empty) return;
+        
+        // Batch update all unread notifications
+        const batch = writeBatch(db);
+        snapshot.docs.forEach(docSnap => {
+          batch.update(docSnap.ref, { read: true });
         });
         
         await batch.commit();
         
         window.dispatchEvent(new Event("edubridge-notifications-updated"));
-        await render();
       } catch (error) {
         console.error('Error marking all notifications as read:', error);
       }
@@ -362,20 +342,46 @@
     });
 
     onAuthStateChanged(auth, async function (user) {
+      // Cleanup previous listener
+      if (notificationsUnsubscribe) {
+        notificationsUnsubscribe();
+        notificationsUnsubscribe = null;
+      }
+      
       if (!user) {
         window.location.href = "dang-nhap.html?next=thong-bao.html";
         return;
       }
-      currentEmail = String(user.email || "").trim().toLowerCase();
-      var normalizedEmail = currentEmail;
-      var adminEmail = await getAdminEmail();
-      var moderatorEmails = await getModeratorEmails();
-      canReviewTutor = normalizedEmail === adminEmail || moderatorEmails.includes(normalizedEmail);
+      
+      currentEmail = user.email.toLowerCase().trim();
+      const adminEmail = await getAdminEmail();
+      const moderatorEmails = await getModeratorEmails();
+      canReviewTutor = currentEmail === adminEmail || moderatorEmails.includes(currentEmail);
+      
       if (!user.emailVerified && !canReviewTutor) {
         window.location.href = "dang-nhap.html?next=thong-bao.html";
         return;
       }
-      await render();
+      
+      // Set up real-time listener for notifications
+      const q = query(
+        collection(db, 'notifications'),
+        where('userEmail', '==', currentEmail),
+        orderBy('createdAt', 'desc')
+      );
+      
+      notificationsUnsubscribe = onSnapshot(q, (snapshot) => {
+        try {
+          const notifications = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          renderNotifications(notifications);
+        } catch (error) {
+          console.error('Error rendering notifications:', error);
+          listEl.innerHTML = '<li class="history-item">Có lỗi khi tải thông báo.</li>';
+        }
+      }, (error) => {
+        console.error('Error listening to notifications:', error);
+        listEl.innerHTML = '<li class="history-item">Có lỗi khi tải thông báo.</li>';
+      });
     });
   </script>
 </body>
