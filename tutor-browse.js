@@ -1,4 +1,12 @@
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+import { 
+  collection,
+  doc,
+  getDocs,
+  writeBatch,
+  setDoc,
+  getDoc
+} from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 import { auth, db } from "./firebase-config.js";
 
 const STORAGE_KEY = "edubridge_tutor_filters";
@@ -44,7 +52,7 @@ class TutorBrowser {
   }
 
   async loadTutors() {
-    const registered = await this.readJson("edubridge_tutor_registrations");
+    const registered = (await this.readJson("edubridge_tutor_registrations"))
       .filter((item) => item && item.status === "approved")
       .map((item, index) => ({
         id: 1000 + index,
@@ -121,8 +129,8 @@ class TutorBrowser {
     }
     try {
       const collectionName = key.replace('edubridge_', '');
-      const snapshot = await db.collection(collectionName).get();
-      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const snapshot = await getDocs(collection(db, collectionName));
+      return snapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() }));
     } catch (e) {
       return [];
     }
@@ -134,24 +142,23 @@ class TutorBrowser {
       return;
     }
     const collectionName = key.replace('edubridge_', '');
-    const collectionRef = db.collection(collectionName);
-    const batch = db.batch();
+    const batch = writeBatch(db);
     try {
-      const snapshot = await collectionRef.get();
-      snapshot.docs.forEach(doc => batch.delete(doc.ref));
+      const snapshot = await getDocs(collection(db, collectionName));
+      snapshot.docs.forEach(docSnap => batch.delete(docSnap.ref));
     } catch (e) {
       console.warn('Không thể đọc trước khi ghi', collectionName, e);
     }
     await batch.commit();
     for (const item of value) {
-      await collectionRef.doc(item.id).set(item);
+      await setDoc(doc(db, collectionName, item.id), item);
     }
   }
 
   async getAdminEmail() {
     try {
-      const doc = await db.collection('settings').doc('edubridge_admin_email').get();
-      return (doc.exists ? doc.data().value : "tu620014@gmail.com").trim().toLowerCase();
+      const docSnap = await getDoc(doc(db, 'settings', 'edubridge_admin_email'));
+      return (docSnap.exists() ? docSnap.data().value : "tu620014@gmail.com").trim().toLowerCase();
     } catch (e) {
       return "tu620014@gmail.com";
     }
@@ -159,16 +166,10 @@ class TutorBrowser {
 
   async getModeratorEmails() {
     try {
-      const doc = await db.collection('settings').doc('edubridge_moderator_emails').get();
-      const emails = doc.exists ? doc.data().value : [];
+      const docSnap = await getDoc(doc(db, 'settings', 'edubridge_moderator_emails'));
+      const emails = docSnap.exists() ? docSnap.data().value : [];
       if (!Array.isArray(emails)) return [];
       return emails.map(email => String(email || "").trim().toLowerCase()).filter(email => email);
-    } catch (e) {
-      return [];
-    }
-  }
-        .map(function (item) { return String(item || "").trim().toLowerCase(); })
-        .filter(function (item, index, arr) { return item && arr.indexOf(item) === index; });
     } catch (e) {
       return [];
     }

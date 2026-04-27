@@ -120,6 +120,7 @@
   <script type="module" src="auth-nav.js?v=1"></script>
   <script type="module">
     import { onAuthStateChanged, signOut, updateProfile } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+    import { collection, doc, getDocs, writeBatch, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
     import { auth, db } from "./firebase-config.js";
 
     var form = document.getElementById("profile-form");
@@ -155,101 +156,113 @@
 
     async function readRequests() {
       try {
-        const snapshot = await db.collection('requests').get();
-        return snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
+        const snapshot = await getDocs(collection(db, 'requests'));
+        return snapshot.docs.map(docSnap => ({id: docSnap.id, ...docSnap.data()}));
       } catch (e) {
         return [];
       }
     }
 
     async function writeRequests(requests) {
-      const collectionRef = db.collection('requests');
-      const snapshot = await collectionRef.get();
-      const batch = db.batch();
-      snapshot.docs.forEach(doc => batch.delete(doc.ref));
+      const batch = writeBatch(db);
+      try {
+        const snapshot = await getDocs(collection(db, 'requests'));
+        snapshot.docs.forEach(docSnap => batch.delete(docSnap.ref));
+      } catch (e) {
+        console.warn('Cannot read before write', e);
+      }
       await batch.commit();
       for (const item of requests) {
-        await collectionRef.doc(item.id).set(item);
+        await setDoc(doc(db, 'requests', item.id), item);
       }
     }
 
     async function readTutorRegistrations() {
       try {
-        const snapshot = await db.collection('tutor_registrations').get();
-        return snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
+        const snapshot = await getDocs(collection(db, 'tutor_registrations'));
+        return snapshot.docs.map(docSnap => ({id: docSnap.id, ...docSnap.data()}));
       } catch (e) {
         return [];
       }
     }
 
     async function writeTutorRegistrations(registrations) {
-      const collectionRef = db.collection('tutor_registrations');
-      const snapshot = await collectionRef.get();
-      const batch = db.batch();
-      snapshot.docs.forEach(doc => batch.delete(doc.ref));
+      const batch = writeBatch(db);
+      try {
+        const snapshot = await getDocs(collection(db, 'tutor_registrations'));
+        snapshot.docs.forEach(docSnap => batch.delete(docSnap.ref));
+      } catch (e) {
+        console.warn('Cannot read before write', e);
+      }
       await batch.commit();
       for (const item of registrations) {
-        await collectionRef.doc(item.id).set(item);
+        await setDoc(doc(db, 'tutor_registrations', item.id), item);
       }
     }
 
     async function readNotifications() {
       try {
-        const snapshot = await db.collection('notifications').get();
-        return snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
+        const snapshot = await getDocs(collection(db, 'notifications'));
+        return snapshot.docs.map(docSnap => ({id: docSnap.id, ...docSnap.data()}));
       } catch (e) {
         return [];
       }
     }
 
     async function writeNotifications(notifications) {
-      const collectionRef = db.collection('notifications');
-      const snapshot = await collectionRef.get();
-      const batch = db.batch();
-      snapshot.docs.forEach(doc => batch.delete(doc.ref));
+      const batch = writeBatch(db);
+      try {
+        const snapshot = await getDocs(collection(db, 'notifications'));
+        snapshot.docs.forEach(docSnap => batch.delete(docSnap.ref));
+      } catch (e) {
+        console.warn('Cannot read before write', e);
+      }
       await batch.commit();
       for (const item of notifications) {
-        await collectionRef.doc(item.id).set(item);
+        await setDoc(doc(db, 'notifications', item.id), item);
       }
     }
 
     async function readWallets() {
       try {
-        const doc = await db.collection('settings').doc('wallets').get();
-        return doc.data() || { adminRevenue: 0, tutorBalances: {} };
+        const docSnap = await getDoc(doc(db, 'settings', 'wallets'));
+        return docSnap.data() || { adminRevenue: 0, tutorBalances: {} };
       } catch (e) {
         return { adminRevenue: 0, tutorBalances: {} };
       }
     }
 
     async function writeWallets(wallets) {
-      await db.collection('settings').doc('wallets').set(wallets);
+      await setDoc(doc(db, 'settings', 'wallets'), wallets);
     }
 
     async function readDisputes() {
       try {
-        const snapshot = await db.collection('disputes').get();
-        return snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
+        const snapshot = await getDocs(collection(db, 'disputes'));
+        return snapshot.docs.map(docSnap => ({id: docSnap.id, ...docSnap.data()}));
       } catch (e) {
         return [];
       }
     }
 
     async function writeDisputes(disputes) {
-      const collectionRef = db.collection('disputes');
-      const snapshot = await collectionRef.get();
-      const batch = db.batch();
-      snapshot.docs.forEach(doc => batch.delete(doc.ref));
+      const batch = writeBatch(db);
+      try {
+        const snapshot = await getDocs(collection(db, 'disputes'));
+        snapshot.docs.forEach(docSnap => batch.delete(docSnap.ref));
+      } catch (e) {
+        console.warn('Cannot read before write', e);
+      }
       await batch.commit();
       for (const item of disputes) {
-        await collectionRef.doc(item.id).set(item);
+        await setDoc(doc(db, 'disputes', item.id), item);
       }
     }
 
     async function getAdminEmail() {
       try {
-        const doc = await db.collection('settings').doc('edubridge_admin_email').get();
-        return (doc.exists ? doc.data().value : "tu620014@gmail.com").trim().toLowerCase();
+        const docSnap = await getDoc(doc(db, 'settings', 'edubridge_admin_email'));
+        return (docSnap.exists() ? docSnap.data().value : "tu620014@gmail.com").trim().toLowerCase();
       } catch (e) {
         return "tu620014@gmail.com";
       }
@@ -257,8 +270,8 @@
 
     async function getModeratorEmails() {
       try {
-        const doc = await db.collection('settings').doc('edubridge_moderator_emails').get();
-        const emails = doc.exists ? doc.data().value : [];
+        const docSnap = await getDoc(doc(db, 'settings', 'edubridge_moderator_emails'));
+        const emails = docSnap.exists() ? docSnap.data().value : [];
         if (!Array.isArray(emails)) return [];
         return emails.map(email => String(email || "").trim().toLowerCase()).filter(email => email);
       } catch (e) {

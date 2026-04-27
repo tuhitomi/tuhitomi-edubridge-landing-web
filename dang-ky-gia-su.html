@@ -85,6 +85,7 @@
   <script type="module" src="auth-nav.js?v=1"></script>
   <script type="module">
     import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+    import { collection, doc, getDocs, writeBatch, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
     import { auth, db } from "./firebase-config.js";
 
     var DEFAULT_ADMIN_EMAIL = "tu620014@gmail.com";
@@ -97,8 +98,8 @@
     async function readJson(key, fallback) {
       try {
         const collectionName = key.replace('edubridge_', '');
-        const snapshot = await db.collection(collectionName).get();
-        return snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
+        const snapshot = await getDocs(collection(db, collectionName));
+        return snapshot.docs.map(docSnap => ({id: docSnap.id, ...docSnap.data()}));
       } catch (e) {
         return fallback;
       }
@@ -106,17 +107,16 @@
 
     async function writeJson(key, value) {
       const collectionName = key.replace('edubridge_', '');
-      const collectionRef = db.collection(collectionName);
-      const batch = db.batch();
+      const batch = writeBatch(db);
       try {
-        const snapshot = await collectionRef.get();
-        snapshot.docs.forEach(doc => batch.delete(doc.ref));
+        const snapshot = await getDocs(collection(db, collectionName));
+        snapshot.docs.forEach(docSnap => batch.delete(docSnap.ref));
       } catch (e) {
         console.warn('Không thể đọc trước khi ghi', collectionName, e);
       }
       await batch.commit();
       for (const item of value) {
-        await collectionRef.doc(item.id).set(item);
+        await setDoc(doc(db, collectionName, item.id), item);
       }
     }
 
@@ -139,7 +139,7 @@
 
     async function setDocNoRead(collectionName, docId, data) {
       try {
-        await db.collection(collectionName).doc(docId).set(data);
+        await setDoc(doc(db, collectionName, docId), data);
       } catch (e) {
         console.error('setDocNoRead failed', collectionName, docId, e);
         throw e;

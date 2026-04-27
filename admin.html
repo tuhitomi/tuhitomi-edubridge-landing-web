@@ -225,6 +225,7 @@
   <script type="module" src="auth-nav.js?v=1"></script>
   <script type="module">
     import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+    import { collection, doc, getDocs, writeBatch, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
     import { auth, db } from "./firebase-config.js";
 
     var DEFAULT_ADMIN_EMAIL = "tu620014@gmail.com";
@@ -246,8 +247,8 @@
 
     async function getAdminEmail() {
       try {
-        const doc = await db.collection('settings').doc('edubridge_admin_email').get();
-        return (doc.exists ? doc.data().value : DEFAULT_ADMIN_EMAIL).trim().toLowerCase();
+        const docSnap = await getDoc(doc(db, 'settings', 'edubridge_admin_email'));
+        return (docSnap.exists() ? docSnap.data().value : DEFAULT_ADMIN_EMAIL).trim().toLowerCase();
       } catch (e) {
         return DEFAULT_ADMIN_EMAIL.trim().toLowerCase();
       }
@@ -255,8 +256,8 @@
 
     async function getModeratorEmails() {
       try {
-        const doc = await db.collection('settings').doc('edubridge_moderator_emails').get();
-        var value = doc.exists ? doc.data().value : [];
+        const docSnap = await getDoc(doc(db, 'settings', 'edubridge_moderator_emails'));
+        var value = docSnap.exists() ? docSnap.data().value : [];
         if (!Array.isArray(value)) return [];
         return value
           .map(function (item) { return String(item || "").trim().toLowerCase(); })

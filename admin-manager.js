@@ -9,7 +9,11 @@ import {
   limit,
   addDoc,
   updateDoc,
-  serverTimestamp
+  serverTimestamp,
+  getDoc,
+  getDocs,
+  writeBatch,
+  setDoc
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 import { auth, db } from "./firebase-config.js";
 
@@ -94,8 +98,8 @@ class AdminManager {
       
       // Check if user is admin
       try {
-        const adminDoc = await db.collection('admins').doc(user.uid).get();
-        this.isAdmin = adminDoc.exists;
+        const adminDoc = await getDoc(doc(db, 'admins', user.uid));
+        this.isAdmin = adminDoc.exists();
         
         if (!this.isAdmin) {
           alert("Bạn không có quyền truy cập trang quản trị!");
@@ -176,12 +180,13 @@ class AdminManager {
   async readJson(key) {
     try {
       if (key === "edubridge_wallets") {
-        const doc = await db.collection('settings').doc('wallets').get();
-        return doc.exists ? doc.data().value : {"adminRevenue":0,"tutorBalances":{}};
+        const docRef = doc(db, 'settings', 'wallets');
+        const docSnap = await getDoc(docRef);
+        return docSnap.exists() ? docSnap.data().value : {"adminRevenue":0,"tutorBalances":{}};
       } else {
         const collectionName = key.replace('edubridge_', '');
-        const snapshot = await db.collection(collectionName).get();
-        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const snapshot = await getDocs(collection(db, collectionName));
+        return snapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() }));
       }
     } catch (e) {
       return key === "edubridge_wallets" ? {"adminRevenue":0,"tutorBalances":{}} : [];
@@ -191,18 +196,18 @@ class AdminManager {
   async writeJson(key, value) {
     try {
       if (key === "edubridge_wallets") {
-        await db.collection('settings').doc('wallets').set({value});
+        await setDoc(doc(db, 'settings', 'wallets'), {value});
       } else {
         const collectionName = key.replace('edubridge_', '');
-        const batch = db.batch();
+        const batch = writeBatch(db);
         try {
-          const snapshot = await db.collection(collectionName).get();
-          snapshot.docs.forEach(doc => batch.delete(doc.ref));
+          const snapshot = await getDocs(collection(db, collectionName));
+          snapshot.docs.forEach(docSnap => batch.delete(docSnap.ref));
         } catch (e) {
           console.warn('Không thể đọc trước khi ghi', collectionName, e);
         }
         value.forEach(item => {
-          const docRef = db.collection(collectionName).doc(item.id || Date.now().toString());
+          const docRef = doc(db, collectionName, item.id || Date.now().toString());
           batch.set(docRef, item);
         });
         await batch.commit();
