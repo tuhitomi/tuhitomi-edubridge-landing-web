@@ -625,58 +625,45 @@ class AdminManager {
 
   // === TUTOR APPROVALS ===
   async renderApprovals() {
-    // 1. Đọc dữ liệu từ database
-    const rawData = await this.readJson("edubridge_tutor_registrations");
-    
-    // 2. Ép kiểu mảng (để tránh lỗi filter is not a function)
-    const registrations = Array.isArray(rawData) ? rawData : (rawData ? Object.values(rawData) : []);
+      try {
+          const rawData = await this.readJson("edubridge_tutor_registrations");
+          
+          // Đảm bảo dữ liệu luôn là mảng
+          const registrations = Array.isArray(rawData) ? rawData : (rawData ? Object.values(rawData) : []);
 
-    // 3. LOGIC QUAN TRỌNG: Chỉ giữ lại những người có trạng thái là "pending" hoặc chưa có trạng thái
-    // Những người đã là "approved" (Duyệt) hoặc "rejected" (Từ chối) sẽ bị loại bỏ khỏi danh sách này
-    let pendingOnly = registrations.filter(item => item.status === "pending" || !item.status);
-    let filtered = registrations.filter(item => item.status === "pending" || !item.status);
+          const keywordFilter = (this.filterKeyword?.value || "").toLowerCase();
 
-    // 4. Các bộ lọc tìm kiếm khác (nếu có)
-    const keywordFilter = (this.filterKeyword?.value || "").toLowerCase();
-    let filtered = pendingOnly.filter((item) => {
-      if (keywordFilter && !item.name?.toLowerCase().includes(keywordFilter)) return false;
-      return true;
-    });
+          // LOGIC LỌC: Chấp nhận cả người có status "pending" hoặc chưa có status (mới đăng ký)
+          let filtered = registrations.filter((item) => {
+              const status = (item.status || "").toLowerCase();
+              
+              // 1. Chỉ lấy người chờ duyệt
+              if (status !== "pending" && status !== "") return false;
 
-    // 5. Hiển thị ra màn hình
-    this.adminTutorList.innerHTML = filtered.map((item) => this.tutorApprovalCard(item)).join("");
-    this.adminEmpty.hidden = filtered.length !== 0;
-    
-    // 6. Gán lại các sự kiện click
-    this.attachTutorApprovalListeners();
-  }
+              // 2. Lọc theo từ khóa (nếu có)
+              if (keywordFilter && 
+                  !item.name?.toLowerCase().includes(keywordFilter) &&
+                  !item.email?.toLowerCase().includes(keywordFilter)
+              ) return false;
 
-  tutorApprovalCard(item) {
-    const status = item.status || "pending";
-    const statusLabel = status === "approved" ? "Đã duyệt" : status === "rejected" ? "Từ chối" : "Chờ duyệt";
-    const buttons = 
-      status === "approved"
-        ? `<button type="button" class="btn btn-secondary admin-reject-btn" data-email="${item.email}">Từ chối</button>`
-        : `<button type="button" class="btn btn-primary admin-approve-btn" data-email="${item.email}">Duyệt</button>
-           <button type="button" class="btn btn-secondary admin-reject-btn" data-email="${item.email}">Từ chối</button>`;
-    const rejectReason = status === "rejected" && item.rejectReason
-      ? `<p class="tutor-duration"><strong>Lý do:</strong> ${item.rejectReason}</p>`
-      : "";
+              return true;
+          });
 
-    return `
-      <article class="tutor-card">
-        <h3>${item.name || "Gia sư"}</h3>
-        <p class="tutor-meta">${item.subject || "Chưa cập nhật"} • ${item.level || "Chưa cập nhật"}</p>
-        <p class="tutor-bio"><strong>Email:</strong> ${item.email}</p>
-        <p class="tutor-duration"><strong>Khu vực:</strong> ${item.location || "Chưa cập nhật"}</p>
-        <p class="tutor-duration"><strong>Trạng thái:</strong> ${statusLabel}</p>
-        ${rejectReason}
-        <div class="request-modal-actions">
-          <button type="button" class="btn btn-outline admin-view-btn" data-email="${item.email}">Xem chi tiết</button>
-          ${buttons}
-        </div>
-      </article>
-    `;
+          // Hiển thị ra giao diện
+          if (this.adminTutorList) {
+              this.adminTutorList.innerHTML = filtered.map((item) => this.tutorApprovalCard(item)).join("");
+              
+              // Hiện thông báo "Trống" nếu không có ai
+              if (this.adminEmpty) {
+                  this.adminEmpty.hidden = filtered.length !== 0;
+              }
+          }
+
+          this.attachTutorApprovalListeners();
+
+      } catch (error) {
+          console.error("Lỗi khi render danh sách duyệt:", error);
+      }
   }
 
   attachTutorApprovalListeners() {
