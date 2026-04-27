@@ -28,7 +28,7 @@ class TutorBrowser {
     this.setupAuth();
     this.setupEventListeners();
     this.setupModalListeners();
-    this.restoreFilters();
+    await this.restoreFilters();
     this.render();
   }
 
@@ -79,40 +79,6 @@ class TutorBrowser {
     onAuthStateChanged(auth, (user) => {
       this.activeUser = user;
     });
-  }
-
-  setupEventListeners() {
-    [this.keywordEl, this.subjectEl, this.modeEl, this.priceEl, this.areaEl, this.genderEl, this.ratingEl, this.durationEl, this.sortEl].forEach(
-      (el) => {
-        if (el) {
-          el.addEventListener("input", () => this.debouncedRender());
-          el.addEventListener("change", () => {
-            this.saveFilters();
-            this.render();
-          });
-        }
-      }
-    );
-
-    if (this.modalCancelBtn) this.modalCancelBtn.addEventListener("click", () => this.closeModal());
-    if (this.modalSubmitBtn)
-      this.modalSubmitBtn.addEventListener("click", () => {
-        if (!this.selectedTutor) return;
-        if (!this.validateAndSubmit()) return;
-
-        const note = (this.noteEl.value || "").trim();
-        this.saveRequest(note);
-        this.closeModal();
-        alert("Đã gửi yêu cầu học với gia sư " + this.selectedTutor.name + ".");
-      });
-  }
-
-  debouncedRender() {
-    clearTimeout(this.debounceTimer);
-    this.debounceTimer = setTimeout(() => {
-      this.saveFilters();
-      this.render();
-    }, DEBOUNCE_DELAY);
   }
 
   formatPrice(price) {
@@ -268,8 +234,8 @@ class TutorBrowser {
     this.writeJson(STORAGE_KEY, filters);
   }
 
-  restoreFilters() {
-    const filters = this.readJson(STORAGE_KEY);
+  async restoreFilters() {
+    const filters = await this.readJson(STORAGE_KEY);
     if (filters && Object.keys(filters).length > 0) {
       if (filters.keyword) this.keywordEl.value = filters.keyword;
       if (filters.subject) this.subjectEl.value = filters.subject;
@@ -429,8 +395,7 @@ class TutorBrowser {
   }
 
   setupEventListeners() {
-    // Debounced render for filter inputs
-    const debouncedRender = () => {
+    const debounceAndRender = () => {
       clearTimeout(this.debounceTimer);
       this.debounceTimer = setTimeout(() => {
         this.saveFilters();
@@ -438,18 +403,18 @@ class TutorBrowser {
       }, DEBOUNCE_DELAY);
     };
 
-    this.keywordEl.addEventListener("input", debouncedRender);
-    this.subjectEl.addEventListener("change", debouncedRender);
-    this.modeEl.addEventListener("change", debouncedRender);
-    this.priceEl.addEventListener("input", debouncedRender);
-    this.areaEl.addEventListener("input", debouncedRender);
-    this.genderEl.addEventListener("change", debouncedRender);
-    this.ratingEl.addEventListener("input", debouncedRender);
-    this.durationEl.addEventListener("input", debouncedRender);
-    if (this.sortEl) this.sortEl.addEventListener("change", debouncedRender);
+    [this.keywordEl, this.subjectEl, this.modeEl, this.priceEl, this.areaEl, this.genderEl, this.ratingEl, this.durationEl, this.sortEl].forEach(
+      (el) => {
+        if (!el) return;
+        el.addEventListener("input", debounceAndRender);
+        el.addEventListener("change", debounceAndRender);
+      }
+    );
   }
 
   setupModalListeners() {
+    if (!this.modalSubmitBtn || !this.modalCancelBtn) return;
+
     this.modalSubmitBtn.addEventListener("click", async () => {
       if (this.validateAndSubmit()) {
         const note = (this.noteEl.value || "").trim();
