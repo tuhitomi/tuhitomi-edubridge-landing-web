@@ -108,10 +108,17 @@ class AdminManager {
         if (logoutLink) {
           logoutLink.textContent = "Đăng xuất";
           logoutLink.href = "#";
-          logoutLink.addEventListener("click", (e) => {
+          logoutLink.addEventListener("click", async (e) => {
             e.preventDefault();
-            auth.signOut();
-            window.location.href = "index.html";
+            try {
+              await auth.signOut();
+              // Clear read notifications on logout
+              localStorage.removeItem('edubridge_read_notifications');
+              window.location.href = "index.html";
+            } catch (error) {
+              console.error("Error signing out:", error);
+              window.location.href = "index.html";
+            }
           });
         }
         
@@ -246,6 +253,14 @@ class AdminManager {
       });
     }
     
+    // Clear read storage (reset button)
+    const clearReadStorageBtn = document.getElementById("clear-read-storage");
+    if (clearReadStorageBtn) {
+      clearReadStorageBtn.addEventListener("click", () => {
+        this.clearReadNotificationsStorage();
+      });
+    }
+    
     // Close dropdown when clicking outside
     document.addEventListener("click", (e) => {
       if (!this.notificationBtn.contains(e.target) && !this.notificationDropdown.contains(e.target)) {
@@ -265,25 +280,36 @@ class AdminManager {
     );
     
     onSnapshot(q, (snapshot) => {
-      snapshot.docChanges().forEach((change) => {
-        if (change.type === "added") {
-          const data = change.doc.data();
-          if (data.status === "pending") {
-            this.addNotification({
-              id: change.doc.id,
-              type: "new_registration",
-              title: "Gia sư mới đăng ký",
-              message: `${data.name} đã đăng ký làm gia sư môn ${data.subject}`,
-              tutorData: data,
-              createdAt: data.createdAt?.toDate() || new Date(),
-              isRead: false
-            });
-          }
+      // Clear existing notifications to avoid duplicates
+      this.notifications = [];
+      
+      // Process all current documents
+      snapshot.docs.forEach((doc) => {
+        const data = doc.data();
+        if (data.status === "pending") {
+          // Check if this notification was previously marked as read
+          const readNotifications = this.getReadNotificationsFromStorage();
+          const isRead = readNotifications.includes(doc.id);
+          
+          this.notifications.push({
+            id: doc.id,
+            type: "new_registration",
+            title: "Gia sư mới đăng ký",
+            message: `${data.name} đã đăng ký làm gia sư môn ${data.subject}`,
+            tutorData: data,
+            createdAt: data.createdAt?.toDate() || new Date(),
+            isRead: isRead
+          });
         }
       });
       
+      // Update UI with current notifications
+      this.updateNotificationUI();
+      
       // Update dashboard stats when data changes
       this.loadDashboardStats();
+    }, (error) => {
+      console.error("Error in realtime notifications:", error);
     });
   }
   
@@ -345,13 +371,69 @@ class AdminManager {
     const notification = this.notifications.find(n => n.id === notificationId);
     if (notification) {
       notification.isRead = true;
+      this.saveReadNotificationToStorage(notificationId);
+      this.updateNotificationUI();
+    }
+  }
+  
+  markNotificationAsReadByEmail(email) {
+    const notification = this.notifications.find(n => 
+      n.tutorData && n.tutorData.email?.toLowerCase() === email.toLowerCase()
+    );
+    if (notification) {
+      notification.isRead = true;
+      this.saveReadNotificationToStorage(notification.id);
       this.updateNotificationUI();
     }
   }
   
   markAllNotificationsAsRead() {
-    this.notifications.forEach(n => n.isRead = true);
+    this.notifications.forEach(n => {
+      n.isRead = true;
+      this.saveReadNotificationToStorage(n.id);
+    });
     this.updateNotificationUI();
+  }
+  
+  getReadNotificationsFromStorage() {
+    try {
+      const readNotifications = localStorage.getItem('edubridge_read_notifications');
+      return readNotifications ? JSON.parse(readNotifications) : [];
+    } catch (error) {
+      console.error("Error reading read notifications from storage:", error);
+      return [];
+    }
+  }
+  
+  saveReadNotificationToStorage(notificationId) {
+    try {
+      const readNotifications = this.getReadNotificationsFromStorage();
+      if (!readNotifications.includes(notificationId)) {
+        readNotifications.push(notificationId);
+        localStorage.setItem('edubridge_read_notifications', JSON.stringify(readNotifications));
+      }
+    } catch (error) {
+      console.error("Error saving read notification to storage:", error);
+    }
+  }
+  
+  // Debug method to check notification state
+  debugNotifications() {
+    console.log("Current notifications:", this.notifications);
+    console.log("Unread count:", this.unreadCount);
+    console.log("Read notifications from storage:", this.getReadNotificationsFromStorage());
+  }
+  
+  clearReadNotificationsStorage() {
+    try {
+      localStorage.removeItem('edubridge_read_notifications');
+      // Reset all notifications to unread
+      this.notifications.forEach(n => n.isRead = false);
+      this.updateNotificationUI();
+      console.log("Read notifications storage cleared");
+    } catch (error) {
+      console.error("Error clearing read notifications storage:", error);
+    }
   }
   
   showBrowserNotification(notification) {
@@ -605,6 +687,9 @@ class AdminManager {
         tutor.updatedAt = new Date().toISOString();
         await this.writeJson("edubridge_tutor_registrations", registrations);
         
+        // Mark related notification as read
+        this.markNotificationAsReadByEmail(email);
+        
         // Log activity
         await this.logActivity("approve_tutor", {
           tutorEmail: email,
@@ -642,6 +727,9 @@ class AdminManager {
         tutor.rejectReason = reason;
         tutor.updatedAt = new Date().toISOString();
         await this.writeJson("edubridge_tutor_registrations", registrations);
+        
+        // Mark related notification as read
+        this.markNotificationAsReadByEmail(email);
         
         // Log activity
         await this.logActivity("reject_tutor", {
