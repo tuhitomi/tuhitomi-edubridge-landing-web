@@ -625,25 +625,28 @@ class AdminManager {
 
   // === TUTOR APPROVALS ===
   async renderApprovals() {
-    const registrations = await this.readJson("edubridge_tutor_registrations");
-    const statusFilter = this.filterStatus?.value || "";
-    const keywordFilter = (this.filterKeyword?.value || "").toLowerCase();
+    // 1. Đọc dữ liệu từ database
+    const rawData = await this.readJson("edubridge_tutor_registrations");
+    
+    // 2. Ép kiểu mảng (để tránh lỗi filter is not a function)
+    const registrations = Array.isArray(rawData) ? rawData : (rawData ? Object.values(rawData) : []);
 
-    let filtered = registrations.filter((item) => {
-      if (statusFilter && item.status !== statusFilter) return false;
-      if (
-        keywordFilter &&
-        !item.name?.toLowerCase().includes(keywordFilter) &&
-        !item.email?.toLowerCase().includes(keywordFilter) &&
-        !item.subject?.toLowerCase().includes(keywordFilter)
-      ) {
-        return false;
-      }
+    // 3. LOGIC QUAN TRỌNG: Chỉ giữ lại những người có trạng thái là "pending" hoặc chưa có trạng thái
+    // Những người đã là "approved" (Duyệt) hoặc "rejected" (Từ chối) sẽ bị loại bỏ khỏi danh sách này
+    let pendingOnly = registrations.filter(item => item.status === "pending" || !item.status);
+
+    // 4. Các bộ lọc tìm kiếm khác (nếu có)
+    const keywordFilter = (this.filterKeyword?.value || "").toLowerCase();
+    let filtered = pendingOnly.filter((item) => {
+      if (keywordFilter && !item.name?.toLowerCase().includes(keywordFilter)) return false;
       return true;
     });
 
+    // 5. Hiển thị ra màn hình
     this.adminTutorList.innerHTML = filtered.map((item) => this.tutorApprovalCard(item)).join("");
     this.adminEmpty.hidden = filtered.length !== 0;
+    
+    // 6. Gán lại các sự kiện click
     this.attachTutorApprovalListeners();
   }
 
