@@ -80,7 +80,7 @@ class TutorBrowser {
         if (!this.validateModal()) return;
         await this.saveRequest((this.noteEl.value || "").trim());
         this.closeModal();
-        alert("Da gui yeu cau ket noi.");
+        alert("?? g?i y?u c?u k?t n?i.");
       });
     }
   }
@@ -111,19 +111,19 @@ class TutorBrowser {
         return {
           id: String(item.id || item.email || item.name || Date.now()),
           docId: String(item.id || ""),
-          name: item.name || "Gia su moi",
+          name: item.name || "Gia s? m?i",
           email: item.email || "",
           subject: "custom",
-          subjectLabel: item.subject || "Mon hoc khac",
+          subjectLabel: item.subject || "M?n h?c kh?c",
           mode: isOnline ? "online" : "offline",
           modeLabel: isOnline ? "Online" : "Offline",
-          area: item.location || "Chua cap nhat",
+          area: item.location || "Ch?a c?p nh?t",
           gender: String(item.gender || "").trim().toLowerCase() || "female",
           rating: Number(item.rating || 4),
           price: Number(item.price || 250000),
           sessionHours: Number(item.sessionHours || 2),
-          level: item.level || "Nhieu cap do",
-          bio: item.experience || "Gia su da dang ky tren he thong EduBridge.",
+          level: item.level || "Nhi?u c?p ??",
+          bio: item.experience || "Gia s? ?? ??ng k? tr?n h? th?ng EduBridge.",
           activeState: item.activeState || "available"
         };
       });
@@ -173,14 +173,14 @@ class TutorBrowser {
   }
 
   formatPrice(price) {
-    return `${Number(price || 0).toLocaleString("vi-VN")} VND/buoi`;
+    return `${Number(price || 0).toLocaleString("vi-VN")} VND/bu?i`;
   }
 
   getStatusBadge(activeState) {
     if (String(activeState || "available").toLowerCase() === "busy") {
-      return '<span class="tutor-status tutor-status-busy">Busy</span>';
+      return '<span class="tutor-status tutor-status-busy">?ang b?n</span>';
     }
-    return '<span class="tutor-status tutor-status-available">Available</span>';
+    return '<span class="tutor-status tutor-status-available">C? s?n</span>';
   }
 
   getFilteredTutors() {
@@ -226,12 +226,12 @@ class TutorBrowser {
         <p class="tutor-meta">${tutor.subjectLabel} | ${tutor.modeLabel} | ${tutor.level}</p>
         <p class="tutor-bio">${tutor.bio}</p>
         <div class="tutor-details">
-          <p class="tutor-duration">Khu vuc: ${tutor.area} | ${Number(tutor.rating || 0).toFixed(1)} sao</p>
-          <p class="tutor-duration">1 buoi: ${tutor.sessionHours} gio</p>
+          <p class="tutor-duration">Khu v?c: ${tutor.area} | ${Number(tutor.rating || 0).toFixed(1)} sao</p>
+          <p class="tutor-duration">1 bu?i: ${tutor.sessionHours} gi?</p>
         </div>
         <p class="tutor-price">${this.formatPrice(tutor.price)}</p>
         <button type="button" class="btn btn-primary btn-block tutor-request-btn" data-id="${tutor.id}">
-          Gui yeu cau gia su
+          G?i y?u c?u gia s?
         </button>
       </article>
     `;
@@ -264,7 +264,7 @@ class TutorBrowser {
 
   openModal(tutor) {
     this.selectedTutor = tutor;
-    this.modalTitleEl.textContent = `Gui yeu cau: ${tutor.name} (${tutor.subjectLabel})`;
+    this.modalTitleEl.textContent = `G?i y?u c?u: ${tutor.name} (${tutor.subjectLabel})`;
     this.noteEl.value = "";
     this.modalEl.hidden = false;
   }
@@ -276,7 +276,7 @@ class TutorBrowser {
 
   validateModal() {
     if (!this.selectedTutor) {
-      alert("Vui long chon gia su.");
+      alert("Vui l?ng ch?n gia s?.");
       return false;
     }
 
@@ -288,7 +288,7 @@ class TutorBrowser {
 
     const note = String(this.noteEl?.value || "").trim();
     if (note.length > 500) {
-      alert("Ghi chu khong duoc vuot qua 500 ky tu.");
+      alert("Ghi ch? kh?ng ???c v??t qu? 500 k? t?.");
       return false;
     }
 
@@ -402,13 +402,13 @@ class TutorBrowser {
 
     await this.pushNotification(
       tutorEmail,
-      `Ban co yeu cau moi tu ${studentName} cho mon ${this.selectedTutor.subjectLabel}.`,
+      `B?n c? y?u c?u m?i t? ${studentName} cho m?n ${this.selectedTutor.subjectLabel}.`,
       "tutor-request",
       { requestId: request.id }
     );
     await this.pushNotification(
       studentEmail,
-      `Ban da gui yeu cau den gia su ${tutorName}.`,
+      `B?n ?? g?i y?u c?u ??n gia s? ${tutorName}.`,
       "student-request",
       { requestId: request.id }
     );
@@ -420,7 +420,7 @@ class TutorBrowser {
     for (const email of recipients) {
       await this.pushNotification(
         email,
-        `Hoc vien ${studentName} da gui yeu cau den gia su ${tutorName}.`,
+        `H?c vi?n ${studentName} ?? g?i y?u c?u ??n gia s? ${tutorName}.`,
         "admin-request",
         { requestId: request.id, tutorEmail, studentEmail }
       );

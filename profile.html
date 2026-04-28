@@ -80,15 +80,15 @@
         <label>
           Trạng thái hoạt động
           <select id="tutor-active-state">
-            <option value="available">AVAILABLE (đang tìm lớp)</option>
-            <option value="busy">BUSY (tạm ẩn khỏi tìm kiếm)</option>
+            <option value="available">C? s?n (đang tìm lớp)</option>
+            <option value="busy">?ang b?n (tạm ẩn khỏi tìm kiếm)</option>
           </select>
         </label>
         <button type="button" class="btn btn-secondary btn-block" id="save-tutor-profile-btn">Lưu hồ sơ gia sư</button>
         <button type="button" class="btn btn-secondary btn-block" id="logout-btn">Đăng xuất</button>
         <p class="auth-status" id="profile-status"></p>
         <h3>Ví hệ thống</h3>
-        <p class="auth-note" id="wallet-note">Admin revenue: 0 VND • Ví gia sư của bạn: 0 VND</p>
+        <p class="auth-note" id="wallet-note">Doanh thu admin: 0 VND • Ví gia sư của bạn: 0 VND</p>
         <button type="button" class="btn btn-secondary btn-block" id="withdraw-btn">Yêu cầu rút tiền về ngân hàng</button>
         <h3>Lịch sử yêu cầu (học viên)</h3>
         <ul id="sent-history" class="history-list"></ul>
@@ -96,7 +96,7 @@
         <ul id="received-history" class="history-list"></ul>
         <h3>Báo cáo tranh chấp</h3>
         <label>
-          Chọn yêu cầu cần report
+          Chọn yêu cầu cần b?o c?o
           <select id="dispute-request-id">
             <option value="">-- Chọn yêu cầu --</option>
           </select>
@@ -105,7 +105,7 @@
           Nội dung báo cáo
           <textarea id="dispute-reason" rows="3" placeholder="Mô tả vấn đề, bằng chứng, mong muốn xử lý..."></textarea>
         </label>
-        <button type="button" class="btn btn-secondary btn-block" id="create-dispute-btn">Gửi report tranh chấp</button>
+        <button type="button" class="btn btn-secondary btn-block" id="create-dispute-btn">Gửi b?o c?o tranh chấp</button>
       </form>
     </section>
   </main>
@@ -134,7 +134,7 @@
     var tutorLevelEl = document.getElementById("tutor-level");
     var tutorExperienceEl = document.getElementById("tutor-experience");
     var tutorLocationEl = document.getElementById("tutor-location");
-    var tutorAvailableTimeEl = document.getElementById("tutor-available-time");
+    var tutorC? s?nTimeEl = document.getElementById("tutor-available-time");
     var tutorPriceEl = document.getElementById("tutor-price");
     var tutorSessionHoursEl = document.getElementById("tutor-session-hours");
     var tutorGenderEl = document.getElementById("tutor-gender");
@@ -373,7 +373,7 @@
         tutorLevelEl.value = "";
         tutorExperienceEl.value = "";
         tutorLocationEl.value = "";
-        tutorAvailableTimeEl.value = "";
+        tutorC? s?nTimeEl.value = "";
         tutorPriceEl.value = "";
         tutorSessionHoursEl.value = "";
         tutorGenderEl.value = "female";
@@ -390,7 +390,7 @@
       tutorLevelEl.value = profile.level || "";
       tutorExperienceEl.value = profile.experience || "";
       tutorLocationEl.value = profile.location || "";
-      tutorAvailableTimeEl.value = profile.availableTime || "";
+      tutorC? s?nTimeEl.value = profile.availableTime || "";
       tutorPriceEl.value = profile.price ? Number(profile.price) : "";
       tutorSessionHoursEl.value = profile.sessionHours ? Number(profile.sessionHours) : "";
       tutorGenderEl.value = profile.gender || "female";
@@ -570,7 +570,7 @@
       var wallets = await readWallets();
       var adminRevenue = Number(wallets.adminRevenue || 0);
       var tutorBalance = Number((wallets.tutorBalances && wallets.tutorBalances[email]) || 0);
-      walletNoteEl.textContent = "Admin revenue: " + adminRevenue.toLocaleString("vi-VN") + " VND • Ví gia sư của bạn: " + tutorBalance.toLocaleString("vi-VN") + " VND";
+      walletNoteEl.textContent = "Doanh thu admin: " + adminRevenue.toLocaleString("vi-VN") + " VND • Ví gia sư của bạn: " + tutorBalance.toLocaleString("vi-VN") + " VND";
       withdrawBtn.disabled = tutorBalance <= 0;
     }
 
@@ -622,7 +622,7 @@
         level: (tutorLevelEl.value || "").trim(),
         experience: (tutorExperienceEl.value || "").trim(),
         location: (tutorLocationEl.value || "").trim(),
-        availableTime: (tutorAvailableTimeEl.value || "").trim(),
+        availableTime: (tutorC? s?nTimeEl.value || "").trim(),
         price: Number(tutorPriceEl.value || 0),
         sessionHours: Number(tutorSessionHoursEl.value || 0),
         gender: tutorGenderEl.value || "female",
@@ -716,7 +716,7 @@
       var requestId = Number(disputeSelectEl.value || 0);
       var reason = String(disputeReasonEl.value || "").trim();
       if (!requestId) {
-        alert("Vui lòng chọn yêu cầu cần report.");
+        alert("Vui lòng chọn yêu cầu cần b?o c?o.");
         return;
       }
       if (!reason) {
@@ -734,8 +734,8 @@
       disputes.unshift({
         id: Date.now(),
         requestId: requestId,
-        reporterEmail: email,
-        reporterRole: request.studentEmail === email ? "student" : "tutor",
+        b?o c?oerEmail: email,
+        b?o c?oerRole: request.studentEmail === email ? "student" : "tutor",
         tutorEmail: request.tutorEmail,
         studentEmail: request.studentEmail,
         reason: reason,
@@ -745,9 +745,9 @@
       await writeDisputes(disputes);
 
       var adminEmail = await getAdminEmail();
-      await pushNotification(adminEmail, "Có report tranh chấp mới cho yêu cầu #" + requestId + ".", "dispute-opened", { requestId: requestId });
+      await pushNotification(adminEmail, "Có b?o c?o tranh chấp mới cho yêu cầu #" + requestId + ".", "dispute-opened", { requestId: requestId });
       disputeReasonEl.value = "";
-      alert("Đã gửi report tranh chấp. Admin sẽ xử lý sớm.");
+      alert("Đã gửi b?o c?o tranh chấp. Admin sẽ xử lý sớm.");
     });
   </script>
 </body>
