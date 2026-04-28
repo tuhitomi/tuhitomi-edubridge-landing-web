@@ -428,27 +428,6 @@ class TutorBrowser {
     this.attachButtonListeners();
   }
 
-  setupEventListeners() {
-    // Debounced render for filter inputs
-    const debouncedRender = () => {
-      clearTimeout(this.debounceTimer);
-      this.debounceTimer = setTimeout(() => {
-        this.saveFilters();
-        this.render();
-      }, DEBOUNCE_DELAY);
-    };
-
-    this.keywordEl.addEventListener("input", debouncedRender);
-    this.subjectEl.addEventListener("change", debouncedRender);
-    this.modeEl.addEventListener("change", debouncedRender);
-    this.priceEl.addEventListener("input", debouncedRender);
-    this.areaEl.addEventListener("input", debouncedRender);
-    this.genderEl.addEventListener("change", debouncedRender);
-    this.ratingEl.addEventListener("input", debouncedRender);
-    this.durationEl.addEventListener("input", debouncedRender);
-    if (this.sortEl) this.sortEl.addEventListener("change", debouncedRender);
-  }
-
   setupModalListeners() {
     this.modalSubmitBtn.addEventListener("click", async () => {
       if (this.validateAndSubmit()) {

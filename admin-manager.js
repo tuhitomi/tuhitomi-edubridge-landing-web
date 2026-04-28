@@ -666,15 +666,37 @@ class AdminManager {
       }
   }
 
+  tutorApprovalCard(item) {
+    const price = (item.price || 0).toLocaleString("vi-VN");
+    return `
+      <article class="tutor-card">
+        <div class="tutor-header">
+          <h3>${item.name || "Gia sư"}</h3>
+          <span class="tutor-status tutor-status-available">Chờ duyệt</span>
+        </div>
+        <p class="tutor-meta">${item.subject || "Chưa cập nhật"} • ${item.level || "Chưa cập nhật"}</p>
+        <p class="tutor-bio"><strong>Email:</strong> ${item.email}</p>
+        <p class="tutor-duration"><strong>Khu vực:</strong> ${item.location || "Chưa cập nhật"}</p>
+        <p class="tutor-duration"><strong>Giá:</strong> ${price} VND/buổi</p>
+        <p class="tutor-duration"><strong>Kinh nghiệm:</strong> ${item.experience || "Chưa cập nhật"}</p>
+        <div class="request-modal-actions">
+          <button type="button" class="btn btn-primary admin-approve-btn" data-email="${item.email}">Duyệt</button>
+          <button type="button" class="btn btn-secondary admin-reject-btn" data-email="${item.email}">Từ chối</button>
+          <button type="button" class="btn btn-secondary admin-view-btn" data-email="${item.email}">Xem chi tiết</button>
+        </div>
+      </article>
+    `;
+  }
+
   attachTutorApprovalListeners() {
     const approveButtons = document.querySelectorAll(".admin-approve-btn");
     const rejectButtons = document.querySelectorAll(".admin-reject-btn");
     const viewButtons = document.querySelectorAll(".admin-view-btn");
 
     approveButtons.forEach((btn) => {
-      btn.addEventListener("click", () => {
+      btn.addEventListener("click", async () => {
         const email = btn.getAttribute("data-email");
-        this.approveTutorRegistration(email);
+        await this.approveTutorRegistration(email);
       });
     });
 

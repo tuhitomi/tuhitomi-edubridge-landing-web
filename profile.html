@@ -642,7 +642,7 @@
     withdrawBtn.addEventListener("click", async function () {
       if (!currentUser || !currentUser.email) return;
       var email = String(currentUser.email || "").toLowerCase();
-      var wallets = readWallets();
+      var wallets = await readWallets();
       wallets.tutorBalances = wallets.tutorBalances || {};
       var amount = Number(wallets.tutorBalances[email] || 0);
       if (amount <= 0) {
@@ -650,7 +650,7 @@
         return;
       }
       wallets.tutorBalances[email] = 0;
-      writeWallets(wallets);
+      await writeWallets(wallets);
 
       var withdrawals = [];
       try {

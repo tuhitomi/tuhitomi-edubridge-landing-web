@@ -722,40 +722,6 @@
       renderModerators();
       alert("Đã thêm kiểm duyệt viên " + email + ".");
     });
-
-    onAuthStateChanged(auth, async function (user) {
-      if (!user) {
-        window.location.href = "dang-nhap.html?next=admin.html";
-        return;
-      }
-
-      currentUserEmail = String(user.email || "").toLowerCase().trim();
-      
-      // Đảm bảo dữ liệu quyền hạn đã được tải xong từ server
-      var adminEmail = await getAdminEmail();
-      var moderatorEmails = await getModeratorEmails();
-      
-      // Debug: in ra email hiện tại và email admin để kiểm tra
-      console.log("[ADMIN PERMISSION DEBUG]");
-      console.log("Current User Email:", currentUserEmail);
-      console.log("Admin Email from Firestore:", adminEmail);
-      console.log("Moderator Emails from Firestore:", moderatorEmails);
-      console.log("Email Match (Admin):", currentUserEmail === adminEmail);
-      console.log("Email in Moderators:", moderatorEmails.includes(currentUserEmail));
-      
-      currentRole = await getRoleByEmail(currentUserEmail);
-      console.log("Current Role:", currentRole);
-      
-      if (currentRole === "none") {
-        console.error("Access Denied: User is not admin or moderator");
-        alert("Bạn không có quyền truy cập trang quản trị/kiểm duyệt.");
-        window.location.href = "index.html";
-        return;
-      }
-      moderatorFormEl.hidden = currentRole !== "admin";
-      applyFocusFromUrl();
-      render();
-    });
   </script>
   <script type="module" src="admin-manager.js"></script>
 </body>
