@@ -112,7 +112,7 @@ class AdminManager {
         this.canManageModerators = this.currentUserEmail === this.primaryAdminEmail;
 
         if (!this.isAdmin) {
-          alert("B?n kh?ng c? quy?n truy c?p trang qu?n tr?.");
+          alert("Ban khong co quyen truy cap trang quan tri.");
           window.location.href = "index.html";
           return;
         }
@@ -125,7 +125,7 @@ class AdminManager {
         await this.switchTab(this.currentTab);
       } catch (error) {
         console.error("Error checking admin permissions:", error);
-        alert("Kh?ng th? ki?m tra quy?n qu?n tr?.");
+        alert("Khong the kiem tra quyen quan tri.");
         window.location.href = "index.html";
       }
     });
@@ -137,7 +137,7 @@ class AdminManager {
     const logoutLink = document.getElementById("nav-auth-link");
     if (!logoutLink) return;
 
-    logoutLink.textContent = "??ng xu?t";
+    logoutLink.textContent = "Dang xuat";
     logoutLink.href = "#";
     logoutLink.onclick = async (event) => {
       event.preventDefault();
@@ -221,7 +221,7 @@ class AdminManager {
       this.modalRejectBtn.addEventListener("click", async () => {
         const email = this.modalRejectBtn.getAttribute("data-email");
         if (!email) return;
-        const reason = prompt("Nh?p l? do t? ch?i:", "") || "";
+        const reason = prompt("Nhap ly do tu choi:", "") || "";
         await this.rejectTutorRegistration(email, reason.trim());
         this.closeTutorDetailModal();
       });
@@ -278,11 +278,11 @@ class AdminManager {
 
       const email = String(this.moderatorEmailInput?.value || "").trim().toLowerCase();
       if (!email || !email.includes("@")) {
-        alert("Nh?p email moderator h?p l?.");
+        alert("Nhap email moderator hop le.");
         return;
       }
       if (email === this.primaryAdminEmail) {
-        alert("Kh?ng th? th?m email admin ch?nh v?o danh s?ch moderator.");
+        alert("Khong the them email admin chinh vao danh sach moderator.");
         return;
       }
 
@@ -294,7 +294,7 @@ class AdminManager {
 
       this.moderatorEmailInput.value = "";
       await this.renderModerators();
-      alert("?? th?m moderator m?i.");
+      alert("Da them moderator moi.");
     });
   }
 
@@ -410,8 +410,8 @@ class AdminManager {
           .sort((a, b) => this.getComparableDate(b.submittedAt || b.updatedAt) - this.getComparableDate(a.submittedAt || a.updatedAt))
           .map((item) => ({
             id: item.id,
-            title: "H? s? gia s? m?i",
-            message: `${item.name || item.email || "Gia s?"} ?ang ch? duy?t`,
+            title: "Ho so gia su moi",
+            message: `${item.name || item.email || "Gia su"} dang cho duyet`,
             createdAt: item.submittedAt || item.updatedAt || new Date().toISOString(),
             tutorData: item,
             isRead: readIds.includes(item.id)
@@ -443,7 +443,7 @@ class AdminManager {
     const recent = this.notifications.slice(0, 10);
     this.notificationList.innerHTML = recent.length
       ? recent.map((item) => this.renderNotification(item)).join("")
-      : '<div class="notification-item"><div class="notification-content"><div class="notification-title">Kh?ng c? th?ng b?o m?i</div></div></div>';
+      : '<div class="notification-item"><div class="notification-content"><div class="notification-title">Khong co thong bao moi</div></div></div>';
 
     this.notificationList.querySelectorAll(".notification-item").forEach((element, index) => {
       element.addEventListener("click", () => {
@@ -514,10 +514,10 @@ class AdminManager {
   getTimeAgo(value) {
     const date = this.toDate(value);
     const diffSeconds = Math.max(0, Math.floor((Date.now() - date.getTime()) / 1000));
-    if (diffSeconds < 60) return "V?a xong";
-    if (diffSeconds < 3600) return `${Math.floor(diffSeconds / 60)} ph?t tr??c`;
-    if (diffSeconds < 86400) return `${Math.floor(diffSeconds / 3600)} gi? tr??c`;
-    return `${Math.floor(diffSeconds / 86400)} ng?y tr??c`;
+    if (diffSeconds < 60) return "Vua xong";
+    if (diffSeconds < 3600) return `${Math.floor(diffSeconds / 60)} phut truoc`;
+    if (diffSeconds < 86400) return `${Math.floor(diffSeconds / 3600)} gio truoc`;
+    return `${Math.floor(diffSeconds / 86400)} ngay truoc`;
   }
 
   toDate(value) {
@@ -533,7 +533,7 @@ class AdminManager {
 
   formatDateTime(value) {
     const date = this.toDate(value);
-    return Number.isNaN(date.getTime()) ? "Ch?a c?p nh?t" : date.toLocaleString("vi-VN");
+    return Number.isNaN(date.getTime()) ? "Chua cap nhat" : date.toLocaleString("vi-VN");
   }
 
   async loadDashboardStats() {
@@ -556,7 +556,7 @@ class AdminManager {
   showTutorDetailModal(tutorData) {
     if (!this.tutorDetailModal || !tutorData) return;
 
-    this.modalTutorName.textContent = `Chi ti?t: ${tutorData.name || tutorData.email || "Gia s?"}`;
+    this.modalTutorName.textContent = `Chi tiet: ${tutorData.name || tutorData.email || "Gia su"}`;
     this.modalTutorDetails.innerHTML = this.renderTutorDetails(tutorData);
     this.modalApproveBtn?.setAttribute("data-email", tutorData.email || "");
     this.modalRejectBtn?.setAttribute("data-email", tutorData.email || "");
@@ -571,28 +571,28 @@ class AdminManager {
   }
 
   renderTutorDetails(tutorData) {
-    const priceText = tutorData.price ? `${Number(tutorData.price).toLocaleString("vi-VN")} VND/buoi` : "Ch?a c?p nh?t";
+    const priceText = tutorData.price ? `${Number(tutorData.price).toLocaleString("vi-VN")} VND/buoi` : "Chua cap nhat";
     return `
       <div class="tutor-detail-grid">
         <div class="detail-section">
           <h3>Thong tin ca nhan</h3>
-          <p><strong>Ho ten:</strong> ${tutorData.name || "Ch?a c?p nh?t"}</p>
-          <p><strong>Email:</strong> ${tutorData.email || "Ch?a c?p nh?t"}</p>
-          <p><strong>So dien thoai:</strong> ${tutorData.phone || "Ch?a c?p nh?t"}</p>
-          <p><strong>Khu v?c:</strong> ${tutorData.location || "Ch?a c?p nh?t"}</p>
+          <p><strong>Ho ten:</strong> ${tutorData.name || "Chua cap nhat"}</p>
+          <p><strong>Email:</strong> ${tutorData.email || "Chua cap nhat"}</p>
+          <p><strong>So dien thoai:</strong> ${tutorData.phone || "Chua cap nhat"}</p>
+          <p><strong>Khu vuc:</strong> ${tutorData.location || "Chua cap nhat"}</p>
         </div>
         <div class="detail-section">
           <h3>Thong tin giang day</h3>
-          <p><strong>Mon hoc:</strong> ${tutorData.subject || "Ch?a c?p nh?t"}</p>
-          <p><strong>Trinh do:</strong> ${tutorData.level || "Ch?a c?p nh?t"}</p>
-          <p><strong>Kinh nghiem:</strong> ${tutorData.experience || "Ch?a c?p nh?t"}</p>
+          <p><strong>Mon hoc:</strong> ${tutorData.subject || "Chua cap nhat"}</p>
+          <p><strong>Trinh do:</strong> ${tutorData.level || "Chua cap nhat"}</p>
+          <p><strong>Kinh nghiem:</strong> ${tutorData.experience || "Chua cap nhat"}</p>
           <p><strong>Hoc phi:</strong> ${priceText}</p>
-          <p><strong>Thoi gian ranh:</strong> ${tutorData.availableTime || tutorData.schedule || "Ch?a c?p nh?t"}</p>
+          <p><strong>Thoi gian ranh:</strong> ${tutorData.availableTime || tutorData.schedule || "Chua cap nhat"}</p>
         </div>
         <div class="detail-section">
           <h3>Trang thai</h3>
-          <p><strong>Duy?t:</strong> ${this.getTutorStatusLabel(tutorData.status)}</p>
-          <p><strong>Ho?t ??ng:</strong> ${tutorData.activeState === "busy" ? "?ang b?n" : "C? s?n"}</p>
+          <p><strong>Duyet:</strong> ${this.getTutorStatusLabel(tutorData.status)}</p>
+          <p><strong>Hoat dong:</strong> ${tutorData.activeState === "busy" ? "Dang ban" : "Co san"}</p>
           <p><strong>Gui luc:</strong> ${this.formatDateTime(tutorData.submittedAt || tutorData.createdAt)}</p>
           ${tutorData.rejectReason ? `<p><strong>Ly do tu choi:</strong> ${tutorData.rejectReason}</p>` : ""}
         </div>
@@ -602,7 +602,7 @@ class AdminManager {
 
   getTutorStatusLabel(status) {
     if (status === "approved") return "Da duyet";
-    if (status === "rejected") return "T? ch?i";
+    if (status === "rejected") return "Tu choi";
     return "Cho duyet";
   }
 
@@ -668,21 +668,21 @@ class AdminManager {
     const statusClass = status === "approved" ? "tutor-status-available" : status === "rejected" ? "tutor-status-busy" : "tutor-status-available";
     const actionButtons = status === "pending"
       ? `
-          <button type="button" class="btn btn-primary admin-approve-btn" data-email="${item.email}">Duy?t</button>
-          <button type="button" class="btn btn-secondary admin-reject-btn" data-email="${item.email}">T? ch?i</button>
+          <button type="button" class="btn btn-primary admin-approve-btn" data-email="${item.email}">Duyet</button>
+          <button type="button" class="btn btn-secondary admin-reject-btn" data-email="${item.email}">Tu choi</button>
         `
       : "";
 
     return `
       <article class="tutor-card">
         <div class="tutor-header">
-          <h3>${item.name || "Gia s?"}</h3>
+          <h3>${item.name || "Gia su"}</h3>
           <span class="tutor-status ${statusClass}">${this.getTutorStatusLabel(status)}</span>
         </div>
-        <p class="tutor-meta">${item.subject || "Ch?a c?p nh?t"} | ${item.level || "Ch?a c?p nh?t"}</p>
+        <p class="tutor-meta">${item.subject || "Chua cap nhat"} | ${item.level || "Chua cap nhat"}</p>
         <p class="tutor-bio"><strong>Email:</strong> ${item.email || ""}</p>
-        <p class="tutor-duration"><strong>Khu v?c:</strong> ${item.location || "Ch?a c?p nh?t"}</p>
-        <p class="tutor-duration"><strong>Gi?:</strong> ${price} VND/buoi</p>
+        <p class="tutor-duration"><strong>Khu vuc:</strong> ${item.location || "Chua cap nhat"}</p>
+        <p class="tutor-duration"><strong>Gia:</strong> ${price} VND/buoi</p>
         ${item.rejectReason ? `<p class="tutor-duration"><strong>Ly do tu choi:</strong> ${item.rejectReason}</p>` : ""}
         <div class="request-modal-actions">
           ${actionButtons}
@@ -702,7 +702,7 @@ class AdminManager {
     document.querySelectorAll(".admin-reject-btn").forEach((button) => {
       button.addEventListener("click", async () => {
         const email = button.getAttribute("data-email");
-        const reason = prompt("Nh?p l? do t? ch?i:", "") || "";
+        const reason = prompt("Nhap ly do tu choi:", "") || "";
         await this.rejectTutorRegistration(email, reason.trim());
       });
     });
@@ -718,7 +718,7 @@ class AdminManager {
     if (!email) return;
     const tutorDoc = await this.findTutorDocumentByEmail(email);
     if (!tutorDoc) {
-      alert("Kh?ng t?m th?y h? s? gia s?.");
+      alert("Khong tim thay ho so gia su.");
       return;
     }
 
@@ -731,7 +731,7 @@ class AdminManager {
 
     await this.pushNotification(
       email,
-      "H? s? gia s? c?a b?n ?? ???c duy?t v? hi?n th? tr?n h? th?ng.",
+      "Ho so gia su cua ban da duoc duyet va hien thi tren he thong.",
       "tutor-approval-status",
       { status: "approved" }
     );
@@ -741,14 +741,14 @@ class AdminManager {
     await this.loadDashboardStats();
     await this.renderApprovals();
     if (this.currentTab === "tutor-list") await this.renderTutors();
-    alert("?? duy?t h? s? gia s?.");
+    alert("Da duyet ho so gia su.");
   }
 
   async rejectTutorRegistration(email, reason) {
     if (!email) return;
     const tutorDoc = await this.findTutorDocumentByEmail(email);
     if (!tutorDoc) {
-      alert("Kh?ng t?m th?y h? s? gia s?.");
+      alert("Khong tim thay ho so gia su.");
       return;
     }
 
@@ -761,7 +761,7 @@ class AdminManager {
 
     await this.pushNotification(
       email,
-      "H? s? gia s? c?a b?n ch?a ???c duy?t. Vui l?ng c?p nh?t l?i th?ng tin v? g?i l?i.",
+      "Ho so gia su cua ban chua duoc duyet. Vui long cap nhat lai thong tin va gui lai.",
       "tutor-approval-status",
       { status: "rejected", reason: String(reason || "").trim() }
     );
@@ -774,7 +774,7 @@ class AdminManager {
     this.markNotificationAsRead(tutorDoc.id);
     await this.loadDashboardStats();
     await this.renderApprovals();
-    alert("?? t? ch?i h? s? gia s?.");
+    alert("Da tu choi ho so gia su.");
   }
 
   async viewTutorDetails(email) {
@@ -782,7 +782,7 @@ class AdminManager {
     const registrations = await this.readJson("edubridge_tutor_registrations");
     const tutor = registrations.find((item) => String(item.email || "").toLowerCase() === String(email).toLowerCase());
     if (!tutor) {
-      alert("Kh?ng t?m th?y th?ng tin gia s?.");
+      alert("Khong tim thay thong tin gia su.");
       return;
     }
     this.showTutorDetailModal(tutor);
@@ -801,11 +801,11 @@ class AdminManager {
           <li class="history-item">
             <strong>${email}</strong>
             <div class="request-modal-actions">
-              <button type="button" class="btn btn-secondary remove-moderator-btn" data-email="${email}">X?a quy?n</button>
+              <button type="button" class="btn btn-secondary remove-moderator-btn" data-email="${email}">Xoa quyen</button>
             </div>
           </li>
         `).join("")
-      : '<li class="history-item">Ch?a c? moderator n?o.</li>';
+      : '<li class="history-item">Chua co moderator nao.</li>';
 
     this.moderatorList.querySelectorAll(".remove-moderator-btn").forEach((button) => {
       button.addEventListener("click", async () => {
@@ -842,26 +842,26 @@ class AdminManager {
   }
 
   tutorManageCard(item) {
-    const is?ang b?n = String(item.activeState || "available").toLowerCase() === "busy";
-    const badge = is?ang b?n
-      ? '<span class="tutor-status tutor-status-busy">?ang b?n</span>'
-      : '<span class="tutor-status tutor-status-available">C? s?n</span>';
+    const isBusy = String(item.activeState || "available").toLowerCase() === "busy";
+    const badge = isBusy
+      ? '<span class="tutor-status tutor-status-busy">Dang ban</span>'
+      : '<span class="tutor-status tutor-status-available">Co san</span>';
 
     return `
       <article class="tutor-card">
         <div class="tutor-header">
-          <h3>${item.name || "Gia s?"}</h3>
+          <h3>${item.name || "Gia su"}</h3>
           ${badge}
         </div>
-        <p class="tutor-meta">${item.subject || "Ch?a c?p nh?t"} | ${item.level || "Ch?a c?p nh?t"}</p>
+        <p class="tutor-meta">${item.subject || "Chua cap nhat"} | ${item.level || "Chua cap nhat"}</p>
         <p class="tutor-bio"><strong>Email:</strong> ${item.email || ""}</p>
-        <p class="tutor-duration"><strong>Khu v?c:</strong> ${item.location || "Ch?a c?p nh?t"}</p>
-        <p class="tutor-duration"><strong>Gi?:</strong> ${Number(item.price || 0).toLocaleString("vi-VN")} VND/buoi</p>
+        <p class="tutor-duration"><strong>Khu vuc:</strong> ${item.location || "Chua cap nhat"}</p>
+        <p class="tutor-duration"><strong>Gia:</strong> ${Number(item.price || 0).toLocaleString("vi-VN")} VND/buoi</p>
         <div class="request-modal-actions">
           <button type="button" class="btn btn-secondary tutor-toggle-status-btn" data-email="${item.email}">
-            ${is?ang b?n ? "M? l?i" : "??nh d?u b?n"}
+            ${isBusy ? "Mo lai" : "Danh dau ban"}
           </button>
-          <button type="button" class="btn btn-secondary tutor-remove-btn" data-email="${item.email}">X?a</button>
+          <button type="button" class="btn btn-secondary tutor-remove-btn" data-email="${item.email}">Xoa</button>
         </div>
       </article>
     `;
@@ -876,7 +876,7 @@ class AdminManager {
       button.addEventListener("click", async () => {
         const email = button.getAttribute("data-email");
         if (!email) return;
-        if (!confirm("B?n ch?c ch?n mu?n x?a gia s? n?y?")) return;
+        if (!confirm("Ban chac chan muon xoa gia su nay?")) return;
         await this.removeTutor(email);
       });
     });
@@ -896,7 +896,7 @@ class AdminManager {
   async removeTutor(email) {
     const tutorDoc = await this.findTutorDocumentByEmail(email);
     if (!tutorDoc) {
-      alert("Kh?ng t?m th?y gia s?.");
+      alert("Khong tim thay gia su.");
       return;
     }
 
@@ -905,7 +905,7 @@ class AdminManager {
     await this.loadDashboardStats();
     await this.renderTutors();
     await this.renderApprovals();
-    alert("?? x?a gia s?.");
+    alert("Da xoa gia su.");
   }
 
   async renderStudents() {
@@ -928,11 +928,11 @@ class AdminManager {
     const assignedCount = Array.isArray(item.assignedTutors) ? item.assignedTutors.length : 0;
     return `
       <article class="tutor-card">
-        <h3>${item.name || "H?c vi?n"}</h3>
+        <h3>${item.name || "Hoc vien"}</h3>
         <p class="tutor-meta">${item.email || ""}</p>
         <p class="tutor-duration"><strong>Tham gia:</strong> ${this.formatDateTime(item.joinedAt)}</p>
-        <p class="tutor-duration"><strong>Tr?ng th?i:</strong> ${item.status || "active"}</p>
-        <p class="tutor-duration"><strong>Gia s? da ket noi:</strong> ${assignedCount}</p>
+        <p class="tutor-duration"><strong>Trang thai:</strong> ${item.status || "active"}</p>
+        <p class="tutor-duration"><strong>Gia su da ket noi:</strong> ${assignedCount}</p>
       </article>
     `;
   }
@@ -965,24 +965,24 @@ class AdminManager {
     const statusLabel = this.getRequestStatusLabel(item.status);
     const buttons = item.status === "waiting_tutor"
       ? `
-          <button type="button" class="btn btn-primary request-approve-btn" data-id="${item.id}">Duy?t th? c?ng</button>
-          <button type="button" class="btn btn-secondary request-reject-btn" data-id="${item.id}">T? ch?i</button>
-          <button type="button" class="btn btn-secondary request-delete-btn" data-id="${item.id}">X?a</button>
+          <button type="button" class="btn btn-primary request-approve-btn" data-id="${item.id}">Duyet thu cong</button>
+          <button type="button" class="btn btn-secondary request-reject-btn" data-id="${item.id}">Tu choi</button>
+          <button type="button" class="btn btn-secondary request-delete-btn" data-id="${item.id}">Xoa</button>
         `
-      : '<button type="button" class="btn btn-secondary request-delete-btn" data-id="' + item.id + '">X?a</button>';
+      : '<button type="button" class="btn btn-secondary request-delete-btn" data-id="' + item.id + '">Xoa</button>';
 
     return `
       <article class="tutor-card">
         <div class="tutor-header">
-          <h3>Y?u c?u t? ${item.studentName || "H?c vi?n"}</h3>
+          <h3>Yeu cau tu ${item.studentName || "Hoc vien"}</h3>
           <span class="tutor-status tutor-status-available">${statusLabel}</span>
         </div>
-        <p class="tutor-meta"><strong>Gia s?:</strong> ${item.tutorName || "Ch?a c?p nh?t"}</p>
-        <p class="tutor-bio"><strong>H?c vi?n:</strong> ${item.studentEmail || ""}</p>
-        <p class="tutor-duration"><strong>M?n:</strong> ${item.subject || ""}</p>
+        <p class="tutor-meta"><strong>Gia su:</strong> ${item.tutorName || "Chua cap nhat"}</p>
+        <p class="tutor-bio"><strong>Hoc vien:</strong> ${item.studentEmail || ""}</p>
+        <p class="tutor-duration"><strong>Mon:</strong> ${item.subject || ""}</p>
         <p class="tutor-duration"><strong>Gia/buoi:</strong> ${Number(item.pricePerSession || 0).toLocaleString("vi-VN")} VND</p>
-        <p class="tutor-duration"><strong>Ghi ch?:</strong> ${item.note || "(kh?ng c?)"}</p>
-        <p class="tutor-duration"><small>T?o l?c: ${this.formatDateTime(item.createdAt)}</small></p>
+        <p class="tutor-duration"><strong>Ghi chu:</strong> ${item.note || "(khong co)"}</p>
+        <p class="tutor-duration"><small>Tao luc: ${this.formatDateTime(item.createdAt)}</small></p>
         <div class="request-modal-actions">${buttons}</div>
       </article>
     `;
@@ -993,10 +993,10 @@ class AdminManager {
     if (status === "accepted_waiting_funds") return "Cho nop tien";
     if (status === "in_teaching") return "Dang hoc";
     if (status === "completed") return "Hoan thanh";
-    if (status === "declined") return "T? ch?i";
+    if (status === "declined") return "Tu choi";
     if (status === "expired") return "Het han";
     if (status === "refunded") return "Da hoan tien";
-    return status || "Kh?ng r?";
+    return status || "Khong ro";
   }
 
   attachRequestListeners() {
@@ -1015,7 +1015,7 @@ class AdminManager {
     document.querySelectorAll(".request-delete-btn").forEach((button) => {
       button.addEventListener("click", async () => {
         const id = button.getAttribute("data-id");
-        if (!confirm("B?n ch?c ch?n mu?n x?a y?u c?u n?y?")) return;
+        if (!confirm("Ban chac chan muon xoa yeu cau nay?")) return;
         await this.deleteRequest(id);
       });
     });
@@ -1041,20 +1041,20 @@ class AdminManager {
 
     await this.pushNotification(
       next.studentEmail,
-      `Y?u c?u k?t n?i v?i gia s? ${next.tutorName || ""} ?? ???c admin duy?t.`,
+      `Yeu cau ket noi voi gia su ${next.tutorName || ""} da duoc admin duyet.`,
       "matching-status",
       { requestId: next.id, status: "accepted_waiting_funds" }
     );
     await this.pushNotification(
       next.tutorEmail,
-      `Admin ?? duy?t y?u c?u h?c t? ${next.studentName || ""}.`,
+      `Admin da duyet yeu cau hoc tu ${next.studentName || ""}.`,
       "matching-status",
       { requestId: next.id, status: "accepted_waiting_funds" }
     );
 
     await this.loadDashboardStats();
     await this.renderRequests();
-    alert("?? duy?t y?u c?u k?t n?i.");
+    alert("Da duyet yeu cau ket noi.");
   }
 
   async rejectRequest(requestId) {
@@ -1067,19 +1067,19 @@ class AdminManager {
 
     await this.pushNotification(
       next.studentEmail,
-      `Y?u c?u k?t n?i v?i gia s? ${next.tutorName || ""} ?? b? t? ch?i.`,
+      `Yeu cau ket noi voi gia su ${next.tutorName || ""} da bi tu choi.`,
       "matching-status",
       { requestId: next.id, status: "declined" }
     );
     await this.pushNotification(
       next.tutorEmail,
-      `Y?u c?u h?c t? ${next.studentName || ""} ?? b? admin t? ch?i.`,
+      `Yeu cau hoc tu ${next.studentName || ""} da bi admin tu choi.`,
       "matching-status",
       { requestId: next.id, status: "declined" }
     );
 
     await this.renderRequests();
-    alert("?? t? ch?i y?u c?u k?t n?i.");
+    alert("Da tu choi yeu cau ket noi.");
   }
 
   async deleteRequest(requestId) {
@@ -1105,16 +1105,16 @@ class AdminManager {
   withdrawalCard(item) {
     const status = item.status === "approved" ? "Da duyet" : "Cho duyet";
     const action = item.status === "pending"
-      ? `<button type="button" class="btn btn-primary approve-withdraw-btn" data-id="${item.id}">Duy?t r?t ti?n</button>`
+      ? `<button type="button" class="btn btn-primary approve-withdraw-btn" data-id="${item.id}">Duyet rut tien</button>`
       : "";
 
     return `
       <article class="tutor-card">
-        <h3>${item.tutorName || item.tutorEmail || "Gia s?"}</h3>
+        <h3>${item.tutorName || item.tutorEmail || "Gia su"}</h3>
         <p class="tutor-meta">${item.tutorEmail || ""}</p>
-        <p class="tutor-duration"><strong>S? ti?n:</strong> ${Number(item.amount || 0).toLocaleString("vi-VN")} VND</p>
-        <p class="tutor-duration"><strong>Tr?ng th?i:</strong> ${status}</p>
-        <p class="tutor-duration"><small>T?o l?c: ${this.formatDateTime(item.createdAt)}</small></p>
+        <p class="tutor-duration"><strong>So tien:</strong> ${Number(item.amount || 0).toLocaleString("vi-VN")} VND</p>
+        <p class="tutor-duration"><strong>Trang thai:</strong> ${status}</p>
+        <p class="tutor-duration"><small>Tao luc: ${this.formatDateTime(item.createdAt)}</small></p>
         <div class="request-modal-actions">${action}</div>
       </article>
     `;
@@ -1133,13 +1133,13 @@ class AdminManager {
 
     await this.pushNotification(
       withdrawal.tutorEmail,
-      `Y?u c?u r?t ti?n ${Number(withdrawal.amount || 0).toLocaleString("vi-VN")} VND ?? ???c duy?t.`,
+      `Yeu cau rut tien ${Number(withdrawal.amount || 0).toLocaleString("vi-VN")} VND da duoc duyet.`,
       "withdrawal-approved",
       { amount: withdrawal.amount || 0 }
     );
 
     await this.renderWithdrawals();
-    alert("?? duy?t y?u c?u r?t ti?n.");
+    alert("Da duyet yeu cau rut tien.");
   }
 
   async renderDisputes() {
@@ -1164,16 +1164,30 @@ class AdminManager {
     });
   }
 
+  getLegacyDisputeReporter(item) {
+    if (!item || typeof item !== "object") {
+      return { email: "", role: "unknown" };
+    }
+
+    const legacyEmailKey = Object.keys(item).find((key) => key.toLowerCase().includes("email") && key !== "tutorEmail" && key !== "studentEmail");
+    const legacyRoleKey = Object.keys(item).find((key) => key.toLowerCase().includes("role"));
+    const email = item.reporterEmail || (legacyEmailKey ? item[legacyEmailKey] : "") || "";
+    const role = item.reporterRole || (legacyRoleKey ? item[legacyRoleKey] : "") || "unknown";
+
+    return { email, role };
+  }
+
   disputeCard(item) {
+    const reporter = this.getLegacyDisputeReporter(item);
     return `
       <article class="tutor-card">
-        <h3>Yêu cầu #${item.requestId || item.id}</h3>
-        <p class="tutor-meta">${item.b?o c?oerEmail || ""} (${item.b?o c?oerRole || "unknown"})</p>
-        <p class="tutor-bio">${item.reason || "Kh?ng c? n?i dung"}</p>
-        <p class="tutor-duration"><small>T?o l?c: ${this.formatDateTime(item.createdAt)}</small></p>
+        <h3>Yeu cau #${item.requestId || item.id}</h3>
+        <p class="tutor-meta">${reporter.email} (${reporter.role})</p>
+        <p class="tutor-bio">${item.reason || "Khong co noi dung"}</p>
+        <p class="tutor-duration"><small>Tao luc: ${this.formatDateTime(item.createdAt)}</small></p>
         <div class="request-modal-actions">
-          <button type="button" class="btn btn-primary dispute-refund-btn" data-id="${item.id}">Ho?n ti?n cho h?c vi?n</button>
-          <button type="button" class="btn btn-secondary dispute-close-btn" data-id="${item.id}">??ng kh?ng ho?n ti?n</button>
+          <button type="button" class="btn btn-primary dispute-refund-btn" data-id="${item.id}">Hoan tien cho hoc vien</button>
+          <button type="button" class="btn btn-secondary dispute-close-btn" data-id="${item.id}">Dong khong hoan tien</button>
         </div>
       </article>
     `;
@@ -1215,20 +1229,20 @@ class AdminManager {
 
     await this.pushNotification(
       dispute.studentEmail,
-      `Tranh ch?p c?a y?u c?u #${dispute.requestId} ?? ???c x? l? v? ho?n ti?n.`,
+      `Tranh chap cua yeu cau #${dispute.requestId} da duoc xu ly va hoan tien.`,
       "dispute-resolved",
       { requestId: dispute.requestId, result: "refunded" }
     );
     await this.pushNotification(
       dispute.tutorEmail,
-      `Tranh ch?p c?a y?u c?u #${dispute.requestId} ?? ???c admin x? l? theo h??ng ho?n ti?n.`,
+      `Tranh chap cua yeu cau #${dispute.requestId} da duoc admin xu ly theo huong hoan tien.`,
       "dispute-resolved",
       { requestId: dispute.requestId, result: "refunded" }
     );
 
     await this.renderDisputes();
     await this.renderRequests();
-    alert("?? x? l? tranh ch?p v? ho?n ti?n.");
+    alert("Da xu ly tranh chap va hoan tien.");
   }
 
   async resolveWithoutRefund(disputeId) {
@@ -1243,14 +1257,14 @@ class AdminManager {
     });
 
     await this.pushNotification(
-      dispute.b?o c?oerEmail,
-      `Tranh ch?p c?a y?u c?u #${dispute.requestId} ?? ???c ??ng kh?ng ho?n ti?n.`,
+      this.getLegacyDisputeReporter(dispute).email,
+      `Tranh chap cua yeu cau #${dispute.requestId} da duoc dong khong hoan tien.`,
       "dispute-resolved",
       { requestId: dispute.requestId, result: "closed" }
     );
 
     await this.renderDisputes();
-    alert("?? ??ng tranh ch?p.");
+    alert("Da dong tranh chap.");
   }
 }
 

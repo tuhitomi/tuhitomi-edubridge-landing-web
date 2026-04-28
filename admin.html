@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="description" content="Trang qu?n tr? duy?t h? s? gia s? EduBridge." />
-  <title>Qu?n tr? - EduBridge</title>
+  <meta name="description" content="Trang quan tri duyet ho so gia su EduBridge." />
+  <title>Quan tri - EduBridge</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet" />
@@ -15,14 +15,14 @@
     <div class="wrap header-inner">
       <a class="logo" href="index.html">EduBridge</a>
       <nav class="nav">
-        <a href="index.html#cach-hoat-dong">C?ch ho?t ??ng</a>
-        <a href="index.html#loi-ich">L?i ?ch</a>
+        <a href="index.html#cach-hoat-dong">Cach hoat dong</a>
+        <a href="index.html#loi-ich">Loi ich</a>
         <div class="header-actions">
-          <button id="notification-btn" class="notification-btn" title="Th?ng b?o">
+          <button id="notification-btn" class="notification-btn" title="Thong bao">
             <span class="notification-icon">GS</span>
             <span id="notification-count" class="notification-count" style="display: none;">0</span>
           </button>
-          <a id="nav-auth-link" href="dang-nhap.html">??ng xu?t</a>
+          <a id="nav-auth-link" href="dang-nhap.html">Dang xuat</a>
         </div>
       </nav>
     </div>
@@ -31,15 +31,15 @@
   <main class="auth-page">
     <div id="notification-dropdown" class="notification-dropdown" style="display: none;">
       <div class="notification-header">
-        <h3>Th?ng b?o</h3>
+        <h3>Thong bao</h3>
         <div class="notification-actions">
-          <button id="mark-all-read" class="btn btn-small">??nh d?u t?t c? ?? ??c</button>
+          <button id="mark-all-read" class="btn btn-small">Danh dau tat ca da doc</button>
           <button id="clear-read-storage" class="btn btn-small btn-outline" style="margin-left: 0.5rem;">Reset</button>
         </div>
       </div>
       <div id="notification-list" class="notification-list"></div>
       <div class="notification-footer">
-        <a href="#" id="view-all-notifications">Xem t?t c? th?ng b?o</a>
+        <a href="#" id="view-all-notifications">Xem tat ca thong bao</a>
       </div>
     </div>
 
@@ -49,159 +49,159 @@
           <div class="card-icon">GS</div>
           <div class="card-content">
             <h3 id="total-tutors">0</h3>
-            <p>T?ng gia s?</p>
+            <p>Tong gia su</p>
           </div>
         </div>
         <div class="dashboard-card">
           <div class="card-icon">PD</div>
           <div class="card-content">
             <h3 id="pending-approvals">0</h3>
-            <p>H? s? ch? duy?t</p>
+            <p>Ho so cho duyet</p>
           </div>
         </div>
         <div class="dashboard-card">
           <div class="card-icon">KN</div>
           <div class="card-content">
             <h3 id="successful-connections">0</h3>
-            <p>L??t k?t n?i</p>
+            <p>Luot ket noi</p>
           </div>
         </div>
         <div class="dashboard-card">
           <div class="card-icon">HV</div>
           <div class="card-content">
             <h3 id="total-students">0</h3>
-            <p>T?ng h?c vi?n</p>
+            <p>Tong hoc vien</p>
           </div>
         </div>
       </div>
 
       <div class="admin-tabs">
-        <button type="button" class="admin-tab-btn admin-tab-btn-active" data-tab="tutor-approvals">Duy?t gia s?</button>
-        <button type="button" class="admin-tab-btn" data-tab="tutor-list">Qu?n l? gia s?</button>
-        <button type="button" class="admin-tab-btn" data-tab="student-list">Qu?n l? h?c vi?n</button>
-        <button type="button" class="admin-tab-btn" data-tab="requests">Y?u c?u k?t n?i</button>
-        <button type="button" class="admin-tab-btn" data-tab="withdrawals">R?t ti?n</button>
-        <button type="button" class="admin-tab-btn" data-tab="disputes">Tranh ch?p</button>
+        <button type="button" class="admin-tab-btn admin-tab-btn-active" data-tab="tutor-approvals">Duyet gia su</button>
+        <button type="button" class="admin-tab-btn" data-tab="tutor-list">Quan ly gia su</button>
+        <button type="button" class="admin-tab-btn" data-tab="student-list">Quan ly hoc vien</button>
+        <button type="button" class="admin-tab-btn" data-tab="requests">Yeu cau ket noi</button>
+        <button type="button" class="admin-tab-btn" data-tab="withdrawals">Rut tien</button>
+        <button type="button" class="admin-tab-btn" data-tab="disputes">Tranh chap</button>
       </div>
 
       <div id="tab-tutor-approvals" class="admin-tab-content admin-tab-content-active">
-        <h1 class="section-title">Duy?t h? s? gia s?</h1>
-        <p class="section-intro">Ki?m tra, duy?t ho?c t? ch?i c?c h? s? ?ang ch? x? l?.</p>
+        <h1 class="section-title">Duyet ho so gia su</h1>
+        <p class="section-intro">Kiem tra, duyet hoac tu choi cac ho so dang cho xu ly.</p>
         <form class="tutor-filters" id="admin-filters">
           <label>
-            Tr?ng th?i
+            Trang thai
             <select id="filter-status">
-              <option value="">T?t c?</option>
-              <option value="pending">Ch? duy?t</option>
-              <option value="approved">?? duy?t</option>
-              <option value="rejected">T? ch?i</option>
+              <option value="">Tat ca</option>
+              <option value="pending">Cho duyet</option>
+              <option value="approved">Da duyet</option>
+              <option value="rejected">Tu choi</option>
             </select>
           </label>
           <label>
-            T?m nhanh
-            <input type="text" id="filter-keyword" placeholder="T?n, email, m?n d?y..." />
+            Tim nhanh
+            <input type="text" id="filter-keyword" placeholder="Ten, email, mon day..." />
           </label>
         </form>
 
         <form class="auth-form auth-form-single" id="moderator-form" hidden>
-          <h3>Qu?n l? moderator</h3>
-          <p class="auth-note">Ch? admin ch?nh m?i c? quy?n th?m ho?c x?a moderator.</p>
+          <h3>Quan ly moderator</h3>
+          <p class="auth-note">Chi admin chinh moi co quyen them hoac xoa moderator.</p>
           <label>
             Email moderator
             <input type="email" id="moderator-email-input" placeholder="moderator@example.com" />
           </label>
-          <button type="submit" class="btn btn-primary btn-block">Th?m moderator</button>
+          <button type="submit" class="btn btn-primary btn-block">Them moderator</button>
           <ul id="moderator-list" class="history-list"></ul>
         </form>
 
         <div id="admin-tutor-list" class="tutor-list"></div>
-        <p id="admin-empty" class="tutor-empty" hidden>Kh?ng c? h? s? ph? h?p.</p>
+        <p id="admin-empty" class="tutor-empty" hidden>Khong co ho so phu hop.</p>
       </div>
 
       <div id="tab-tutor-list" class="admin-tab-content">
-        <h1 class="section-title">Qu?n l? gia s?</h1>
-        <p class="section-intro">Danh s?ch gia s? ?? ???c duy?t.</p>
+        <h1 class="section-title">Quan ly gia su</h1>
+        <p class="section-intro">Danh sach gia su da duoc duyet.</p>
         <form class="tutor-filters" id="tutor-search-filters">
           <label>
-            T?m nhanh
-            <input type="text" id="tutor-search-keyword" placeholder="T?n, email, m?n d?y..." />
+            Tim nhanh
+            <input type="text" id="tutor-search-keyword" placeholder="Ten, email, mon day..." />
           </label>
           <label>
-            Tr?ng th?i
+            Trang thai
             <select id="tutor-search-status">
-              <option value="">T?t c?</option>
-              <option value="available">C? s?n</option>
-              <option value="busy">?ang b?n</option>
+              <option value="">Tat ca</option>
+              <option value="available">Co san</option>
+              <option value="busy">Dang ban</option>
             </select>
           </label>
         </form>
         <div id="tutor-manage-list" class="tutor-list"></div>
-        <p id="tutor-manage-empty" class="tutor-empty">Ch?a c? gia s? n?o.</p>
+        <p id="tutor-manage-empty" class="tutor-empty">Chua co gia su nao.</p>
       </div>
 
       <div id="tab-student-list" class="admin-tab-content">
-        <h1 class="section-title">Qu?n l? h?c vi?n</h1>
-        <p class="section-intro">Danh s?ch h?c vi?n ?? ??ng k?.</p>
+        <h1 class="section-title">Quan ly hoc vien</h1>
+        <p class="section-intro">Danh sach hoc vien da dang ky.</p>
         <form class="tutor-filters" id="student-search-filters">
           <label>
-            T?m nhanh
-            <input type="text" id="student-search-keyword" placeholder="T?n, email..." />
+            Tim nhanh
+            <input type="text" id="student-search-keyword" placeholder="Ten, email..." />
           </label>
         </form>
         <div id="student-manage-list" class="tutor-list"></div>
-        <p id="student-manage-empty" class="tutor-empty">Ch?a c? h?c vi?n n?o.</p>
+        <p id="student-manage-empty" class="tutor-empty">Chua co hoc vien nao.</p>
       </div>
 
       <div id="tab-requests" class="admin-tab-content">
-        <h1 class="section-title">Y?u c?u k?t n?i</h1>
-        <p class="section-intro">Theo d?i v? x? l? c?c y?u c?u k?t n?i gi?a h?c vi?n v? gia s?.</p>
+        <h1 class="section-title">Yeu cau ket noi</h1>
+        <p class="section-intro">Theo doi va xu ly cac yeu cau ket noi giua hoc vien va gia su.</p>
         <form class="tutor-filters" id="request-search-filters">
           <label>
-            Tr?ng th?i
+            Trang thai
             <select id="request-search-status">
-              <option value="">T?t c?</option>
-              <option value="waiting_tutor">Ch? gia s? ph?n h?i</option>
-              <option value="accepted_waiting_funds">Ch? n?p ti?n</option>
-              <option value="in_teaching">?ang h?c</option>
-              <option value="completed">Ho?n th?nh</option>
-              <option value="declined">T? ch?i</option>
-              <option value="expired">H?t h?n</option>
-              <option value="refunded">?? ho?n ti?n</option>
+              <option value="">Tat ca</option>
+              <option value="waiting_tutor">Cho gia su phan hoi</option>
+              <option value="accepted_waiting_funds">Cho nop tien</option>
+              <option value="in_teaching">Dang hoc</option>
+              <option value="completed">Hoan thanh</option>
+              <option value="declined">Tu choi</option>
+              <option value="expired">Het han</option>
+              <option value="refunded">Da hoan tien</option>
             </select>
           </label>
           <label>
-            T?m nhanh
-            <input type="text" id="request-search-keyword" placeholder="T?n gia s?, h?c vi?n, email..." />
+            Tim nhanh
+            <input type="text" id="request-search-keyword" placeholder="Ten gia su, hoc vien, email..." />
           </label>
         </form>
         <div id="request-manage-list" class="tutor-list"></div>
-        <p id="request-manage-empty" class="tutor-empty">Kh?ng c? y?u c?u n?o.</p>
+        <p id="request-manage-empty" class="tutor-empty">Khong co yeu cau nao.</p>
       </div>
 
       <div id="tab-withdrawals" class="admin-tab-content">
-        <h2 class="section-title">Y?u c?u r?t ti?n</h2>
+        <h2 class="section-title">Yeu cau rut tien</h2>
         <div id="withdrawal-list" class="tutor-list"></div>
-        <p id="withdrawal-empty" class="tutor-empty" hidden>Ch?a c? y?u c?u r?t ti?n n?o.</p>
+        <p id="withdrawal-empty" class="tutor-empty" hidden>Chua co yeu cau rut tien nao.</p>
       </div>
 
       <div id="tab-disputes" class="admin-tab-content">
-        <h2 class="section-title">Tranh ch?p can xu ly</h2>
+        <h2 class="section-title">Tranh chap can xu ly</h2>
         <div id="dispute-list" class="tutor-list"></div>
-        <p id="dispute-empty" class="tutor-empty" hidden>Ch?a c? tranh ch?p n?o.</p>
+        <p id="dispute-empty" class="tutor-empty" hidden>Chua co tranh chap nao.</p>
       </div>
     </section>
 
     <div id="tutor-detail-modal" class="modal" style="display: none;">
       <div class="modal-content">
         <div class="modal-header">
-          <h2 id="modal-tutor-name">Chi ti?t gia s?</h2>
+          <h2 id="modal-tutor-name">Chi tiet gia su</h2>
           <button id="close-modal" class="close-modal">&times;</button>
         </div>
         <div class="modal-body" id="modal-tutor-details"></div>
         <div class="modal-footer">
-          <button id="modal-approve-btn" class="btn btn-primary">Duy?t</button>
-          <button id="modal-reject-btn" class="btn btn-secondary">T? ch?i</button>
-          <button id="modal-close-btn" class="btn btn-outline">??ng</button>
+          <button id="modal-approve-btn" class="btn btn-primary">Duyet</button>
+          <button id="modal-reject-btn" class="btn btn-secondary">Tu choi</button>
+          <button id="modal-close-btn" class="btn btn-outline">Dong</button>
         </div>
       </div>
     </div>
@@ -210,7 +210,7 @@
   <footer class="site-footer">
     <div class="wrap footer-inner">
       <span class="logo">EduBridge</span>
-      <p>&copy; 2026 Demo k?t n?i gia s? v? h?c vi?n.</p>
+      <p>&copy; 2026 Demo ket noi gia su va hoc vien.</p>
     </div>
   </footer>
 
