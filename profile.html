@@ -120,7 +120,7 @@
   <script type="module" src="auth-nav.js?v=1"></script>
   <script type="module">
     import { onAuthStateChanged, signOut, updateProfile } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
-    import { collection, doc, getDocs, writeBatch, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+    import { addDoc, collection, doc, getDocs, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
     import { auth, db } from "./firebase-config.js";
 
     var form = document.getElementById("profile-form");
@@ -163,17 +163,14 @@
       }
     }
 
-    async function writeRequests(requests) {
-      const batch = writeBatch(db);
+    async function readRequestById(requestId) {
       try {
-        const snapshot = await getDocs(collection(db, 'requests'));
-        snapshot.docs.forEach(docSnap => batch.delete(docSnap.ref));
+        const requestRef = doc(db, 'requests', String(requestId || ""));
+        const requestSnap = await getDoc(requestRef);
+        if (!requestSnap.exists()) return null;
+        return { id: requestSnap.id, ...requestSnap.data() };
       } catch (e) {
-        console.warn('Cannot read before write', e);
-      }
-      await batch.commit();
-      for (const item of requests) {
-        await setDoc(doc(db, 'requests', item.id), item);
+        return null;
       }
     }
 
@@ -186,54 +183,64 @@
       }
     }
 
-    async function writeTutorRegistrations(registrations) {
-      const batch = writeBatch(db);
-      try {
-        const snapshot = await getDocs(collection(db, 'tutor_registrations'));
-        snapshot.docs.forEach(docSnap => batch.delete(docSnap.ref));
-      } catch (e) {
-        console.warn('Cannot read before write', e);
-      }
-      await batch.commit();
-      for (const item of registrations) {
-        await setDoc(doc(db, 'tutor_registrations', item.id), item);
-      }
+    async function saveTutorRegistration(profile) {
+      const profileId = String(profile.id || Date.now());
+      await setDoc(doc(db, 'tutor_registrations', profileId), { ...profile, id: profileId });
     }
 
-    async function readNotifications() {
-      try {
-        const snapshot = await getDocs(collection(db, 'notifications'));
-        return snapshot.docs.map(docSnap => ({id: docSnap.id, ...docSnap.data()}));
-      } catch (e) {
-        return [];
-      }
-    }
-
-    async function writeNotifications(notifications) {
-      const batch = writeBatch(db);
-      try {
-        const snapshot = await getDocs(collection(db, 'notifications'));
-        snapshot.docs.forEach(docSnap => batch.delete(docSnap.ref));
-      } catch (e) {
-        console.warn('Cannot read before write', e);
-      }
-      await batch.commit();
-      for (const item of notifications) {
-        await setDoc(doc(db, 'notifications', item.id), item);
-      }
+    async function createNotification(userEmail, text, type, payload) {
+      await addDoc(collection(db, 'notifications'), {
+        userEmail: String(userEmail || "").trim().toLowerCase(),
+        type: type || "general",
+        read: false,
+        createdAt: new Date().toISOString(),
+        text: text,
+        payload: payload || {}
+      });
+      window.dispatchEvent(new Event("edubridge-notifications-updated"));
     }
 
     async function readWallets() {
       try {
         const docSnap = await getDoc(doc(db, 'settings', 'wallets'));
-        return docSnap.data() || { adminRevenue: 0, tutorBalances: {} };
+        if (!docSnap.exists()) {
+          return { adminRevenue: 0, tutorBalances: {} };
+        }
+        const data = docSnap.data() || {};
+        if (data.value && typeof data.value === "object") {
+          return {
+            adminRevenue: Number(data.value.adminRevenue || 0),
+            tutorBalances: data.value.tutorBalances || {}
+          };
+        }
+        return {
+          adminRevenue: Number(data.adminRevenue || 0),
+          tutorBalances: data.tutorBalances || {}
+        };
       } catch (e) {
         return { adminRevenue: 0, tutorBalances: {} };
       }
     }
 
     async function writeWallets(wallets) {
-      await setDoc(doc(db, 'settings', 'wallets'), wallets);
+      await setDoc(doc(db, 'settings', 'wallets'), {
+        adminRevenue: Number(wallets.adminRevenue || 0),
+        tutorBalances: wallets.tutorBalances || {}
+      });
+    }
+
+    async function readWithdrawals() {
+      try {
+        const snapshot = await getDocs(collection(db, 'withdrawals'));
+        return snapshot.docs.map(docSnap => ({id: docSnap.id, ...docSnap.data()}));
+      } catch (e) {
+        return [];
+      }
+    }
+
+    async function createWithdrawal(withdrawal) {
+      const withdrawalId = String(withdrawal.id || Date.now());
+      await setDoc(doc(db, 'withdrawals', withdrawalId), { ...withdrawal, id: withdrawalId });
     }
 
     async function readDisputes() {
@@ -245,18 +252,9 @@
       }
     }
 
-    async function writeDisputes(disputes) {
-      const batch = writeBatch(db);
-      try {
-        const snapshot = await getDocs(collection(db, 'disputes'));
-        snapshot.docs.forEach(docSnap => batch.delete(docSnap.ref));
-      } catch (e) {
-        console.warn('Cannot read before write', e);
-      }
-      await batch.commit();
-      for (const item of disputes) {
-        await setDoc(doc(db, 'disputes', item.id), item);
-      }
+    async function createDisputeRecord(dispute) {
+      const disputeId = String(dispute.id || Date.now());
+      await setDoc(doc(db, 'disputes', disputeId), { ...dispute, id: disputeId });
     }
 
     async function getAdminEmail() {
@@ -317,6 +315,14 @@
       return "status-default";
     }
 
+    function getEffectiveRequest(item) {
+      if (!item) return null;
+      if (item.status === "waiting_tutor" && item.respondBy && new Date(item.respondBy).getTime() < Date.now()) {
+        return { ...item, status: "expired" };
+      }
+      return item;
+    }
+
     async function getTutorProfileByEmail(email) {
       var registrations = await readTutorRegistrations();
       var found = registrations.find(function (item) {
@@ -368,12 +374,8 @@
 
     async function renderHistories(email) {
       var requests = (await readRequests()).map(function (item) {
-        if (item.status === "waiting_tutor" && item.respondBy && new Date(item.respondBy).getTime() < Date.now()) {
-          item.status = "expired";
-        }
-        return item;
+        return getEffectiveRequest(item);
       });
-      await writeRequests(requests);
       var sent = requests.filter(function (item) {
         return item.studentEmail === email;
       });
@@ -414,21 +416,6 @@
       bindRequestActions(email);
     }
 
-    async function pushNotification(userEmail, text, type, payload) {
-      var notifications = await readNotifications();
-      notifications.unshift({
-        id: Date.now() + Math.floor(Math.random() * 1000),
-        userEmail: userEmail,
-        type: type || "general",
-        read: false,
-        createdAt: new Date().toISOString(),
-        text: text,
-        payload: payload || {}
-      });
-      await writeNotifications(notifications);
-      window.dispatchEvent(new Event("edubridge-notifications-updated"));
-    }
-
     async function bindRequestActions(email) {
       var acceptButtons = document.querySelectorAll(".tutor-accept-btn");
       var declineButtons = document.querySelectorAll(".tutor-decline-btn");
@@ -437,81 +424,74 @@
 
       acceptButtons.forEach(function (button) {
         button.addEventListener("click", async function () {
-          var requestId = Number(button.getAttribute("data-id") || 0);
-          var requests = (await readRequests()).map(function (item) {
-            if (item.id !== requestId || item.tutorEmail !== email) return item;
-            item.status = "accepted_waiting_funds";
-            item.tutorRespondedAt = new Date().toISOString();
-            return item;
+          var requestId = String(button.getAttribute("data-id") || "").trim();
+          var req = await readRequestById(requestId);
+          if (!req || req.tutorEmail !== email) return;
+
+          req.status = "accepted_waiting_funds";
+          req.tutorRespondedAt = new Date().toISOString();
+          await setDoc(doc(db, "requests", requestId), req);
+          await createNotification(req.studentEmail, "Gia sư " + req.tutorName + " đã chấp nhận yêu cầu. Vui lòng nạp tiền để bắt đầu.", "matching-status", {
+            requestId: requestId,
+            status: "accepted_waiting_funds"
           });
-          await writeRequests(requests);
-          var req = requests.find(function (item) { return item.id === requestId; });
-          if (req) {
-            await pushNotification(req.studentEmail, "Gia sư " + req.tutorName + " đã chấp nhận yêu cầu. Vui lòng nạp tiền để bắt đầu.", "matching-status", { requestId: requestId, status: "accepted_waiting_funds" });
-          }
           await renderHistories(email);
         });
       });
 
       declineButtons.forEach(function (button) {
         button.addEventListener("click", async function () {
-          var requestId = Number(button.getAttribute("data-id") || 0);
+          var requestId = String(button.getAttribute("data-id") || "").trim();
           var reason = prompt("Lý do từ chối yêu cầu (tùy chọn):", "") || "";
-          var requests = (await readRequests()).map(function (item) {
-            if (item.id !== requestId || item.tutorEmail !== email) return item;
-            item.status = "declined";
-            item.tutorRespondedAt = new Date().toISOString();
-            item.declineReason = reason.trim();
-            return item;
+          var req = await readRequestById(requestId);
+          if (!req || req.tutorEmail !== email) return;
+
+          req.status = "declined";
+          req.tutorRespondedAt = new Date().toISOString();
+          req.declineReason = reason.trim();
+          await setDoc(doc(db, "requests", requestId), req);
+          await createNotification(req.studentEmail, "Gia sư " + req.tutorName + " đã từ chối yêu cầu của bạn.", "matching-status", {
+            requestId: requestId,
+            status: "declined"
           });
-          await writeRequests(requests);
-          var req = requests.find(function (item) { return item.id === requestId; });
-          if (req) {
-            await pushNotification(req.studentEmail, "Gia sư " + req.tutorName + " đã từ chối yêu cầu của bạn.", "matching-status", { requestId: requestId, status: "declined" });
-          }
           await renderHistories(email);
         });
       });
 
       payButtons.forEach(function (button) {
         button.addEventListener("click", async function () {
-          var requestId = Number(button.getAttribute("data-id") || 0);
-          var requests = (await readRequests()).map(function (item) {
-            if (item.id !== requestId || item.studentEmail !== email) return item;
-            var monthlyTuition = Number(item.pricePerSession || 0) * Number(item.monthlySessions || 8);
-            item.escrow = {
-              holdAmount: monthlyTuition + SERVICE_FEE,
-              monthlyTuition: monthlyTuition,
-              serviceFee: SERVICE_FEE,
-              adminAmount: Math.round(monthlyTuition * 0.3 + SERVICE_FEE),
-              tutorAmount: Math.round(monthlyTuition * 0.7),
-              heldAt: new Date().toISOString()
-            };
-            item.status = "in_teaching";
-            return item;
+          var requestId = String(button.getAttribute("data-id") || "").trim();
+          var req = await readRequestById(requestId);
+          if (!req || req.studentEmail !== email) return;
+
+          var monthlyTuition = Number(req.pricePerSession || 0) * Number(req.monthlySessions || 8);
+          req.escrow = {
+            holdAmount: monthlyTuition + SERVICE_FEE,
+            monthlyTuition: monthlyTuition,
+            serviceFee: SERVICE_FEE,
+            adminAmount: Math.round(monthlyTuition * 0.3 + SERVICE_FEE),
+            tutorAmount: Math.round(monthlyTuition * 0.7),
+            heldAt: new Date().toISOString()
+          };
+          req.status = "in_teaching";
+          await setDoc(doc(db, "requests", requestId), req);
+          await createNotification(req.tutorEmail, "Phụ huynh đã nạp tiền vào ví trung gian cho lớp " + req.subject + ". Bạn có thể bắt đầu dạy.", "escrow-update", {
+            requestId: requestId,
+            status: "in_teaching"
           });
-          await writeRequests(requests);
-          var req = requests.find(function (item) { return item.id === requestId; });
-          if (req) {
-            await pushNotification(req.tutorEmail, "Phụ huynh đã nạp tiền vào ví trung gian cho lớp " + req.subject + ". Bạn có thể bắt đầu dạy.", "escrow-update", { requestId: requestId, status: "in_teaching" });
-          }
           await renderHistories(email);
         });
       });
 
       releaseButtons.forEach(function (button) {
         button.addEventListener("click", async function () {
-          var requestId = Number(button.getAttribute("data-id") || 0);
-          var releasedRequest = null;
-          var requests = (await readRequests()).map(function (item) {
-            if (item.id !== requestId || item.tutorEmail !== email) return item;
-            item.status = "completed";
-            item.releasedAt = new Date().toISOString();
-            releasedRequest = item;
-            return item;
-          });
-          if (!releasedRequest || !releasedRequest.escrow) return;
-          await writeRequests(requests);
+          var requestId = String(button.getAttribute("data-id") || "").trim();
+          var releasedRequest = await readRequestById(requestId);
+          if (!releasedRequest || releasedRequest.tutorEmail !== email || !releasedRequest.escrow) return;
+
+          releasedRequest.status = "completed";
+          releasedRequest.releasedAt = new Date().toISOString();
+          await setDoc(doc(db, "requests", requestId), releasedRequest);
 
           var wallets = await readWallets();
           wallets.adminRevenue = Number(wallets.adminRevenue || 0) + Number(releasedRequest.escrow.adminAmount || 0);
@@ -519,8 +499,14 @@
           wallets.tutorBalances[email] = Number(wallets.tutorBalances[email] || 0) + Number(releasedRequest.escrow.tutorAmount || 0);
           await writeWallets(wallets);
 
-          await pushNotification(releasedRequest.studentEmail, "Lớp học với gia sư " + releasedRequest.tutorName + " đã được hoàn thành và giải ngân thành công.", "escrow-update", { requestId: requestId, status: "completed" });
-          await pushNotification(email, "Hệ thống đã giải ngân " + Number(releasedRequest.escrow.tutorAmount || 0).toLocaleString("vi-VN") + " VND vào ví của bạn.", "escrow-update", { requestId: requestId, status: "completed" });
+          await createNotification(releasedRequest.studentEmail, "Lớp học với gia sư " + releasedRequest.tutorName + " đã được hoàn thành và giải ngân thành công.", "escrow-update", {
+            requestId: requestId,
+            status: "completed"
+          });
+          await createNotification(email, "Hệ thống đã giải ngân " + Number(releasedRequest.escrow.tutorAmount || 0).toLocaleString("vi-VN") + " VND vào ví của bạn.", "escrow-update", {
+            requestId: requestId,
+            status: "completed"
+          });
           await renderHistories(email);
           await renderWalletInfo(email);
         });
@@ -572,11 +558,10 @@
 
       var email = String(currentUser.email || "").toLowerCase();
       var nowIso = new Date().toISOString();
-      var registrations = await readTutorRegistrations();
       var currentProfile = await getTutorProfileByEmail(email);
       var nextStatus = currentProfile && currentProfile.status === "approved" ? "approved" : "pending";
       var profile = {
-        id: currentProfile ? currentProfile.id : Date.now(),
+        id: String(currentProfile ? currentProfile.id : Date.now()),
         email: email,
         name: (tutorNameEl.value || "").trim() || (nameInput.value || "").trim() || email,
         subject: (tutorSubjectEl.value || "").trim(),
@@ -595,16 +580,11 @@
         updatedAt: nowIso
       };
 
-      registrations = registrations.filter(function (item) {
-        return String(item.email || "").toLowerCase() !== email;
-      });
-      registrations.unshift(profile);
-      await writeTutorRegistrations(registrations);
+      await saveTutorRegistration(profile);
 
-      if (nextStatus !== "approved") {
-        var notifications = await readNotifications();
+      if (false && nextStatus !== "approved") {
         var reviewerEmails = await getReviewerEmails();
-        reviewerEmails.forEach(function (reviewerEmail, index) {
+        for (const reviewerEmail of reviewerEmails) {
           notifications.unshift({
             id: Date.now() + 1 + index,
             userEmail: reviewerEmail,
@@ -617,7 +597,7 @@
               tutorName: profile.name
             }
           });
-        });
+        }
         notifications.unshift({
           id: Date.now() + 2,
           userEmail: email,
@@ -632,7 +612,18 @@
         await writeNotifications(notifications);
       }
 
-      window.dispatchEvent(new Event("edubridge-notifications-updated"));
+      if (nextStatus !== "approved") {
+        var reviewerEmails2 = await getReviewerEmails();
+        for (const reviewerEmail of reviewerEmails2) {
+          await createNotification(reviewerEmail, "Gia sÆ° " + profile.name + " (" + email + ") vá»«a cáº­p nháº­t há»“ sÆ¡ vÃ  cáº§n duyá»‡t.", "tutor-approval-request", {
+            tutorEmail: email,
+            tutorName: profile.name
+          });
+        }
+        await createNotification(email, "Báº¡n Ä‘Ã£ cáº­p nháº­t há»“ sÆ¡ gia sÆ°. Há»“ sÆ¡ Ä‘ang chá» admin duyá»‡t.", "tutor-approval-status", {
+          status: "pending"
+        });
+      }
       await renderTutorProfile(email);
       setStatus(nextStatus === "approved"
         ? "Đã cập nhật hồ sơ gia sư thành công."
@@ -652,13 +643,7 @@
       wallets.tutorBalances[email] = 0;
       await writeWallets(wallets);
 
-      var withdrawals = [];
-      try {
-        withdrawals = JSON.parse(localStorage.getItem("edubridge_withdrawals") || "[]");
-      } catch (e) {
-        withdrawals = [];
-      }
-      withdrawals.unshift({
+      await createWithdrawal({
         id: Date.now(),
         tutorEmail: email,
         tutorName: currentUser.displayName || email,
@@ -666,11 +651,10 @@
         status: "pending",
         createdAt: new Date().toISOString()
       });
-      localStorage.setItem("edubridge_withdrawals", JSON.stringify(withdrawals));
-      await pushNotification(email, "Yêu cầu rút tiền " + amount.toLocaleString("vi-VN") + " VND đã được gửi admin duyệt.", "withdrawal-request", { amount: amount });
+      await createNotification(email, "Yêu cầu rút tiền " + amount.toLocaleString("vi-VN") + " VND đã được gửi admin duyệt.", "withdrawal-request", { amount: amount });
 
       var adminEmail = await getAdminEmail();
-      await pushNotification(adminEmail, "Có yêu cầu rút tiền mới từ " + (currentUser.displayName || email) + " (" + amount.toLocaleString("vi-VN") + " VND).", "withdrawal-admin", { tutorEmail: email, amount: amount });
+      await createNotification(adminEmail, "Có yêu cầu rút tiền mới từ " + (currentUser.displayName || email) + " (" + amount.toLocaleString("vi-VN") + " VND).", "withdrawal-admin", { tutorEmail: email, amount: amount });
 
       await renderWalletInfo(email);
       alert("Đã tạo yêu cầu rút tiền. Chờ admin duyệt.");
@@ -679,7 +663,7 @@
     createDisputeBtn.addEventListener("click", async function () {
       if (!currentUser || !currentUser.email) return;
       var email = String(currentUser.email || "").toLowerCase();
-      var requestId = Number(disputeSelectEl.value || 0);
+      var requestId = String(disputeSelectEl.value || "").trim();
       var reason = String(disputeReasonEl.value || "").trim();
       if (!requestId) {
         alert("Vui long chon yeu cau can bao cao.");
@@ -689,15 +673,13 @@
         alert("Vui lòng nhập nội dung báo cáo.");
         return;
       }
-      var requests = await readRequests();
-      var request = requests.find(function (item) { return Number(item.id || 0) === requestId; });
+      var request = await readRequestById(requestId);
       if (!request) {
         alert("Không tìm thấy yêu cầu.");
         return;
       }
 
-      var disputes = await readDisputes();
-      disputes.unshift({
+      await createDisputeRecord({
         id: Date.now(),
         requestId: requestId,
         reporterEmail: email,
@@ -708,10 +690,10 @@
         status: "open",
         createdAt: new Date().toISOString()
       });
-      await writeDisputes(disputes);
+      
 
       var adminEmail = await getAdminEmail();
-      await pushNotification(adminEmail, "Co bao cao tranh chap moi cho yeu cau #" + requestId + ".", "dispute-opened", { requestId: requestId });
+      await createNotification(adminEmail, "Co bao cao tranh chap moi cho yeu cau #" + requestId + ".", "dispute-opened", { requestId: requestId });
       disputeReasonEl.value = "";
       alert("Da gui bao cao tranh chap. Admin se xu ly som.");
     });

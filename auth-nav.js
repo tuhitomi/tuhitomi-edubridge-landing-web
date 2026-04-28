@@ -15,14 +15,10 @@ const navAuthLink = document.getElementById("nav-auth-link");
 const nav = navAuthLink ? (navAuthLink.closest(".nav") || navAuthLink.closest("nav") || navAuthLink.parentElement) : null;
 const DEFAULT_ADMIN_EMAIL = "tu620014@gmail.com";
 
-<<<<<<< HEAD
 function isPermissionDeniedError(error) {
   return !!(error && (error.code === "permission-denied" || String(error.message || "").toLowerCase().includes("insufficient permissions")));
 }
 
-=======
-// Global variable to store unsubscribe function for notifications listener
->>>>>>> parent of 066b3bf (.)
 let notificationsUnsubscribe = null;
 
 const avatarIconSvg =
@@ -35,26 +31,6 @@ const bellIconSvg =
   '<path fill="currentColor" d="M12 22a2.5 2.5 0 0 0 2.45-2h-4.9A2.5 2.5 0 0 0 12 22Zm7-6v-1l-1.5-1.5V10a5.5 5.5 0 0 0-11 0v3.5L5 15v1h14Z" />' +
   "</svg>";
 
-<<<<<<< HEAD
-=======
-async function readNotifications(userEmail) {
-  try {
-    if (!userEmail) return [];
-    const normalizedEmail = userEmail.toLowerCase().trim();
-    const q = query(
-      collection(db, 'notifications'),
-      where('userEmail', '==', normalizedEmail),
-      orderBy('createdAt', 'desc')
-    );
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-  } catch (e) {
-    console.error('Error reading notifications:', e);
-    return [];
-  }
-}
-
->>>>>>> parent of 066b3bf (.)
 async function getAdminEmail() {
   try {
     const docSnap = await getDoc(doc(db, "settings", "edubridge_admin_email"));
@@ -63,15 +39,10 @@ async function getAdminEmail() {
       localStorage.setItem("edubridge_admin_email", email);
       return email;
     }
-<<<<<<< HEAD
   } catch (error) {
     if (!isPermissionDeniedError(error)) {
       console.error("Firestore error:", error);
     }
-=======
-  } catch (e) {
-    console.error('Firestore Error:', e);
->>>>>>> parent of 066b3bf (.)
   }
   return DEFAULT_ADMIN_EMAIL.trim().toLowerCase();
 }
@@ -82,19 +53,12 @@ async function getModeratorEmails() {
     const value = docSnap.exists() ? docSnap.data().value : [];
     if (!Array.isArray(value)) return [];
     return value
-<<<<<<< HEAD
       .map((item) => String(item || "").trim().toLowerCase())
       .filter((item, index, arr) => item && arr.indexOf(item) === index);
   } catch (error) {
     if (!isPermissionDeniedError(error)) {
       console.error("Error getting moderator emails:", error);
     }
-=======
-      .map(function (item) { return String(item || "").trim().toLowerCase(); })
-      .filter(function (item, index, arr) { return item && arr.indexOf(item) === index; });
-  } catch (e) {
-    console.error('Error getting moderator emails:', e);
->>>>>>> parent of 066b3bf (.)
     return [];
   }
 }
@@ -169,13 +133,9 @@ async function updateBellBadge(user) {
       badge.hidden = true;
     }
   }, (error) => {
-<<<<<<< HEAD
     if (!isPermissionDeniedError(error)) {
       console.error("Error listening to notifications:", error);
     }
-=======
-    console.error('Error listening to notifications:', error);
->>>>>>> parent of 066b3bf (.)
     badge.textContent = "0";
     badge.hidden = true;
   });
