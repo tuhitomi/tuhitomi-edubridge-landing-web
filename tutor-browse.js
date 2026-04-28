@@ -28,7 +28,7 @@ class TutorBrowser {
     this.setupAuth();
     this.setupEventListeners();
     this.setupModalListeners();
-    this.restoreFilters();
+    await this.restoreFilters();
     this.render();
   }
 
@@ -86,8 +86,8 @@ class TutorBrowser {
       (el) => {
         if (el) {
           el.addEventListener("input", () => this.debouncedRender());
-          el.addEventListener("change", () => {
-            this.saveFilters();
+          el.addEventListener("change", async () => {
+            await this.saveFilters();
             this.render();
           });
         }
@@ -96,12 +96,12 @@ class TutorBrowser {
 
     if (this.modalCancelBtn) this.modalCancelBtn.addEventListener("click", () => this.closeModal());
     if (this.modalSubmitBtn)
-      this.modalSubmitBtn.addEventListener("click", () => {
+      this.modalSubmitBtn.addEventListener("click", async () => {
         if (!this.selectedTutor) return;
         if (!this.validateAndSubmit()) return;
 
         const note = (this.noteEl.value || "").trim();
-        this.saveRequest(note);
+        await this.saveRequest(note);
         this.closeModal();
         alert("Đã gửi yêu cầu học với gia sư " + this.selectedTutor.name + ".");
       });
@@ -109,8 +109,8 @@ class TutorBrowser {
 
   debouncedRender() {
     clearTimeout(this.debounceTimer);
-    this.debounceTimer = setTimeout(() => {
-      this.saveFilters();
+    this.debounceTimer = setTimeout(async () => {
+      await this.saveFilters();
       this.render();
     }, DEBOUNCE_DELAY);
   }
@@ -253,7 +253,7 @@ class TutorBrowser {
     return filtered;
   }
 
-  saveFilters() {
+  async saveFilters() {
     const filters = {
       keyword: this.keywordEl.value,
       subject: this.subjectEl.value,
@@ -265,11 +265,11 @@ class TutorBrowser {
       duration: this.durationEl.value,
       sort: this.sortEl?.value || "default"
     };
-    this.writeJson(STORAGE_KEY, filters);
+    await this.writeJson(STORAGE_KEY, filters);
   }
 
-  restoreFilters() {
-    const filters = this.readJson(STORAGE_KEY);
+  async restoreFilters() {
+    const filters = await this.readJson(STORAGE_KEY);
     if (filters && Object.keys(filters).length > 0) {
       if (filters.keyword) this.keywordEl.value = filters.keyword;
       if (filters.subject) this.subjectEl.value = filters.subject;

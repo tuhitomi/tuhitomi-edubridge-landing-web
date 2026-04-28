@@ -352,8 +352,8 @@
       tutorExperienceEl.value = profile.experience || "";
       tutorLocationEl.value = profile.location || "";
       tutorAvailableTimeEl.value = profile.availableTime || "";
-      tutorPriceEl.value = Number(profile.price || 0) || "";
-      tutorSessionHoursEl.value = Number(profile.sessionHours || 0) || "";
+      tutorPriceEl.value = profile.price ? Number(profile.price) : "";
+      tutorSessionHoursEl.value = profile.sessionHours ? Number(profile.sessionHours) : "";
       tutorGenderEl.value = profile.gender || "female";
       tutorActiveStateEl.value = profile.activeState || "available";
     }
@@ -567,13 +567,13 @@
       window.location.href = "dang-nhap.html";
     });
 
-    saveTutorProfileBtn.addEventListener("click", function () {
+    saveTutorProfileBtn.addEventListener("click", async function () {
       if (!currentUser || !currentUser.email) return;
 
       var email = String(currentUser.email || "").toLowerCase();
       var nowIso = new Date().toISOString();
-      var registrations = readTutorRegistrations();
-      var currentProfile = getTutorProfileByEmail(email);
+      var registrations = await readTutorRegistrations();
+      var currentProfile = await getTutorProfileByEmail(email);
       var nextStatus = currentProfile && currentProfile.status === "approved" ? "approved" : "pending";
       var profile = {
         id: currentProfile ? currentProfile.id : Date.now(),
@@ -599,11 +599,11 @@
         return String(item.email || "").toLowerCase() !== email;
       });
       registrations.unshift(profile);
-      writeTutorRegistrations(registrations);
+      await writeTutorRegistrations(registrations);
 
       if (nextStatus !== "approved") {
-        var notifications = readNotifications();
-        var reviewerEmails = getReviewerEmails();
+        var notifications = await readNotifications();
+        var reviewerEmails = await getReviewerEmails();
         reviewerEmails.forEach(function (reviewerEmail, index) {
           notifications.unshift({
             id: Date.now() + 1 + index,
@@ -629,11 +629,11 @@
             status: "pending"
           }
         });
-        writeNotifications(notifications);
+        await writeNotifications(notifications);
       }
 
       window.dispatchEvent(new Event("edubridge-notifications-updated"));
-      renderTutorProfile(email);
+      await renderTutorProfile(email);
       setStatus(nextStatus === "approved"
         ? "Đã cập nhật hồ sơ gia sư thành công."
         : "Đã lưu hồ sơ gia sư và gửi kiểm duyệt.");
@@ -667,12 +667,12 @@
         createdAt: new Date().toISOString()
       });
       localStorage.setItem("edubridge_withdrawals", JSON.stringify(withdrawals));
-      pushNotification(email, "Yêu cầu rút tiền " + amount.toLocaleString("vi-VN") + " VND đã được gửi admin duyệt.", "withdrawal-request", { amount: amount });
+      await pushNotification(email, "Yêu cầu rút tiền " + amount.toLocaleString("vi-VN") + " VND đã được gửi admin duyệt.", "withdrawal-request", { amount: amount });
 
       var adminEmail = await getAdminEmail();
-      pushNotification(adminEmail, "Có yêu cầu rút tiền mới từ " + (currentUser.displayName || email) + " (" + amount.toLocaleString("vi-VN") + " VND).", "withdrawal-admin", { tutorEmail: email, amount: amount });
+      await pushNotification(adminEmail, "Có yêu cầu rút tiền mới từ " + (currentUser.displayName || email) + " (" + amount.toLocaleString("vi-VN") + " VND).", "withdrawal-admin", { tutorEmail: email, amount: amount });
 
-      renderWalletInfo(email);
+      await renderWalletInfo(email);
       alert("Đã tạo yêu cầu rút tiền. Chờ admin duyệt.");
     });
 
@@ -689,14 +689,14 @@
         alert("Vui lòng nhập nội dung báo cáo.");
         return;
       }
-      var requests = readRequests();
+      var requests = await readRequests();
       var request = requests.find(function (item) { return Number(item.id || 0) === requestId; });
       if (!request) {
         alert("Không tìm thấy yêu cầu.");
         return;
       }
 
-      var disputes = readDisputes();
+      var disputes = await readDisputes();
       disputes.unshift({
         id: Date.now(),
         requestId: requestId,
@@ -708,10 +708,10 @@
         status: "open",
         createdAt: new Date().toISOString()
       });
-      writeDisputes(disputes);
+      await writeDisputes(disputes);
 
       var adminEmail = await getAdminEmail();
-      pushNotification(adminEmail, "Có report tranh chấp mới cho yêu cầu #" + requestId + ".", "dispute-opened", { requestId: requestId });
+      await pushNotification(adminEmail, "Có report tranh chấp mới cho yêu cầu #" + requestId + ".", "dispute-opened", { requestId: requestId });
       disputeReasonEl.value = "";
       alert("Đã gửi report tranh chấp. Admin sẽ xử lý sớm.");
     });

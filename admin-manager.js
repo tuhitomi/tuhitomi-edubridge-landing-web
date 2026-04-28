@@ -243,25 +243,25 @@ class AdminManager {
   setupFilters() {
     // Tutor approvals filters
     if (this.filterStatus && this.filterKeyword) {
-      this.filterStatus.addEventListener("change", () => this.renderApprovals());
-      this.filterKeyword.addEventListener("input", () => this.renderApprovals());
+      this.filterStatus.addEventListener("change", async () => await this.renderApprovals());
+      this.filterKeyword.addEventListener("input", async () => await this.renderApprovals());
     }
     
     // Tutor list filters
     if (this.tutorSearchKeyword && this.tutorSearchStatus) {
-      this.tutorSearchKeyword.addEventListener("input", () => this.renderTutors());
-      this.tutorSearchStatus.addEventListener("change", () => this.renderTutors());
+      this.tutorSearchKeyword.addEventListener("input", async () => await this.renderTutors());
+      this.tutorSearchStatus.addEventListener("change", async () => await this.renderTutors());
     }
     
     // Student list filters
     if (this.studentSearchKeyword) {
-      this.studentSearchKeyword.addEventListener("input", () => this.renderStudents());
+      this.studentSearchKeyword.addEventListener("input", async () => await this.renderStudents());
     }
     
     // Request filters
     if (this.requestSearchStatus && this.requestSearchKeyword) {
-      this.requestSearchStatus.addEventListener("change", () => this.renderRequests());
-      this.requestSearchKeyword.addEventListener("input", () => this.renderRequests());
+      this.requestSearchStatus.addEventListener("change", async () => await this.renderRequests());
+      this.requestSearchKeyword.addEventListener("input", async () => await this.renderRequests());
     }
   }
 
@@ -335,7 +335,7 @@ class AdminManager {
       this.updateNotificationUI();
       
       // Update dashboard stats when data changes
-      this.loadDashboardStats();
+      this.loadDashboardStats().catch(error => console.error("Error loading dashboard stats:", error));
     }, (error) => {
       console.error("Error in realtime notifications:", error);
     });
@@ -860,31 +860,31 @@ class AdminManager {
     const removeButtons = document.querySelectorAll(".tutor-remove-btn");
 
     toggleButtons.forEach((btn) => {
-      btn.addEventListener("click", () => {
+      btn.addEventListener("click", async () => {
         const email = btn.getAttribute("data-email");
-        this.toggleTutorStatus(email);
+        await this.toggleTutorStatus(email);
       });
     });
 
     removeButtons.forEach((btn) => {
-      btn.addEventListener("click", () => {
+      btn.addEventListener("click", async () => {
         const email = btn.getAttribute("data-email");
         if (confirm("Bạn chắc chắn muốn xóa gia sư này?")) {
-          this.removeTutor(email);
+          await this.removeTutor(email);
         }
       });
     });
   }
 
-  toggleTutorStatus(email) {
-    const registrations = this.readJson("edubridge_tutor_registrations");
+  async toggleTutorStatus(email) {
+    const registrations = await this.readJson("edubridge_tutor_registrations");
     registrations.forEach((item) => {
       if (item.email?.toLowerCase() === email.toLowerCase()) {
         item.activeState = item.activeState === "busy" ? "available" : "busy";
       }
     });
-    this.writeJson("edubridge_tutor_registrations", registrations);
-    this.renderTutors();
+    await this.writeJson("edubridge_tutor_registrations", registrations);
+    await this.renderTutors();
   }
 
   async removeTutor(email) {
