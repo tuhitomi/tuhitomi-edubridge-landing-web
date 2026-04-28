@@ -16,6 +16,10 @@ const nav = navAuthLink ? (navAuthLink.closest(".nav") || navAuthLink.closest("n
 const DEFAULT_ADMIN_EMAIL = "tu620014@gmail.com";
 const MODERATOR_KEY = "edubridge_moderator_emails";
 
+function isPermissionDeniedError(error) {
+  return !!(error && (error.code === "permission-denied" || String(error.message || "").toLowerCase().includes("insufficient permissions")));
+}
+
 // Global variable to store unsubscribe function for notifications listener
 let notificationsUnsubscribe = null;
 const avatarIconSvg =
@@ -39,7 +43,9 @@ async function readNotifications(userEmail) {
     const snapshot = await getDocs(q);
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
   } catch (e) {
-    console.error('Error reading notifications:', e);
+    if (!isPermissionDeniedError(e)) {
+      console.error('Error reading notifications:', e);
+    }
     return [];
   }
 }
@@ -53,7 +59,9 @@ async function getAdminEmail() {
       return email;
     }
   } catch (e) {
-    console.error('Firestore Error:', e);
+    if (!isPermissionDeniedError(e)) {
+      console.error('Firestore Error:', e);
+    }
   }
   return DEFAULT_ADMIN_EMAIL.trim().toLowerCase(); // Fallback về email mặc định trong code
 }
@@ -67,7 +75,9 @@ async function getModeratorEmails() {
       .map(function (item) { return String(item || "").trim().toLowerCase(); })
       .filter(function (item, index, arr) { return item && arr.indexOf(item) === index; });
   } catch (e) {
-    console.error('Error getting moderator emails:', e);
+    if (!isPermissionDeniedError(e)) {
+      console.error('Error getting moderator emails:', e);
+    }
     return [];
   }
 }
@@ -148,7 +158,9 @@ async function updateBellBadge(user) {
       badge.hidden = true;
     }
   }, (error) => {
-    console.error('Error listening to notifications:', error);
+    if (!isPermissionDeniedError(error)) {
+      console.error('Error listening to notifications:', error);
+    }
     badge.textContent = "0";
     badge.hidden = true;
   });

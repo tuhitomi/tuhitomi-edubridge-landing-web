@@ -226,14 +226,53 @@
     async function readWallets() {
       try {
         const docSnap = await getDoc(doc(db, 'settings', 'wallets'));
-        return docSnap.data() || { adminRevenue: 0, tutorBalances: {} };
+        if (!docSnap.exists()) {
+          return { adminRevenue: 0, tutorBalances: {} };
+        }
+        const data = docSnap.data() || {};
+        if (data.value && typeof data.value === "object") {
+          return {
+            adminRevenue: Number(data.value.adminRevenue || 0),
+            tutorBalances: data.value.tutorBalances || {}
+          };
+        }
+        return {
+          adminRevenue: Number(data.adminRevenue || 0),
+          tutorBalances: data.tutorBalances || {}
+        };
       } catch (e) {
         return { adminRevenue: 0, tutorBalances: {} };
       }
     }
 
     async function writeWallets(wallets) {
-      await setDoc(doc(db, 'settings', 'wallets'), wallets);
+      await setDoc(doc(db, 'settings', 'wallets'), {
+        adminRevenue: Number(wallets.adminRevenue || 0),
+        tutorBalances: wallets.tutorBalances || {}
+      });
+    }
+
+    async function readWithdrawals() {
+      try {
+        const snapshot = await getDocs(collection(db, 'withdrawals'));
+        return snapshot.docs.map(docSnap => ({id: docSnap.id, ...docSnap.data()}));
+      } catch (e) {
+        return [];
+      }
+    }
+
+    async function writeWithdrawals(withdrawals) {
+      const batch = writeBatch(db);
+      try {
+        const snapshot = await getDocs(collection(db, 'withdrawals'));
+        snapshot.docs.forEach(docSnap => batch.delete(docSnap.ref));
+      } catch (e) {
+        console.warn('Cannot read before write', e);
+      }
+      await batch.commit();
+      for (const item of withdrawals) {
+        await setDoc(doc(db, 'withdrawals', item.id), item);
+      }
     }
 
     async function readDisputes() {
@@ -652,12 +691,7 @@
       wallets.tutorBalances[email] = 0;
       await writeWallets(wallets);
 
-      var withdrawals = [];
-      try {
-        withdrawals = JSON.parse(localStorage.getItem("edubridge_withdrawals") || "[]");
-      } catch (e) {
-        withdrawals = [];
-      }
+      var withdrawals = await readWithdrawals();
       withdrawals.unshift({
         id: Date.now(),
         tutorEmail: email,
@@ -666,7 +700,7 @@
         status: "pending",
         createdAt: new Date().toISOString()
       });
-      localStorage.setItem("edubridge_withdrawals", JSON.stringify(withdrawals));
+      await writeWithdrawals(withdrawals);
       await pushNotification(email, "Yêu cầu rút tiền " + amount.toLocaleString("vi-VN") + " VND đã được gửi admin duyệt.", "withdrawal-request", { amount: amount });
 
       var adminEmail = await getAdminEmail();

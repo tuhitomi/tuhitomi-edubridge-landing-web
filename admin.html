@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="description" content="Trang quản trị duyệt hồ sơ gia sư EduBridge." />
-  <title>Quản trị - EduBridge</title>
+  <meta name="description" content="Trang quan tri duyet ho so gia su EduBridge." />
+  <title>Quan tri - EduBridge</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet" />
@@ -15,201 +15,193 @@
     <div class="wrap header-inner">
       <a class="logo" href="index.html">EduBridge</a>
       <nav class="nav">
-        <a href="index.html#cach-hoat-dong">Cách hoạt động</a>
-        <a href="index.html#loi-ich">Lợi ích</a>
+        <a href="index.html#cach-hoat-dong">Cach hoat dong</a>
+        <a href="index.html#loi-ich">Loi ich</a>
         <div class="header-actions">
-          <button id="notification-btn" class="notification-btn" title="Thông báo">
-            <span class="notification-icon">🔔</span>
+          <button id="notification-btn" class="notification-btn" title="Thong bao">
+            <span class="notification-icon">GS</span>
             <span id="notification-count" class="notification-count" style="display: none;">0</span>
           </button>
-          <a id="nav-auth-link" href="dang-nhap.html">Đăng xuất</a>
+          <a id="nav-auth-link" href="dang-nhap.html">Dang xuat</a>
         </div>
       </nav>
     </div>
   </header>
 
   <main class="auth-page">
-    <!-- Notification Dropdown -->
     <div id="notification-dropdown" class="notification-dropdown" style="display: none;">
       <div class="notification-header">
-        <h3>Thông báo</h3>
+        <h3>Thong bao</h3>
         <div class="notification-actions">
-          <button id="mark-all-read" class="btn btn-small">Đánh dấu tất cả đã đọc</button>
+          <button id="mark-all-read" class="btn btn-small">Danh dau tat ca da doc</button>
           <button id="clear-read-storage" class="btn btn-small btn-outline" style="margin-left: 0.5rem;">Reset</button>
         </div>
       </div>
-      <div id="notification-list" class="notification-list">
-        <!-- Notifications will be populated here -->
-      </div>
+      <div id="notification-list" class="notification-list"></div>
       <div class="notification-footer">
-        <a href="#" id="view-all-notifications">Xem tất cả thông báo</a>
+        <a href="#" id="view-all-notifications">Xem tat ca thong bao</a>
       </div>
     </div>
 
     <section class="wrap tutor-search-section">
-      <!-- Dashboard Cards -->
       <div class="dashboard-cards">
         <div class="dashboard-card">
-          <div class="card-icon">👨‍🏫</div>
+          <div class="card-icon">GS</div>
           <div class="card-content">
             <h3 id="total-tutors">0</h3>
-            <p>Tổng gia sư</p>
+            <p>Tong gia su</p>
           </div>
         </div>
         <div class="dashboard-card">
-          <div class="card-icon">⏳</div>
+          <div class="card-icon">PD</div>
           <div class="card-content">
             <h3 id="pending-approvals">0</h3>
-            <p>Hồ sơ chờ duyệt</p>
+            <p>Ho so cho duyet</p>
           </div>
         </div>
         <div class="dashboard-card">
-          <div class="card-icon">🤝</div>
+          <div class="card-icon">KN</div>
           <div class="card-content">
             <h3 id="successful-connections">0</h3>
-            <p>Lượt kết nối thành công</p>
+            <p>Luot ket noi</p>
           </div>
         </div>
         <div class="dashboard-card">
-          <div class="card-icon">📊</div>
+          <div class="card-icon">HV</div>
           <div class="card-content">
             <h3 id="total-students">0</h3>
-            <p>Tổng học viên</p>
+            <p>Tong hoc vien</p>
           </div>
         </div>
       </div>
+
       <div class="admin-tabs">
-        <button type="button" class="admin-tab-btn admin-tab-btn-active" data-tab="tutor-approvals">Duyệt gia sư</button>
-        <button type="button" class="admin-tab-btn" data-tab="tutor-list">Quản lý gia sư</button>
-        <button type="button" class="admin-tab-btn" data-tab="student-list">Quản lý học viên</button>
-        <button type="button" class="admin-tab-btn" data-tab="requests">Yêu cầu kết nối</button>
-        <button type="button" class="admin-tab-btn" data-tab="withdrawals">Yêu cầu rút tiền</button>
-        <button type="button" class="admin-tab-btn" data-tab="disputes">Tranh chấp</button>
+        <button type="button" class="admin-tab-btn admin-tab-btn-active" data-tab="tutor-approvals">Duyet gia su</button>
+        <button type="button" class="admin-tab-btn" data-tab="tutor-list">Quan ly gia su</button>
+        <button type="button" class="admin-tab-btn" data-tab="student-list">Quan ly hoc vien</button>
+        <button type="button" class="admin-tab-btn" data-tab="requests">Yeu cau ket noi</button>
+        <button type="button" class="admin-tab-btn" data-tab="withdrawals">Rut tien</button>
+        <button type="button" class="admin-tab-btn" data-tab="disputes">Tranh chap</button>
       </div>
 
-      <!-- Tab: Duyệt gia sư -->
       <div id="tab-tutor-approvals" class="admin-tab-content admin-tab-content-active">
-        <h1 class="section-title">Quản trị duyệt gia sư</h1>
-        <p class="section-intro">Duyệt hồ sơ để gia sư được hiển thị trên bảng tìm gia sư.</p>
+        <h1 class="section-title">Duyet ho so gia su</h1>
+        <p class="section-intro">Kiem tra, duyet hoac tu choi cac ho so dang cho xu ly.</p>
         <form class="tutor-filters" id="admin-filters">
           <label>
-            Trạng thái
+            Trang thai
             <select id="filter-status">
-              <option value="">Tất cả</option>
-              <option value="pending">Chờ duyệt</option>
-              <option value="approved">Đã duyệt</option>
-              <option value="rejected">Từ chối</option>
+              <option value="">Tat ca</option>
+              <option value="pending">Cho duyet</option>
+              <option value="approved">Da duyet</option>
+              <option value="rejected">Tu choi</option>
             </select>
           </label>
           <label>
-            Tìm nhanh
-            <input type="text" id="filter-keyword" placeholder="Tên, email, môn dạy..." />
+            Tim nhanh
+            <input type="text" id="filter-keyword" placeholder="Ten, email, mon day..." />
           </label>
         </form>
 
         <form class="auth-form auth-form-single" id="moderator-form" hidden>
-          <h3>Quản lý kiểm duyệt viên</h3>
-          <p class="auth-note">Chỉ admin mới có quyền thêm/xóa tài khoản kiểm duyệt viên.</p>
+          <h3>Quan ly moderator</h3>
+          <p class="auth-note">Chi admin chinh moi co quyen them hoac xoa moderator.</p>
           <label>
-            Email kiểm duyệt viên
+            Email moderator
             <input type="email" id="moderator-email-input" placeholder="moderator@example.com" />
           </label>
-          <button type="submit" class="btn btn-primary btn-block">Thêm kiểm duyệt viên</button>
+          <button type="submit" class="btn btn-primary btn-block">Them moderator</button>
           <ul id="moderator-list" class="history-list"></ul>
         </form>
 
         <div id="admin-tutor-list" class="tutor-list"></div>
-        <p id="admin-empty" class="tutor-empty" hidden>Không có hồ sơ nào phù hợp.</p>
+        <p id="admin-empty" class="tutor-empty" hidden>Khong co ho so phu hop.</p>
       </div>
 
-      <!-- Tab: Quản lý gia sư -->
       <div id="tab-tutor-list" class="admin-tab-content">
-        <h1 class="section-title">Quản lý gia sư</h1>
-        <p class="section-intro">Danh sách tất cả gia sư đã duyệt.</p>
+        <h1 class="section-title">Quan ly gia su</h1>
+        <p class="section-intro">Danh sach gia su da duoc duyet.</p>
         <form class="tutor-filters" id="tutor-search-filters">
           <label>
-            Tìm nhanh
-            <input type="text" id="tutor-search-keyword" placeholder="Tên, email, môn dạy..." />
+            Tim nhanh
+            <input type="text" id="tutor-search-keyword" placeholder="Ten, email, mon day..." />
           </label>
           <label>
-            Trạng thái
+            Trang thai
             <select id="tutor-search-status">
-              <option value="">Tất cả</option>
-              <option value="available">Có sẵn</option>
-              <option value="busy">Đang bận</option>
+              <option value="">Tat ca</option>
+              <option value="available">Available</option>
+              <option value="busy">Busy</option>
             </select>
           </label>
         </form>
         <div id="tutor-manage-list" class="tutor-list"></div>
-        <p id="tutor-manage-empty" class="tutor-empty">Chưa có gia sư nào.</p>
+        <p id="tutor-manage-empty" class="tutor-empty">Chua co gia su nao.</p>
       </div>
 
-      <!-- Tab: Quản lý học viên -->
       <div id="tab-student-list" class="admin-tab-content">
-        <h1 class="section-title">Quản lý học viên</h1>
-        <p class="section-intro">Danh sách tất cả học viên đã đăng ký.</p>
+        <h1 class="section-title">Quan ly hoc vien</h1>
+        <p class="section-intro">Danh sach hoc vien da dang ky.</p>
         <form class="tutor-filters" id="student-search-filters">
           <label>
-            Tìm nhanh
-            <input type="text" id="student-search-keyword" placeholder="Tên, email..." />
+            Tim nhanh
+            <input type="text" id="student-search-keyword" placeholder="Ten, email..." />
           </label>
         </form>
         <div id="student-manage-list" class="tutor-list"></div>
-        <p id="student-manage-empty" class="tutor-empty">Chưa có học viên nào.</p>
+        <p id="student-manage-empty" class="tutor-empty">Chua co hoc vien nao.</p>
       </div>
 
-      <!-- Tab: Yêu cầu kết nối -->
       <div id="tab-requests" class="admin-tab-content">
-        <h1 class="section-title">Yêu cầu kết nối</h1>
-        <p class="section-intro">Yêu cầu học viên gửi đến gia sư. Admin có thể duyệt hoặc từ chối.</p>
+        <h1 class="section-title">Yeu cau ket noi</h1>
+        <p class="section-intro">Theo doi va xu ly cac yeu cau ket noi giua hoc vien va gia su.</p>
         <form class="tutor-filters" id="request-search-filters">
           <label>
-            Trạng thái
+            Trang thai
             <select id="request-search-status">
-              <option value="">Tất cả</option>
-              <option value="waiting_tutor">Chờ gia sư trả lời</option>
-              <option value="approved">Đã duyệt</option>
-              <option value="rejected">Từ chối</option>
+              <option value="">Tat ca</option>
+              <option value="waiting_tutor">Cho gia su phan hoi</option>
+              <option value="accepted_waiting_funds">Cho nop tien</option>
+              <option value="in_teaching">Dang hoc</option>
+              <option value="completed">Hoan thanh</option>
+              <option value="declined">Tu choi</option>
+              <option value="expired">Het han</option>
+              <option value="refunded">Da hoan tien</option>
             </select>
           </label>
           <label>
-            Tìm nhanh
-            <input type="text" id="request-search-keyword" placeholder="Tên gia sư, học viên, email..." />
+            Tim nhanh
+            <input type="text" id="request-search-keyword" placeholder="Ten gia su, hoc vien, email..." />
           </label>
         </form>
         <div id="request-manage-list" class="tutor-list"></div>
-        <p id="request-manage-empty" class="tutor-empty">Không có yêu cầu nào.</p>
+        <p id="request-manage-empty" class="tutor-empty">Khong co yeu cau nao.</p>
       </div>
 
-      <!-- Tab: Yêu cầu rút tiền -->
       <div id="tab-withdrawals" class="admin-tab-content">
-        <h2 class="section-title">Yêu cầu rút tiền</h2>
+        <h2 class="section-title">Yeu cau rut tien</h2>
         <div id="withdrawal-list" class="tutor-list"></div>
-        <p id="withdrawal-empty" class="tutor-empty" hidden>Chưa có yêu cầu rút tiền nào.</p>
+        <p id="withdrawal-empty" class="tutor-empty" hidden>Chua co yeu cau rut tien nao.</p>
       </div>
 
-      <!-- Tab: Tranh chấp -->
       <div id="tab-disputes" class="admin-tab-content">
-        <h2 class="section-title">Tranh chấp cần xử lý</h2>
+        <h2 class="section-title">Tranh chap can xu ly</h2>
         <div id="dispute-list" class="tutor-list"></div>
-        <p id="dispute-empty" class="tutor-empty" hidden>Chưa có tranh chấp mở nào.</p>
+        <p id="dispute-empty" class="tutor-empty" hidden>Chua co tranh chap nao.</p>
       </div>
     </section>
 
-    <!-- Tutor Detail Modal -->
     <div id="tutor-detail-modal" class="modal" style="display: none;">
       <div class="modal-content">
         <div class="modal-header">
-          <h2 id="modal-tutor-name">Chi tiết gia sư</h2>
+          <h2 id="modal-tutor-name">Chi tiet gia su</h2>
           <button id="close-modal" class="close-modal">&times;</button>
         </div>
-        <div class="modal-body" id="modal-tutor-details">
-          <!-- Tutor details will be populated here -->
-        </div>
+        <div class="modal-body" id="modal-tutor-details"></div>
         <div class="modal-footer">
-          <button id="modal-approve-btn" class="btn btn-primary">Duyệt</button>
-          <button id="modal-reject-btn" class="btn btn-secondary">Từ chối</button>
-          <button id="modal-close-btn" class="btn btn-outline">Đóng</button>
+          <button id="modal-approve-btn" class="btn btn-primary">Duyet</button>
+          <button id="modal-reject-btn" class="btn btn-secondary">Tu choi</button>
+          <button id="modal-close-btn" class="btn btn-outline">Dong</button>
         </div>
       </div>
     </div>
@@ -218,511 +210,11 @@
   <footer class="site-footer">
     <div class="wrap footer-inner">
       <span class="logo">EduBridge</span>
-      <p>© 2026 — Trang demo kết nối gia sư & học viên.</p>
+      <p>&copy; 2026 Demo ket noi gia su va hoc vien.</p>
     </div>
   </footer>
 
   <script type="module" src="auth-nav.js?v=1"></script>
-  <script type="module">
-    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
-    import { collection, doc, getDocs, writeBatch, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
-    import { auth, db } from "./firebase-config.js";
-
-    var DEFAULT_ADMIN_EMAIL = "tu620014@gmail.com";
-    var MODERATOR_KEY = "edubridge_moderator_emails";
-    var statusEl = document.getElementById("filter-status");
-    var keywordEl = document.getElementById("filter-keyword");
-    var listEl = document.getElementById("admin-tutor-list");
-    var emptyEl = document.getElementById("admin-empty");
-    var moderatorFormEl = document.getElementById("moderator-form");
-    var moderatorEmailInputEl = document.getElementById("moderator-email-input");
-    var moderatorListEl = document.getElementById("moderator-list");
-    var withdrawalListEl = document.getElementById("withdrawal-list");
-    var withdrawalEmptyEl = document.getElementById("withdrawal-empty");
-    var disputeListEl = document.getElementById("dispute-list");
-    var disputeEmptyEl = document.getElementById("dispute-empty");
-    var currentUserEmail = "";
-    var currentRole = "none";
-    var focusTutorEmail = "";
-
-    async function getAdminEmail() {
-      try {
-        const docSnap = await getDoc(doc(db, 'settings', 'edubridge_admin_email'));
-        if (docSnap.exists()) {
-          const email = docSnap.data().value.trim().toLowerCase();
-          localStorage.setItem('edubridge_admin_email', email); // Đồng bộ lại local
-          return email;
-        }
-      } catch (e) {
-        console.error('Firestore Error:', e);
-      }
-      return DEFAULT_ADMIN_EMAIL.trim().toLowerCase(); // Fallback về email mặc định trong code
-    }
-
-    async function getModeratorEmails() {
-      try {
-        const docSnap = await getDoc(doc(db, 'settings', 'edubridge_moderator_emails'));
-        if (docSnap.exists()) {
-          var value = docSnap.data().value;
-          if (Array.isArray(value)) {
-            const emails = value
-              .map(function (item) { return String(item || "").trim().toLowerCase(); })
-              .filter(function (item, index, arr) { return item && arr.indexOf(item) === index; });
-            localStorage.setItem(MODERATOR_KEY, JSON.stringify(emails)); // Đồng bộ lại local
-            return emails;
-          }
-        }
-      } catch (e) {
-        console.error('Firestore Error:', e);
-      }
-      return []; // Fallback
-    }
-
-    function saveModeratorEmails(emails) {
-      localStorage.setItem(MODERATOR_KEY, JSON.stringify(emails));
-    }
-
-    async function getRoleByEmail(email) {
-      var normalized = String(email || "").trim().toLowerCase();
-      if (!normalized) return "none";
-
-      if (normalized === "tu620014@gmail.com") return "admin";
-
-      var adminEmail = await getAdminEmail();
-      if (normalized === adminEmail) return "admin";
-      
-      var moderators = await getModeratorEmails();
-      if (moderators.includes(normalized)) return "moderator";
-      
-      return "none";
-    }
-
-    function readJson(key) {
-      try {
-        return JSON.parse(localStorage.getItem(key) || "[]");
-      } catch (e) {
-        return [];
-      }
-    }
-
-    function writeJson(key, value) {
-      localStorage.setItem(key, JSON.stringify(value));
-    }
-
-    function formatTime(value) {
-      try {
-        return new Date(value).toLocaleString("vi-VN");
-      } catch (e) {
-        return "";
-      }
-    }
-
-    function statusLabel(status) {
-      if (status === "approved") return "Đã duyệt";
-      if (status === "rejected") return "Từ chối";
-      return "Chờ duyệt";
-    }
-
-    function notifyTutor(tutorEmail, status, tutorName, reason) {
-      var notifications = readJson("edubridge_notifications");
-      notifications.unshift({
-        id: Date.now(),
-        userEmail: tutorEmail,
-        type: "tutor-approval-status",
-        read: false,
-        createdAt: new Date().toISOString(),
-        text: status === "approved"
-          ? "Admin đã duyệt hồ sơ gia sư của bạn. Bạn đã được hiển thị trên bảng tìm gia sư."
-          : "Admin đã từ chối hồ sơ gia sư. Lý do: " + (reason || "Chưa cung cấp") + ". Vui lòng chỉnh sửa và gửi lại.",
-        payload: {
-          status: status,
-          tutorName: tutorName || "",
-          reason: reason || ""
-        }
-      });
-      writeJson("edubridge_notifications", notifications);
-      window.dispatchEvent(new Event("edubridge-notifications-updated"));
-    }
-
-    function updateTutorStatus(tutorEmail, status, reason) {
-      var registrations = readJson("edubridge_tutor_registrations");
-      var next = registrations.map(function (item) {
-        if (String(item.email || "").toLowerCase() !== tutorEmail) return item;
-        return {
-          id: item.id,
-          email: item.email,
-          name: item.name,
-          subject: item.subject,
-          level: item.level,
-          experience: item.experience,
-          location: item.location,
-          availableTime: item.availableTime,
-          price: Number(item.price || 0),
-          sessionHours: Number(item.sessionHours || 0),
-          gender: item.gender || "female",
-          rating: Number(item.rating || 4),
-          activeState: item.activeState || "available",
-          status: status,
-          rejectReason: status === "rejected" ? String(reason || "").trim() : "",
-          submittedAt: item.submittedAt || new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        };
-      });
-      writeJson("edubridge_tutor_registrations", next);
-
-      var found = next.find(function (item) {
-        return String(item.email || "").toLowerCase() === tutorEmail;
-      });
-      notifyTutor(tutorEmail, status, found ? found.name : "", reason);
-      render();
-    }
-
-    function cardTemplate(item) {
-      var status = item.status || "pending";
-      var actionButtons = status === "approved"
-        ? '<button type="button" class="btn btn-secondary admin-reject-btn" data-email="' + item.email + '">Từ chối</button>'
-        : '<button type="button" class="btn btn-primary admin-approve-btn" data-email="' + item.email + '">Duyệt</button>' +
-          '<button type="button" class="btn btn-secondary admin-reject-btn" data-email="' + item.email + '">Từ chối</button>';
-      var rejectReasonLine = status === "rejected" && item.rejectReason
-        ? '<p class="tutor-duration"><strong>Lý do từ chối:</strong> ' + item.rejectReason + "</p>"
-        : "";
-
-      return (
-        '<article class="tutor-card' + (String(item.email || "").toLowerCase() === focusTutorEmail ? " tutor-card-focus" : "") + '" data-email="' + String(item.email || "").toLowerCase() + '">' +
-        '<h3>' + (item.name || "Gia sư") + "</h3>" +
-        '<p class="tutor-meta">' + (item.subject || "Chưa cập nhật môn") + " • " + (item.level || "Chưa cập nhật trình độ") + "</p>" +
-        '<p class="tutor-bio"><strong>Email:</strong> ' + (item.email || "") + '<br><strong>Khu vực:</strong> ' + (item.location || "Chưa cập nhật") + '<br><strong>Giờ rảnh:</strong> ' + (item.availableTime || "Chưa cập nhật") + "</p>" +
-        '<p class="tutor-duration"><strong>Trạng thái:</strong> ' + statusLabel(status) + "</p>" +
-        rejectReasonLine +
-        '<p class="tutor-duration"><small>Gửi lúc: ' + formatTime(item.submittedAt) + " • Cập nhật: " + formatTime(item.updatedAt) + "</small></p>" +
-        '<div class="request-modal-actions">' + actionButtons + "</div>" +
-        "</article>"
-      );
-    }
-
-    function withdrawalTemplate(item) {
-      var amountLabel = Number(item.amount || 0).toLocaleString("vi-VN") + " VND";
-      var statusLabelText = item.status === "approved" ? "Đã duyệt" : "Chờ duyệt";
-      var action = item.status === "pending"
-        ? '<button type="button" class="btn btn-primary approve-withdraw-btn" data-id="' + item.id + '">Duyệt rút tiền</button>'
-        : "";
-      return (
-        '<article class="tutor-card">' +
-        '<h3>' + (item.tutorName || item.tutorEmail || "Gia sư") + "</h3>" +
-        '<p class="tutor-meta">' + (item.tutorEmail || "") + "</p>" +
-        '<p class="tutor-duration"><strong>Số tiền:</strong> ' + amountLabel + "</p>" +
-        '<p class="tutor-duration"><strong>Trạng thái:</strong> ' + statusLabelText + "</p>" +
-        '<p class="tutor-duration"><small>Tạo lúc: ' + formatTime(item.createdAt) + "</small></p>" +
-        '<div class="request-modal-actions">' + action + "</div>" +
-        "</article>"
-      );
-    }
-
-    function readWithdrawals() {
-      return readJson("edubridge_withdrawals");
-    }
-
-    function writeWithdrawals(withdrawals) {
-      writeJson("edubridge_withdrawals", withdrawals);
-    }
-
-    function notifyByEmail(email, text, type, payload) {
-      var notifications = readJson("edubridge_notifications");
-      notifications.unshift({
-        id: Date.now() + Math.floor(Math.random() * 1000),
-        userEmail: String(email || "").toLowerCase(),
-        type: type || "general",
-        read: false,
-        createdAt: new Date().toISOString(),
-        text: text,
-        payload: payload || {}
-      });
-      writeJson("edubridge_notifications", notifications);
-      window.dispatchEvent(new Event("edubridge-notifications-updated"));
-    }
-
-    function readWallets() {
-      try {
-        return JSON.parse(localStorage.getItem("edubridge_wallets") || '{"adminRevenue":0,"tutorBalances":{}}');
-      } catch (e) {
-        return { adminRevenue: 0, tutorBalances: {} };
-      }
-    }
-
-    function writeWallets(wallets) {
-      localStorage.setItem("edubridge_wallets", JSON.stringify(wallets));
-    }
-
-    function readRequests() {
-      return readJson("edubridge_requests");
-    }
-
-    function writeRequests(requests) {
-      writeJson("edubridge_requests", requests);
-    }
-
-    function readDisputes() {
-      return readJson("edubridge_disputes");
-    }
-
-    function writeDisputes(disputes) {
-      writeJson("edubridge_disputes", disputes);
-    }
-
-    function approveWithdrawal(withdrawId) {
-      var target = null;
-      var next = readWithdrawals().map(function (item) {
-        if (Number(item.id || 0) !== withdrawId) return item;
-        target = item;
-        item.status = "approved";
-        item.approvedAt = new Date().toISOString();
-        return item;
-      });
-      writeWithdrawals(next);
-      if (target) {
-        notifyByEmail(target.tutorEmail, "Yêu cầu rút tiền " + Number(target.amount || 0).toLocaleString("vi-VN") + " VND đã được admin duyệt.", "withdrawal-approved", { amount: target.amount });
-      }
-      renderWithdrawals();
-    }
-
-    function renderWithdrawals() {
-      if (currentRole === "none") return;
-      var items = readWithdrawals();
-      withdrawalListEl.innerHTML = items.map(withdrawalTemplate).join("");
-      withdrawalEmptyEl.hidden = items.length !== 0;
-
-      var approveButtons = document.querySelectorAll(".approve-withdraw-btn");
-      approveButtons.forEach(function (button) {
-        button.addEventListener("click", function () {
-          var id = Number(button.getAttribute("data-id") || 0);
-          if (!id) return;
-          approveWithdrawal(id);
-          alert("Đã duyệt yêu cầu rút tiền.");
-        });
-      });
-    }
-
-    function disputeTemplate(item) {
-      return (
-        '<article class="tutor-card">' +
-        '<h3>Yêu cầu #' + Number(item.requestId || 0) + "</h3>" +
-        '<p class="tutor-meta">Reporter: ' + (item.reporterEmail || "") + " (" + (item.reporterRole || "unknown") + ")</p>" +
-        '<p class="tutor-bio">' + (item.reason || "Không có nội dung") + "</p>" +
-        '<p class="tutor-duration"><small>Tạo lúc: ' + formatTime(item.createdAt) + "</small></p>" +
-        '<div class="request-modal-actions">' +
-        '<button type="button" class="btn btn-primary dispute-refund-btn" data-id="' + item.id + '">Refund cho phụ huynh</button>' +
-        '<button type="button" class="btn btn-secondary dispute-close-btn" data-id="' + item.id + '">Đóng không hoàn tiền</button>' +
-        "</div>" +
-        "</article>"
-      );
-    }
-
-    function closeDispute(disputeId, nextStatus) {
-      var disputes = readDisputes().map(function (item) {
-        if (Number(item.id || 0) !== disputeId) return item;
-        item.status = nextStatus;
-        item.resolvedAt = new Date().toISOString();
-        return item;
-      });
-      writeDisputes(disputes);
-    }
-
-    function resolveWithRefund(disputeId) {
-      var disputes = readDisputes();
-      var dispute = disputes.find(function (item) { return Number(item.id || 0) === disputeId; });
-      if (!dispute) return;
-      var requestId = Number(dispute.requestId || 0);
-
-      var requests = readRequests();
-      var targetRequest = null;
-      requests = requests.map(function (item) {
-        if (Number(item.id || 0) !== requestId) return item;
-        targetRequest = item;
-        item.status = "refunded";
-        item.refundedAt = new Date().toISOString();
-        return item;
-      });
-      writeRequests(requests);
-
-      if (targetRequest && targetRequest.escrow) {
-        var wallets = readWallets();
-        wallets.adminRevenue = Math.max(0, Number(wallets.adminRevenue || 0) - Number(targetRequest.escrow.adminAmount || 0));
-        wallets.tutorBalances = wallets.tutorBalances || {};
-        var tutorEmail = String(targetRequest.tutorEmail || "").toLowerCase();
-        wallets.tutorBalances[tutorEmail] = Math.max(0, Number(wallets.tutorBalances[tutorEmail] || 0) - Number(targetRequest.escrow.tutorAmount || 0));
-        writeWallets(wallets);
-      }
-
-      closeDispute(disputeId, "resolved_refunded");
-      notifyByEmail(dispute.studentEmail, "Admin đã xử lý tranh chấp yêu cầu #" + requestId + " và hoàn tiền thành công.", "dispute-resolved", { requestId: requestId, result: "refunded" });
-      notifyByEmail(dispute.tutorEmail, "Tranh chấp yêu cầu #" + requestId + " đã được admin xử lý với quyết định hoàn tiền cho phụ huynh.", "dispute-resolved", { requestId: requestId, result: "refunded" });
-      renderDisputes();
-    }
-
-    function resolveWithoutRefund(disputeId) {
-      var dispute = readDisputes().find(function (item) { return Number(item.id || 0) === disputeId; });
-      closeDispute(disputeId, "resolved_no_refund");
-      if (dispute) {
-        notifyByEmail(dispute.reporterEmail, "Admin đã đóng tranh chấp yêu cầu #" + Number(dispute.requestId || 0) + " (không hoàn tiền).", "dispute-resolved", { requestId: dispute.requestId, result: "closed" });
-      }
-      renderDisputes();
-    }
-
-    function renderDisputes() {
-      if (currentRole === "none") return;
-      var items = readDisputes().filter(function (item) {
-        return item.status === "open";
-      });
-      disputeListEl.innerHTML = items.map(disputeTemplate).join("");
-      disputeEmptyEl.hidden = items.length !== 0;
-
-      var refundButtons = document.querySelectorAll(".dispute-refund-btn");
-      var closeButtons = document.querySelectorAll(".dispute-close-btn");
-
-      refundButtons.forEach(function (button) {
-        button.addEventListener("click", function () {
-          var id = Number(button.getAttribute("data-id") || 0);
-          if (!id) return;
-          resolveWithRefund(id);
-          alert("Đã xử lý refund cho tranh chấp.");
-        });
-      });
-
-      closeButtons.forEach(function (button) {
-        button.addEventListener("click", function () {
-          var id = Number(button.getAttribute("data-id") || 0);
-          if (!id) return;
-          resolveWithoutRefund(id);
-          alert("Đã đóng tranh chấp.");
-        });
-      });
-    }
-
-    function getFilteredItems() {
-      var items = readJson("edubridge_tutor_registrations");
-      var status = statusEl.value;
-      var keyword = (keywordEl.value || "").trim().toLowerCase();
-
-      return items.filter(function (item) {
-        var byStatus = !status || (item.status || "pending") === status;
-        var byKeyword = !keyword
-          || String(item.name || "").toLowerCase().includes(keyword)
-          || String(item.email || "").toLowerCase().includes(keyword)
-          || String(item.subject || "").toLowerCase().includes(keyword);
-        return byStatus && byKeyword;
-      });
-    }
-
-    function bindActions() {
-      var approveButtons = document.querySelectorAll(".admin-approve-btn");
-      var rejectButtons = document.querySelectorAll(".admin-reject-btn");
-
-      approveButtons.forEach(function (button) {
-        button.addEventListener("click", function () {
-          var email = String(button.getAttribute("data-email") || "").toLowerCase();
-          if (!email) return;
-          updateTutorStatus(email, "approved", "");
-          alert("Đã duyệt hồ sơ gia sư.");
-        });
-      });
-
-      rejectButtons.forEach(function (button) {
-        button.addEventListener("click", function () {
-          var email = String(button.getAttribute("data-email") || "").toLowerCase();
-          if (!email) return;
-          var reason = prompt("Nhập lý do từ chối hồ sơ:", "") || "";
-          updateTutorStatus(email, "rejected", reason);
-          alert("Đã từ chối hồ sơ gia sư.");
-        });
-      });
-    }
-
-    function renderModerators() {
-      if (currentRole !== "admin") return;
-      var moderators = getModeratorEmails();
-      moderatorListEl.innerHTML = moderators.length
-        ? moderators.map(function (email) {
-            return (
-              '<li class="history-item">' +
-              '<strong>' + email + "</strong>" +
-              '<div class="request-modal-actions">' +
-              '<button type="button" class="btn btn-secondary remove-moderator-btn" data-email="' + email + '">Xóa quyền</button>' +
-              "</div>" +
-              "</li>"
-            );
-          }).join("")
-        : '<li class="history-item">Chưa có kiểm duyệt viên nào.</li>';
-
-      var removeButtons = document.querySelectorAll(".remove-moderator-btn");
-      removeButtons.forEach(function (button) {
-        button.addEventListener("click", function () {
-          var email = String(button.getAttribute("data-email") || "").toLowerCase();
-          if (!email) return;
-          var next = getModeratorEmails().filter(function (item) {
-            return item !== email;
-          });
-          saveModeratorEmails(next);
-          renderModerators();
-          alert("Đã xóa quyền kiểm duyệt của " + email + ".");
-        });
-      });
-    }
-
-    function render() {
-      var items = getFilteredItems();
-      listEl.innerHTML = items.map(cardTemplate).join("");
-      emptyEl.hidden = items.length !== 0;
-      bindActions();
-      renderModerators();
-      renderWithdrawals();
-      renderDisputes();
-      scrollToFocusedTutor();
-    }
-
-    function applyFocusFromUrl() {
-      var params = new URLSearchParams(window.location.search || "");
-      focusTutorEmail = String(params.get("tutorEmail") || "").trim().toLowerCase();
-      if (!focusTutorEmail) return;
-      keywordEl.value = focusTutorEmail;
-      statusEl.value = "";
-    }
-
-    function scrollToFocusedTutor() {
-      if (!focusTutorEmail) return;
-      var target = document.querySelector('.tutor-card[data-email="' + focusTutorEmail + '"]');
-      if (!target) return;
-      target.scrollIntoView({ behavior: "smooth", block: "center" });
-    }
-
-    [statusEl, keywordEl].forEach(function (element) {
-      element.addEventListener("input", render);
-      element.addEventListener("change", render);
-    });
-
-    moderatorFormEl.addEventListener("submit", async function (event) {
-      event.preventDefault();
-      if (currentRole !== "admin") return;
-      var email = String(moderatorEmailInputEl.value || "").trim().toLowerCase();
-      if (!email || email.indexOf("@") === -1) {
-        alert("Vui lòng nhập email hợp lệ.");
-        return;
-      }
-      var adminEmail = await getAdminEmail();
-      if (email === adminEmail) {
-        alert("Không thể thêm admin vào danh sách kiểm duyệt viên.");
-        return;
-      }
-
-      var moderators = getModeratorEmails();
-      if (!moderators.includes(email)) {
-        moderators.unshift(email);
-        saveModeratorEmails(moderators);
-      }
-      moderatorEmailInputEl.value = "";
-      renderModerators();
-      alert("Đã thêm kiểm duyệt viên " + email + ".");
-    });
-  </script>
   <script type="module" src="admin-manager.js"></script>
 </body>
 </html>
