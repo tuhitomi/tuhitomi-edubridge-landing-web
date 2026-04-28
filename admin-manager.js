@@ -1,63 +1,60 @@
-import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
-import {
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+import { 
+  collection, 
+  doc, 
+  onSnapshot, 
+  query, 
+  where, 
+  orderBy, 
+  limit,
   addDoc,
-  collection,
-  deleteDoc,
-  doc,
+  updateDoc,
+  serverTimestamp,
   getDoc,
   getDocs,
-  limit,
-  onSnapshot,
-  orderBy,
-  query,
-  serverTimestamp,
-  setDoc,
-  updateDoc,
-  where,
-  writeBatch
+  writeBatch,
+  setDoc
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 import { auth, db } from "./firebase-config.js";
-
-const DEFAULT_ADMIN_EMAIL = "tu620014@gmail.com";
-const READ_NOTIFICATION_STORAGE_KEY = "edubridge_read_notifications";
 
 class AdminManager {
   constructor() {
     this.currentTab = "tutor-approvals";
-    this.currentUser = null;
-    this.currentUserEmail = "";
-    this.primaryAdminEmail = DEFAULT_ADMIN_EMAIL;
-    this.isAdmin = false;
-    this.canManageModerators = false;
     this.notifications = [];
-    this.unsubscribes = [];
-
+    this.unreadCount = 0;
+    this.currentUser = null;
+    this.isAdmin = false;
     this.initElements();
+    this.setupAuth();
     this.setupTabs();
     this.setupFilters();
-    this.setupModal();
     this.setupNotifications();
-    this.setupModeratorForm();
-    this.setupAuth();
+    this.setupModal();
+    this.initAsync();
+  }
+
+  async initAsync() {
+    //await this.renderApprovals();
   }
 
   initElements() {
     this.tabButtons = document.querySelectorAll(".admin-tab-btn");
     this.tabContents = document.querySelectorAll(".admin-tab-content");
-
+    
+    // Notification elements
     this.notificationBtn = document.getElementById("notification-btn");
     this.notificationCount = document.getElementById("notification-count");
     this.notificationDropdown = document.getElementById("notification-dropdown");
     this.notificationList = document.getElementById("notification-list");
     this.markAllReadBtn = document.getElementById("mark-all-read");
-    this.clearReadStorageBtn = document.getElementById("clear-read-storage");
-    this.viewAllNotificationsLink = document.getElementById("view-all-notifications");
-
+    
+    // Dashboard cards
     this.totalTutorsEl = document.getElementById("total-tutors");
     this.pendingApprovalsEl = document.getElementById("pending-approvals");
     this.successfulConnectionsEl = document.getElementById("successful-connections");
     this.totalStudentsEl = document.getElementById("total-students");
-
+    
+    // Modal elements
     this.tutorDetailModal = document.getElementById("tutor-detail-modal");
     this.modalTutorName = document.getElementById("modal-tutor-name");
     this.modalTutorDetails = document.getElementById("modal-tutor-details");
@@ -65,93 +62,106 @@ class AdminManager {
     this.modalRejectBtn = document.getElementById("modal-reject-btn");
     this.modalCloseBtn = document.getElementById("modal-close-btn");
     this.closeModalBtn = document.getElementById("close-modal");
-
+    
+    // Tab: Tutor Approvals
     this.filterStatus = document.getElementById("filter-status");
     this.filterKeyword = document.getElementById("filter-keyword");
     this.adminTutorList = document.getElementById("admin-tutor-list");
     this.adminEmpty = document.getElementById("admin-empty");
-
-    this.moderatorForm = document.getElementById("moderator-form");
-    this.moderatorEmailInput = document.getElementById("moderator-email-input");
-    this.moderatorList = document.getElementById("moderator-list");
-
+    
+    // Tab: Tutor List
     this.tutorSearchKeyword = document.getElementById("tutor-search-keyword");
     this.tutorSearchStatus = document.getElementById("tutor-search-status");
     this.tutorManageList = document.getElementById("tutor-manage-list");
     this.tutorManageEmpty = document.getElementById("tutor-manage-empty");
-
+    
+    // Tab: Student List
     this.studentSearchKeyword = document.getElementById("student-search-keyword");
     this.studentManageList = document.getElementById("student-manage-list");
     this.studentManageEmpty = document.getElementById("student-manage-empty");
-
+    
+    // Tab: Requests
     this.requestSearchStatus = document.getElementById("request-search-status");
     this.requestSearchKeyword = document.getElementById("request-search-keyword");
     this.requestManageList = document.getElementById("request-manage-list");
     this.requestManageEmpty = document.getElementById("request-manage-empty");
-
-    this.withdrawalList = document.getElementById("withdrawal-list");
-    this.withdrawalEmpty = document.getElementById("withdrawal-empty");
-    this.disputeList = document.getElementById("dispute-list");
-    this.disputeEmpty = document.getElementById("dispute-empty");
   }
 
-  setupAuth() {
+    setupAuth() {
     onAuthStateChanged(auth, async (user) => {
-      if (!user || !user.email) {
+      if (!user) {
         window.location.href = "dang-nhap.html?next=" + encodeURIComponent("admin.html");
         return;
       }
 
-      try {
-        this.currentUser = user;
-        this.currentUserEmail = String(user.email || "").trim().toLowerCase();
-        this.primaryAdminEmail = await this.getAdminEmail();
-        const moderatorEmails = await this.getModeratorEmails();
+      this.currentUser = user;
 
-        this.isAdmin = this.currentUserEmail === this.primaryAdminEmail || moderatorEmails.includes(this.currentUserEmail);
-        this.canManageModerators = this.currentUserEmail === this.primaryAdminEmail;
+      try {
+        const userEmail = (user.email || "").toLowerCase().trim();
+
+        // Lấy Email Admin từ Firestore
+        const adminDoc = await getDoc(doc(db, 'settings', 'edubridge_admin_email'));
+        const adminEmailFromDb = adminDoc.exists() ? adminDoc.data().value.toLowerCase().trim() : "tu620014@gmail.com";
+
+        // Kiểm tra quyền
+        this.isAdmin = (userEmail === adminEmailFromDb);
 
         if (!this.isAdmin) {
-          alert("Ban khong co quyen truy cap trang quan tri.");
+          // Kiểm tra thêm danh sách Moderator
+          const modDoc = await getDoc(doc(db, 'settings', 'edubridge_moderator_emails'));
+          if (modDoc.exists() && Array.isArray(modDoc.data().value)) {
+            const moderators = modDoc.data().value.map(e => String(e).toLowerCase().trim());
+            if (moderators.includes(userEmail)) {
+              this.isAdmin = true;
+            }
+          }
+        }
+
+        if (!this.isAdmin) {
+          alert("Bạn không có quyền truy cập trang quản trị!");
           window.location.href = "index.html";
           return;
         }
+        
+        // 1. Cập nhật nút đăng xuất
+        const logoutLink = document.getElementById("nav-auth-link");
+        if (logoutLink) {
+          logoutLink.textContent = "Đăng xuất";
+          logoutLink.href = "#";
+          logoutLink.onclick = async (e) => {
+            e.preventDefault();
+            await auth.signOut();
+            localStorage.removeItem('edubridge_read_notifications');
+            window.location.href = "index.html";
+          };
+        }
 
-        this.applyLogoutLink();
-        this.toggleModeratorForm();
-        this.startRealtimeNotifications();
-
+        // 2. Tải dữ liệu thống kê
         await this.loadDashboardStats();
-        await this.switchTab(this.currentTab);
+
+        // --- PHẦN SỬA ĐỔI CHÍNH ---
+        // 3. Tự động render dữ liệu cho tab đang được chọn (thường là tutor-approvals)
+        // Điều này đảm bảo khi vào trang lần đầu, sau khi check Auth xong sẽ thấy dữ liệu ngay
+        if (this.currentTab === "tutor-approvals") {
+          await this.renderApprovals();
+        } else {
+          // Hoặc tổng quát hơn, gọi switchTab với tab hiện tại
+          await this.switchTab(this.currentTab);
+        }
+        // --------------------------
+
       } catch (error) {
         console.error("Error checking admin permissions:", error);
-        alert("Khong the kiem tra quyen quan tri.");
+        alert("Có lỗi khi kiểm tra quyền truy cập!");
         window.location.href = "index.html";
       }
     });
-
-    window.addEventListener("beforeunload", () => this.cleanupListeners());
-  }
-
-  applyLogoutLink() {
-    const logoutLink = document.getElementById("nav-auth-link");
-    if (!logoutLink) return;
-
-    logoutLink.textContent = "Dang xuat";
-    logoutLink.href = "#";
-    logoutLink.onclick = async (event) => {
-      event.preventDefault();
-      await signOut(auth);
-      localStorage.removeItem(READ_NOTIFICATION_STORAGE_KEY);
-      window.location.href = "index.html";
-    };
   }
 
   setupTabs() {
-    this.tabButtons.forEach((button) => {
-      button.addEventListener("click", async () => {
-        const tabName = button.getAttribute("data-tab");
-        if (!tabName) return;
+    this.tabButtons.forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const tabName = btn.getAttribute("data-tab");
         await this.switchTab(tabName);
       });
     });
@@ -159,677 +169,684 @@ class AdminManager {
 
   async switchTab(tabName) {
     this.currentTab = tabName;
-
-    this.tabButtons.forEach((button) => {
-      button.classList.toggle("admin-tab-btn-active", button.getAttribute("data-tab") === tabName);
+    
+    // Update button states
+    this.tabButtons.forEach((btn) => {
+      btn.classList.remove("admin-tab-btn-active");
+      if (btn.getAttribute("data-tab") === tabName) {
+        btn.classList.add("admin-tab-btn-active");
+      }
     });
-
+    
+    // Update content visibility
     this.tabContents.forEach((content) => {
-      content.classList.toggle("admin-tab-content-active", content.id === `tab-${tabName}`);
+      content.classList.remove("admin-tab-content-active");
+      if (content.id === `tab-${tabName}`) {
+        content.classList.add("admin-tab-content-active");
+      }
     });
-
+    
+    // Render tab content
     if (tabName === "tutor-approvals") {
       await this.renderApprovals();
-      await this.renderModerators();
-      return;
-    }
-    if (tabName === "tutor-list") {
+    } else if (tabName === "tutor-list") {
       await this.renderTutors();
-      return;
-    }
-    if (tabName === "student-list") {
+    } else if (tabName === "student-list") {
       await this.renderStudents();
-      return;
-    }
-    if (tabName === "requests") {
+    } else if (tabName === "requests") {
       await this.renderRequests();
-      return;
     }
-    if (tabName === "withdrawals") {
-      await this.renderWithdrawals();
-      return;
-    }
-    if (tabName === "disputes") {
-      await this.renderDisputes();
-    }
-  }
-
-  setupFilters() {
-    if (this.filterStatus) this.filterStatus.addEventListener("change", async () => this.renderApprovals());
-    if (this.filterKeyword) this.filterKeyword.addEventListener("input", async () => this.renderApprovals());
-    if (this.tutorSearchKeyword) this.tutorSearchKeyword.addEventListener("input", async () => this.renderTutors());
-    if (this.tutorSearchStatus) this.tutorSearchStatus.addEventListener("change", async () => this.renderTutors());
-    if (this.studentSearchKeyword) this.studentSearchKeyword.addEventListener("input", async () => this.renderStudents());
-    if (this.requestSearchStatus) this.requestSearchStatus.addEventListener("change", async () => this.renderRequests());
-    if (this.requestSearchKeyword) this.requestSearchKeyword.addEventListener("input", async () => this.renderRequests());
-  }
-
-  setupModal() {
-    if (this.closeModalBtn) this.closeModalBtn.addEventListener("click", () => this.closeTutorDetailModal());
-    if (this.modalCloseBtn) this.modalCloseBtn.addEventListener("click", () => this.closeTutorDetailModal());
-
-    if (this.modalApproveBtn) {
-      this.modalApproveBtn.addEventListener("click", async () => {
-        const email = this.modalApproveBtn.getAttribute("data-email");
-        if (!email) return;
-        await this.approveTutorRegistration(email);
-        this.closeTutorDetailModal();
-      });
-    }
-
-    if (this.modalRejectBtn) {
-      this.modalRejectBtn.addEventListener("click", async () => {
-        const email = this.modalRejectBtn.getAttribute("data-email");
-        if (!email) return;
-        const reason = prompt("Nhap ly do tu choi:", "") || "";
-        await this.rejectTutorRegistration(email, reason.trim());
-        this.closeTutorDetailModal();
-      });
-    }
-
-    if (this.tutorDetailModal) {
-      this.tutorDetailModal.addEventListener("click", (event) => {
-        if (event.target === this.tutorDetailModal) {
-          this.closeTutorDetailModal();
-        }
-      });
-    }
-  }
-
-  setupNotifications() {
-    if (this.notificationBtn) {
-      this.notificationBtn.addEventListener("click", (event) => {
-        event.stopPropagation();
-        this.toggleNotificationDropdown();
-      });
-    }
-
-    if (this.markAllReadBtn) {
-      this.markAllReadBtn.addEventListener("click", () => this.markAllNotificationsAsRead());
-    }
-
-    if (this.clearReadStorageBtn) {
-      this.clearReadStorageBtn.addEventListener("click", () => this.clearReadNotificationsStorage());
-    }
-
-    if (this.viewAllNotificationsLink) {
-      this.viewAllNotificationsLink.addEventListener("click", (event) => {
-        event.preventDefault();
-        window.location.href = "thong-bao.html";
-      });
-    }
-
-    document.addEventListener("click", (event) => {
-      if (!this.notificationDropdown || !this.notificationBtn) return;
-      const clickedInsideButton = this.notificationBtn.contains(event.target);
-      const clickedInsideDropdown = this.notificationDropdown.contains(event.target);
-      if (!clickedInsideButton && !clickedInsideDropdown) {
-        this.notificationDropdown.style.display = "none";
-      }
-    });
-  }
-
-  setupModeratorForm() {
-    if (!this.moderatorForm) return;
-
-    this.moderatorForm.addEventListener("submit", async (event) => {
-      event.preventDefault();
-      if (!this.canManageModerators) return;
-
-      const email = String(this.moderatorEmailInput?.value || "").trim().toLowerCase();
-      if (!email || !email.includes("@")) {
-        alert("Nhap email moderator hop le.");
-        return;
-      }
-      if (email === this.primaryAdminEmail) {
-        alert("Khong the them email admin chinh vao danh sach moderator.");
-        return;
-      }
-
-      const moderators = await this.getModeratorEmails();
-      if (!moderators.includes(email)) {
-        moderators.unshift(email);
-        await this.saveModeratorEmails(moderators);
-      }
-
-      this.moderatorEmailInput.value = "";
-      await this.renderModerators();
-      alert("Da them moderator moi.");
-    });
-  }
-
-  toggleModeratorForm() {
-    if (!this.moderatorForm) return;
-    this.moderatorForm.hidden = !this.canManageModerators;
-  }
-
-  cleanupListeners() {
-    this.unsubscribes.forEach((unsubscribe) => {
-      try {
-        unsubscribe();
-      } catch (error) {
-        console.warn("Cannot unsubscribe cleanly:", error);
-      }
-    });
-    this.unsubscribes = [];
-  }
-
-  async getAdminEmail() {
-    try {
-      const adminDoc = await getDoc(doc(db, "settings", "edubridge_admin_email"));
-      if (!adminDoc.exists()) return DEFAULT_ADMIN_EMAIL;
-      return String(adminDoc.data().value || DEFAULT_ADMIN_EMAIL).trim().toLowerCase();
-    } catch (error) {
-      console.error("Error getting admin email:", error);
-      return DEFAULT_ADMIN_EMAIL;
-    }
-  }
-
-  async getModeratorEmails() {
-    try {
-      const modDoc = await getDoc(doc(db, "settings", "edubridge_moderator_emails"));
-      const value = modDoc.exists() ? modDoc.data().value : [];
-      if (!Array.isArray(value)) return [];
-      return value
-        .map((item) => String(item || "").trim().toLowerCase())
-        .filter((item, index, list) => item && list.indexOf(item) === index);
-    } catch (error) {
-      console.error("Error getting moderator emails:", error);
-      return [];
-    }
-  }
-
-  async saveModeratorEmails(emails) {
-    await setDoc(doc(db, "settings", "edubridge_moderator_emails"), { value: emails });
-  }
-
-  async readCollection(name) {
-    const snapshot = await getDocs(collection(db, name));
-    return snapshot.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }));
   }
 
   async readJson(key) {
     try {
       if (key === "edubridge_wallets") {
-        const walletsDoc = await getDoc(doc(db, "settings", "wallets"));
-        if (!walletsDoc.exists()) {
-          return { adminRevenue: 0, tutorBalances: {} };
-        }
-        const data = walletsDoc.data();
-        if (data && typeof data.value === "object" && data.value) {
-          return {
-            adminRevenue: Number(data.value.adminRevenue || 0),
-            tutorBalances: data.value.tutorBalances || {}
-          };
-        }
-        return {
-          adminRevenue: Number(data.adminRevenue || 0),
-          tutorBalances: data.tutorBalances || {}
-        };
+        const docRef = doc(db, 'settings', 'wallets');
+        const docSnap = await getDoc(docRef);
+        return docSnap.exists() ? docSnap.data().value : {"adminRevenue":0,"tutorBalances":{}};
+      } else {
+        const collectionName = key.replace('edubridge_', '');
+        const snapshot = await getDocs(collection(db, collectionName));
+        return snapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() }));
       }
-
-      const collectionName = key.replace("edubridge_", "");
-      return await this.readCollection(collectionName);
-    } catch (error) {
-      console.error("Error reading", key, error);
-      return key === "edubridge_wallets" ? { adminRevenue: 0, tutorBalances: {} } : [];
+    } catch (e) {
+      return key === "edubridge_wallets" ? {"adminRevenue":0,"tutorBalances":{}} : [];
     }
   }
 
   async writeJson(key, value) {
-    if (key === "edubridge_wallets") {
-      await setDoc(doc(db, "settings", "wallets"), {
-        adminRevenue: Number(value.adminRevenue || 0),
-        tutorBalances: value.tutorBalances || {}
-      });
-      return;
+    try {
+      if (key === "edubridge_wallets") {
+        await setDoc(doc(db, 'settings', 'wallets'), {value});
+      } else {
+        const collectionName = key.replace('edubridge_', '');
+        const batch = writeBatch(db);
+        try {
+          const snapshot = await getDocs(collection(db, collectionName));
+          snapshot.docs.forEach(docSnap => batch.delete(docSnap.ref));
+        } catch (e) {
+          console.warn('Không thể đọc trước khi ghi', collectionName, e);
+        }
+        value.forEach(item => {
+          // Đảm bảo id luôn là string bằng cách dùng String()
+          const id = item.id ? String(item.id) : Date.now().toString() + Math.random().toString(36).substr(2, 5);
+          const docRef = doc(db, collectionName, id);
+          batch.set(docRef, item);
+        });
+        await batch.commit();
+      }
+    } catch (e) {
+      console.error(e);
     }
-
-    const collectionName = key.replace("edubridge_", "");
-    const batch = writeBatch(db);
-    const snapshot = await getDocs(collection(db, collectionName));
-    snapshot.docs.forEach((docSnap) => batch.delete(docSnap.ref));
-    value.forEach((item) => {
-      const id = String(item.id || `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`);
-      batch.set(doc(db, collectionName, id), { ...item, id });
-    });
-    await batch.commit();
   }
 
-  startRealtimeNotifications() {
-    this.cleanupListeners();
+  setupFilters() {
+    // Tutor approvals filters
+    if (this.filterStatus && this.filterKeyword) {
+      this.filterStatus.addEventListener("change", async () => await this.renderApprovals());
+      this.filterKeyword.addEventListener("input", async () => await this.renderApprovals());
+    }
+    
+    // Tutor list filters
+    if (this.tutorSearchKeyword && this.tutorSearchStatus) {
+      this.tutorSearchKeyword.addEventListener("input", async () => await this.renderTutors());
+      this.tutorSearchStatus.addEventListener("change", async () => await this.renderTutors());
+    }
+    
+    // Student list filters
+    if (this.studentSearchKeyword) {
+      this.studentSearchKeyword.addEventListener("input", async () => await this.renderStudents());
+    }
+    
+    // Request filters
+    if (this.requestSearchStatus && this.requestSearchKeyword) {
+      this.requestSearchStatus.addEventListener("change", async () => await this.renderRequests());
+      this.requestSearchKeyword.addEventListener("input", async () => await this.renderRequests());
+    }
+  }
 
-    const pendingTutorsQuery = query(collection(db, "tutor_registrations"), limit(100));
-    const unsubscribe = onSnapshot(
-      pendingTutorsQuery,
-      (snapshot) => {
-        const readIds = this.getReadNotificationsFromStorage();
-        const items = snapshot.docs
-          .map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }))
-          .filter((item) => String(item.status || "pending").toLowerCase() === "pending")
-          .sort((a, b) => this.getComparableDate(b.submittedAt || b.updatedAt) - this.getComparableDate(a.submittedAt || a.updatedAt))
-          .map((item) => ({
-            id: item.id,
-            title: "Ho so gia su moi",
-            message: `${item.name || item.email || "Gia su"} dang cho duyet`,
-            createdAt: item.submittedAt || item.updatedAt || new Date().toISOString(),
-            tutorData: item,
-            isRead: readIds.includes(item.id)
-          }));
-
-        this.notifications = items;
-        this.updateNotificationUI();
-        this.loadDashboardStats().catch((error) => console.error("Error refreshing dashboard stats:", error));
-      },
-      (error) => console.error("Error in tutor registration notifications:", error)
+  // === NOTIFICATIONS ===
+  setupNotifications() {
+    // Notification button click
+    if (this.notificationBtn) {
+      this.notificationBtn.addEventListener("click", () => {
+        this.toggleNotificationDropdown();
+      });
+    }
+    
+    // Mark all as read
+    if (this.markAllReadBtn) {
+      this.markAllReadBtn.addEventListener("click", () => {
+        this.markAllNotificationsAsRead();
+      });
+    }
+    
+    // Clear read storage (reset button)
+    const clearReadStorageBtn = document.getElementById("clear-read-storage");
+    if (clearReadStorageBtn) {
+      clearReadStorageBtn.addEventListener("click", () => {
+        this.clearReadNotificationsStorage();
+      });
+    }
+    
+    // Close dropdown when clicking outside
+    document.addEventListener("click", (e) => {
+      if (!this.notificationBtn.contains(e.target) && !this.notificationDropdown.contains(e.target)) {
+        this.notificationDropdown.style.display = "none";
+      }
+    });
+    
+    // Setup real-time listener for tutor registrations
+    this.setupRealtimeNotifications();
+  }
+  
+  setupRealtimeNotifications() {
+    const q = query(
+      collection(db, "tutor_registrations"),
+      orderBy("createdAt", "desc"),
+      limit(50)
     );
-
-    this.unsubscribes.push(unsubscribe);
+    
+    onSnapshot(q, (snapshot) => {
+      // Clear existing notifications to avoid duplicates
+      this.notifications = [];
+      
+      // Process all current documents
+      snapshot.docs.forEach((doc) => {
+        const data = doc.data();
+        if (data.status === "pending") {
+          // Check if this notification was previously marked as read
+          const readNotifications = this.getReadNotificationsFromStorage();
+          const isRead = readNotifications.includes(doc.id);
+          
+          this.notifications.push({
+            id: doc.id,
+            type: "new_registration",
+            title: "Gia sư mới đăng ký",
+            message: `${data.name} đã đăng ký làm gia sư môn ${data.subject}`,
+            tutorData: data,
+            createdAt: data.createdAt?.toDate() || new Date(),
+            isRead: isRead
+          });
+        }
+      });
+      
+      // Update UI with current notifications
+      this.updateNotificationUI();
+      
+      // Update dashboard stats when data changes
+      this.loadDashboardStats().catch(error => console.error("Error loading dashboard stats:", error));
+    }, (error) => {
+      console.error("Error in realtime notifications:", error);
+    });
   }
-
-  toggleNotificationDropdown() {
-    if (!this.notificationDropdown) return;
-    this.notificationDropdown.style.display = this.notificationDropdown.style.display === "block" ? "none" : "block";
+  
+  addNotification(notification) {
+    this.notifications.unshift(notification);
+    this.updateNotificationUI();
+    this.showBrowserNotification(notification);
   }
-
+  
   updateNotificationUI() {
-    const unreadCount = this.notifications.filter((item) => !item.isRead).length;
-    if (this.notificationCount) {
-      this.notificationCount.textContent = unreadCount > 99 ? "99+" : String(unreadCount);
-      this.notificationCount.style.display = unreadCount > 0 ? "inline" : "none";
+    this.unreadCount = this.notifications.filter(n => !n.isRead).length;
+    
+    // Update notification count
+    if (this.unreadCount > 0) {
+      this.notificationCount.textContent = this.unreadCount > 99 ? "99+" : this.unreadCount;
+      this.notificationCount.style.display = "inline";
+    } else {
+      this.notificationCount.style.display = "none";
     }
-
-    if (!this.notificationList) return;
-    const recent = this.notifications.slice(0, 10);
-    this.notificationList.innerHTML = recent.length
-      ? recent.map((item) => this.renderNotification(item)).join("")
-      : '<div class="notification-item"><div class="notification-content"><div class="notification-title">Khong co thong bao moi</div></div></div>';
-
-    this.notificationList.querySelectorAll(".notification-item").forEach((element, index) => {
-      element.addEventListener("click", () => {
-        const item = recent[index];
-        if (!item) return;
-        this.markNotificationAsRead(item.id);
-        this.showTutorDetailModal(item.tutorData);
-        if (this.notificationDropdown) this.notificationDropdown.style.display = "none";
+    
+    // Update notification list
+    const recentNotifications = this.notifications.slice(0, 10);
+    this.notificationList.innerHTML = recentNotifications.map(n => this.renderNotification(n)).join("");
+    
+    // Add click listeners for notifications
+    this.notificationList.querySelectorAll(".notification-item").forEach((item, index) => {
+      item.addEventListener("click", () => {
+        this.markNotificationAsRead(recentNotifications[index].id);
+        this.showTutorDetailModal(recentNotifications[index].tutorData);
+        this.notificationDropdown.style.display = "none";
       });
     });
   }
-
+  
   renderNotification(notification) {
-    const unreadClass = notification.isRead ? "" : " notification-unread";
+    const timeAgo = this.getTimeAgo(notification.createdAt);
+    const unreadClass = notification.isRead ? "" : "notification-unread";
+    
     return `
-      <div class="notification-item${unreadClass}" data-id="${notification.id}">
-        <div class="notification-icon">GS</div>
+      <div class="notification-item ${unreadClass}" data-id="${notification.id}">
+        <div class="notification-icon">
+          ${notification.type === "new_registration" ? "👨‍🏫" : "⚠️"}
+        </div>
         <div class="notification-content">
           <div class="notification-title">${notification.title}</div>
           <div class="notification-message">${notification.message}</div>
-          <div class="notification-time">${this.getTimeAgo(notification.createdAt)}</div>
+          <div class="notification-time">${timeAgo}</div>
         </div>
       </div>
     `;
   }
-
+  
+  toggleNotificationDropdown() {
+    this.notificationDropdown.style.display = 
+      this.notificationDropdown.style.display === "block" ? "none" : "block";
+  }
+  
+  markNotificationAsRead(notificationId) {
+    const notification = this.notifications.find(n => n.id === notificationId);
+    if (notification) {
+      notification.isRead = true;
+      this.saveReadNotificationToStorage(notificationId);
+      this.updateNotificationUI();
+    }
+  }
+  
+  markNotificationAsReadByEmail(email) {
+    const notification = this.notifications.find(n => 
+      n.tutorData && n.tutorData.email?.toLowerCase() === email.toLowerCase()
+    );
+    if (notification) {
+      notification.isRead = true;
+      this.saveReadNotificationToStorage(notification.id);
+      this.updateNotificationUI();
+    }
+  }
+  
+  markAllNotificationsAsRead() {
+    this.notifications.forEach(n => {
+      n.isRead = true;
+      this.saveReadNotificationToStorage(n.id);
+    });
+    this.updateNotificationUI();
+  }
+  
   getReadNotificationsFromStorage() {
     try {
-      const value = localStorage.getItem(READ_NOTIFICATION_STORAGE_KEY);
-      return value ? JSON.parse(value) : [];
+      const readNotifications = localStorage.getItem('edubridge_read_notifications');
+      return readNotifications ? JSON.parse(readNotifications) : [];
     } catch (error) {
-      console.error("Error reading notification read state:", error);
+      console.error("Error reading read notifications from storage:", error);
       return [];
     }
   }
-
+  
   saveReadNotificationToStorage(notificationId) {
-    const ids = this.getReadNotificationsFromStorage();
-    if (ids.includes(notificationId)) return;
-    ids.push(notificationId);
-    localStorage.setItem(READ_NOTIFICATION_STORAGE_KEY, JSON.stringify(ids));
+    try {
+      const readNotifications = this.getReadNotificationsFromStorage();
+      if (!readNotifications.includes(notificationId)) {
+        readNotifications.push(notificationId);
+        localStorage.setItem('edubridge_read_notifications', JSON.stringify(readNotifications));
+      }
+    } catch (error) {
+      console.error("Error saving read notification to storage:", error);
+    }
   }
-
-  markNotificationAsRead(notificationId) {
-    const item = this.notifications.find((notification) => notification.id === notificationId);
-    if (!item) return;
-    item.isRead = true;
-    this.saveReadNotificationToStorage(notificationId);
-    this.updateNotificationUI();
+  
+  // Debug method to check notification state
+  debugNotifications() {
+    console.log("Current notifications:", this.notifications);
+    console.log("Unread count:", this.unreadCount);
+    console.log("Read notifications from storage:", this.getReadNotificationsFromStorage());
   }
-
-  markAllNotificationsAsRead() {
-    this.notifications.forEach((item) => {
-      item.isRead = true;
-      this.saveReadNotificationToStorage(item.id);
-    });
-    this.updateNotificationUI();
-  }
-
+  
   clearReadNotificationsStorage() {
-    localStorage.removeItem(READ_NOTIFICATION_STORAGE_KEY);
-    this.notifications.forEach((item) => {
-      item.isRead = false;
-    });
-    this.updateNotificationUI();
+    try {
+      localStorage.removeItem('edubridge_read_notifications');
+      // Reset all notifications to unread
+      this.notifications.forEach(n => n.isRead = false);
+      this.updateNotificationUI();
+      console.log("Read notifications storage cleared");
+    } catch (error) {
+      console.error("Error clearing read notifications storage:", error);
+    }
+  }
+  
+  showBrowserNotification(notification) {
+    if ("Notification" in window && Notification.permission === "granted") {
+      new Notification(notification.title, {
+        body: notification.message,
+        icon: "/favicon.ico"
+      });
+    }
+  }
+  
+  getTimeAgo(date) {
+    const now = new Date();
+    const diffInSeconds = Math.floor((now - date) / 1000);
+    
+    if (diffInSeconds < 60) return "Vừa xong";
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} phút trước`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} giờ trước`;
+    return `${Math.floor(diffInSeconds / 86400)} ngày trước`;
   }
 
-  getTimeAgo(value) {
-    const date = this.toDate(value);
-    const diffSeconds = Math.max(0, Math.floor((Date.now() - date.getTime()) / 1000));
-    if (diffSeconds < 60) return "Vua xong";
-    if (diffSeconds < 3600) return `${Math.floor(diffSeconds / 60)} phut truoc`;
-    if (diffSeconds < 86400) return `${Math.floor(diffSeconds / 3600)} gio truoc`;
-    return `${Math.floor(diffSeconds / 86400)} ngay truoc`;
-  }
-
-  toDate(value) {
-    if (!value) return new Date(0);
-    if (value instanceof Date) return value;
-    if (typeof value.toDate === "function") return value.toDate();
-    return new Date(value);
-  }
-
-  getComparableDate(value) {
-    return this.toDate(value).getTime();
-  }
-
-  formatDateTime(value) {
-    const date = this.toDate(value);
-    return Number.isNaN(date.getTime()) ? "Chua cap nhat" : date.toLocaleString("vi-VN");
-  }
-
+  // === DASHBOARD STATS ===
   async loadDashboardStats() {
-    const [tutors, students, requests] = await Promise.all([
-      this.readJson("edubridge_tutor_registrations"),
-      this.readJson("edubridge_students"),
-      this.readJson("edubridge_requests")
-    ]);
-
-    const totalTutors = tutors.filter((item) => item.status === "approved").length;
-    const pendingApprovals = tutors.filter((item) => (item.status || "pending") === "pending").length;
-    const activeConnections = requests.filter((item) => ["accepted_waiting_funds", "in_teaching", "completed"].includes(item.status)).length;
-
-    if (this.totalTutorsEl) this.totalTutorsEl.textContent = String(totalTutors);
-    if (this.pendingApprovalsEl) this.pendingApprovalsEl.textContent = String(pendingApprovals);
-    if (this.successfulConnectionsEl) this.successfulConnectionsEl.textContent = String(activeConnections);
-    if (this.totalStudentsEl) this.totalStudentsEl.textContent = String(students.length);
+    try {
+      const [tutors, students, requests] = await Promise.all([
+        this.readJson("edubridge_tutor_registrations"),
+        this.readJson("edubridge_students"),
+        this.readJson("edubridge_requests")
+      ]);
+      
+      // Total tutors (approved)
+      const totalTutors = tutors.filter(t => t.status === "approved").length;
+      this.totalTutorsEl.textContent = totalTutors;
+      
+      // Pending approvals
+      const pendingApprovals = tutors.filter(t => t.status === "pending").length;
+      this.pendingApprovalsEl.textContent = pendingApprovals;
+      
+      // Successful connections (approved requests)
+      const successfulConnections = requests.filter(r => r.status === "approved").length;
+      this.successfulConnectionsEl.textContent = successfulConnections;
+      
+      // Total students
+      this.totalStudentsEl.textContent = students.length;
+      
+    } catch (error) {
+      console.error("Error loading dashboard stats:", error);
+    }
   }
 
+  // === MODAL MANAGEMENT ===
+  setupModal() {
+    // Close modal events
+    if (this.closeModalBtn) {
+      this.closeModalBtn.addEventListener("click", () => this.closeTutorDetailModal());
+    }
+    if (this.modalCloseBtn) {
+      this.modalCloseBtn.addEventListener("click", () => this.closeTutorDetailModal());
+    }
+    
+    // Modal action buttons
+    if (this.modalApproveBtn) {
+      this.modalApproveBtn.addEventListener("click", () => {
+        const email = this.modalApproveBtn.getAttribute("data-email");
+        if (email) {
+          this.approveTutorRegistration(email);
+          this.closeTutorDetailModal();
+        }
+      });
+    }
+    
+    if (this.modalRejectBtn) {
+      this.modalRejectBtn.addEventListener("click", () => {
+        const email = this.modalRejectBtn.getAttribute("data-email");
+        if (email) {
+          const reason = prompt("Nhập lý do từ chối:");
+          if (reason !== null) {
+            this.rejectTutorRegistration(email, reason);
+            this.closeTutorDetailModal();
+          }
+        }
+      });
+    }
+    
+    // Close modal when clicking outside
+    this.tutorDetailModal.addEventListener("click", (e) => {
+      if (e.target === this.tutorDetailModal) {
+        this.closeTutorDetailModal();
+      }
+    });
+  }
+  
   showTutorDetailModal(tutorData) {
-    if (!this.tutorDetailModal || !tutorData) return;
-
-    this.modalTutorName.textContent = `Chi tiet: ${tutorData.name || tutorData.email || "Gia su"}`;
+    this.modalTutorName.textContent = `Chi tiết: ${tutorData.name}`;
     this.modalTutorDetails.innerHTML = this.renderTutorDetails(tutorData);
-    this.modalApproveBtn?.setAttribute("data-email", tutorData.email || "");
-    this.modalRejectBtn?.setAttribute("data-email", tutorData.email || "");
+    
+    // Set data attributes for action buttons
+    this.modalApproveBtn.setAttribute("data-email", tutorData.email);
+    this.modalRejectBtn.setAttribute("data-email", tutorData.email);
+    
     this.tutorDetailModal.style.display = "block";
     document.body.style.overflow = "hidden";
   }
-
+  
   closeTutorDetailModal() {
-    if (!this.tutorDetailModal) return;
     this.tutorDetailModal.style.display = "none";
-    document.body.style.overflow = "";
+    document.body.style.overflow = "auto";
   }
-
+  
   renderTutorDetails(tutorData) {
-    const priceText = tutorData.price ? `${Number(tutorData.price).toLocaleString("vi-VN")} VND/buoi` : "Chua cap nhat";
     return `
       <div class="tutor-detail-grid">
         <div class="detail-section">
-          <h3>Thong tin ca nhan</h3>
-          <p><strong>Ho ten:</strong> ${tutorData.name || "Chua cap nhat"}</p>
-          <p><strong>Email:</strong> ${tutorData.email || "Chua cap nhat"}</p>
-          <p><strong>So dien thoai:</strong> ${tutorData.phone || "Chua cap nhat"}</p>
-          <p><strong>Khu vuc:</strong> ${tutorData.location || "Chua cap nhat"}</p>
+          <h3>Thông tin cá nhân</h3>
+          <p><strong>Họ tên:</strong> ${tutorData.name || "Chưa cập nhật"}</p>
+          <p><strong>Email:</strong> ${tutorData.email || "Chưa cập nhật"}</p>
+          <p><strong>Số điện thoại:</strong> ${tutorData.phone || "Chưa cập nhật"}</p>
+          <p><strong>Địa chỉ:</strong> ${tutorData.address || "Chưa cập nhật"}</p>
+          <p><strong>Khu vực:</strong> ${tutorData.location || "Chưa cập nhật"}</p>
         </div>
+        
         <div class="detail-section">
-          <h3>Thong tin giang day</h3>
-          <p><strong>Mon hoc:</strong> ${tutorData.subject || "Chua cap nhat"}</p>
-          <p><strong>Trinh do:</strong> ${tutorData.level || "Chua cap nhat"}</p>
-          <p><strong>Kinh nghiem:</strong> ${tutorData.experience || "Chua cap nhat"}</p>
-          <p><strong>Hoc phi:</strong> ${priceText}</p>
-          <p><strong>Thoi gian ranh:</strong> ${tutorData.availableTime || tutorData.schedule || "Chua cap nhat"}</p>
+          <h3>Thông tin giảng dạy</h3>
+          <p><strong>Môn học:</strong> ${tutorData.subject || "Chưa cập nhật"}</p>
+          <p><strong>Cấp độ:</strong> ${tutorData.level || "Chưa cập nhật"}</p>
+          <p><strong>Kinh nghiệm:</strong> ${tutorData.experience || "Chưa cập nhật"}</p>
+          <p><strong>Giá cả:</strong> ${tutorData.price ? tutorData.price.toLocaleString("vi-VN") + " VND/buổi" : "Chưa cập nhật"}</p>
+          <p><strong>Lịch học:</strong> ${tutorData.schedule || "Chưa cập nhật"}</p>
         </div>
+        
         <div class="detail-section">
+<<<<<<< HEAD
           <h3>Trang thai</h3>
           <p><strong>Duyet:</strong> ${this.getTutorStatusLabel(tutorData.status)}</p>
           <p><strong>Hoat dong:</strong> ${tutorData.activeState === "busy" ? "Dang ban" : "Co san"}</p>
           <p><strong>Gui luc:</strong> ${this.formatDateTime(tutorData.submittedAt || tutorData.createdAt)}</p>
           ${tutorData.rejectReason ? `<p><strong>Ly do tu choi:</strong> ${tutorData.rejectReason}</p>` : ""}
+=======
+          <h3>Chứng chỉ & Học vấn</h3>
+          <p><strong>Trình độ:</strong> ${tutorData.degree || "Chưa cập nhật"}</p>
+          <p><strong>Trường học:</strong> ${tutorData.school || "Chưa cập nhật"}</p>
+          <p><strong>Chứng chỉ:</strong> ${tutorData.certificates || "Chưa cập nhật"}</p>
+        </div>
+        
+        <div class="detail-section">
+          <h3>Giới thiệu</h3>
+          <p>${tutorData.bio || "Chưa có giới thiệu"}</p>
+        </div>
+        
+        <div class="detail-section">
+          <h3>Trạng thái</h3>
+          <p><strong>Trạng thái duyệt:</strong> ${this.getStatusLabel(tutorData.status)}</p>
+          <p><strong>Ngày đăng ký:</strong> ${tutorData.createdAt ? new Date(tutorData.createdAt.seconds * 1000).toLocaleDateString("vi-VN") : "Chưa cập nhật"}</p>
+          ${tutorData.rejectReason ? `<p><strong>Lý do từ chối:</strong> ${tutorData.rejectReason}</p>` : ""}
+>>>>>>> parent of 066b3bf (.)
         </div>
       </div>
     `;
   }
-
-  getTutorStatusLabel(status) {
-    if (status === "approved") return "Da duyet";
-    if (status === "rejected") return "Tu choi";
-    return "Cho duyet";
+  
+  getStatusLabel(status) {
+    switch (status) {
+      case "pending": return "Chờ duyệt";
+      case "approved": return "Đã duyệt";
+      case "rejected": return "Từ chối";
+      default: return "Chưa cập nhật";
+    }
   }
 
-  async findTutorDocumentByEmail(email) {
-    const q = query(collection(db, "tutor_registrations"), where("email", "==", String(email || "").trim().toLowerCase()), limit(1));
-    const snapshot = await getDocs(q);
-    if (snapshot.empty) return null;
-    return snapshot.docs[0];
-  }
-
-  async pushNotification(userEmail, text, type, payload = {}) {
-    await addDoc(collection(db, "notifications"), {
-      userEmail: String(userEmail || "").trim().toLowerCase(),
-      text,
-      type,
-      payload,
-      read: false,
-      createdAt: new Date().toISOString()
-    });
-    window.dispatchEvent(new Event("edubridge-notifications-updated"));
-  }
-
-  async logActivity(action, details) {
-    if (!this.currentUser) return;
-    await addDoc(collection(db, "admin_activities"), {
-      action,
-      adminId: this.currentUser.uid,
-      adminEmail: this.currentUser.email,
-      details,
-      timestamp: serverTimestamp()
-    });
-  }
-
+  // === TUTOR APPROVALS ===
   async renderApprovals() {
-    const registrations = await this.readJson("edubridge_tutor_registrations");
-    const statusFilter = (this.filterStatus?.value || "").trim().toLowerCase();
-    const keywordFilter = (this.filterKeyword?.value || "").trim().toLowerCase();
+      try {
+          const rawData = await this.readJson("edubridge_tutor_registrations");
+          
+          // Đảm bảo dữ liệu luôn là mảng
+          const registrations = Array.isArray(rawData) ? rawData : (rawData ? Object.values(rawData) : []);
 
-    const filtered = registrations
-      .filter((item) => {
-        const itemStatus = String(item.status || "pending").toLowerCase();
-        if (statusFilter && itemStatus !== statusFilter) return false;
-        if (
-          keywordFilter &&
-          !String(item.name || "").toLowerCase().includes(keywordFilter) &&
-          !String(item.email || "").toLowerCase().includes(keywordFilter) &&
-          !String(item.subject || "").toLowerCase().includes(keywordFilter)
-        ) {
-          return false;
-        }
-        return true;
-      })
-      .sort((a, b) => this.getComparableDate(b.submittedAt || b.updatedAt) - this.getComparableDate(a.submittedAt || a.updatedAt));
+          const keywordFilter = (this.filterKeyword?.value || "").toLowerCase();
 
-    this.adminTutorList.innerHTML = filtered.map((item) => this.tutorApprovalCard(item)).join("");
-    this.adminEmpty.hidden = filtered.length !== 0;
-    this.attachTutorApprovalListeners();
+          // LOGIC LỌC: Chấp nhận cả người có status "pending" hoặc chưa có status (mới đăng ký)
+          let filtered = registrations.filter((item) => {
+              const status = (item.status || "").toLowerCase();
+              
+              // 1. Chỉ lấy người chờ duyệt
+              if (status !== "pending" && status !== "") return false;
+
+              // 2. Lọc theo từ khóa (nếu có)
+              if (keywordFilter && 
+                  !item.name?.toLowerCase().includes(keywordFilter) &&
+                  !item.email?.toLowerCase().includes(keywordFilter)
+              ) return false;
+
+              return true;
+          });
+
+          // Hiển thị ra giao diện
+          if (this.adminTutorList) {
+              this.adminTutorList.innerHTML = filtered.map((item) => this.tutorApprovalCard(item)).join("");
+              
+              // Hiện thông báo "Trống" nếu không có ai
+              if (this.adminEmpty) {
+                  this.adminEmpty.hidden = filtered.length !== 0;
+              }
+          }
+
+          this.attachTutorApprovalListeners();
+
+      } catch (error) {
+          console.error("Lỗi khi render danh sách duyệt:", error);
+      }
   }
 
   tutorApprovalCard(item) {
-    const status = String(item.status || "pending").toLowerCase();
-    const price = Number(item.price || 0).toLocaleString("vi-VN");
-    const statusClass = status === "approved" ? "tutor-status-available" : status === "rejected" ? "tutor-status-busy" : "tutor-status-available";
-    const actionButtons = status === "pending"
-      ? `
-          <button type="button" class="btn btn-primary admin-approve-btn" data-email="${item.email}">Duyet</button>
-          <button type="button" class="btn btn-secondary admin-reject-btn" data-email="${item.email}">Tu choi</button>
-        `
-      : "";
-
+    const price = (item.price || 0).toLocaleString("vi-VN");
     return `
       <article class="tutor-card">
         <div class="tutor-header">
-          <h3>${item.name || "Gia su"}</h3>
-          <span class="tutor-status ${statusClass}">${this.getTutorStatusLabel(status)}</span>
+          <h3>${item.name || "Gia sư"}</h3>
+          <span class="tutor-status tutor-status-available">Chờ duyệt</span>
         </div>
-        <p class="tutor-meta">${item.subject || "Chua cap nhat"} | ${item.level || "Chua cap nhat"}</p>
-        <p class="tutor-bio"><strong>Email:</strong> ${item.email || ""}</p>
-        <p class="tutor-duration"><strong>Khu vuc:</strong> ${item.location || "Chua cap nhat"}</p>
-        <p class="tutor-duration"><strong>Gia:</strong> ${price} VND/buoi</p>
-        ${item.rejectReason ? `<p class="tutor-duration"><strong>Ly do tu choi:</strong> ${item.rejectReason}</p>` : ""}
+        <p class="tutor-meta">${item.subject || "Chưa cập nhật"} • ${item.level || "Chưa cập nhật"}</p>
+        <p class="tutor-bio"><strong>Email:</strong> ${item.email}</p>
+        <p class="tutor-duration"><strong>Khu vực:</strong> ${item.location || "Chưa cập nhật"}</p>
+        <p class="tutor-duration"><strong>Giá:</strong> ${price} VND/buổi</p>
+        <p class="tutor-duration"><strong>Kinh nghiệm:</strong> ${item.experience || "Chưa cập nhật"}</p>
         <div class="request-modal-actions">
-          ${actionButtons}
-          <button type="button" class="btn btn-secondary admin-view-btn" data-email="${item.email}">Xem chi tiet</button>
+          <button type="button" class="btn btn-primary admin-approve-btn" data-email="${item.email}">Duyệt</button>
+          <button type="button" class="btn btn-secondary admin-reject-btn" data-email="${item.email}">Từ chối</button>
+          <button type="button" class="btn btn-secondary admin-view-btn" data-email="${item.email}">Xem chi tiết</button>
         </div>
       </article>
     `;
   }
 
   attachTutorApprovalListeners() {
-    document.querySelectorAll(".admin-approve-btn").forEach((button) => {
-      button.addEventListener("click", async () => {
-        await this.approveTutorRegistration(button.getAttribute("data-email"));
+    const approveButtons = document.querySelectorAll(".admin-approve-btn");
+    const rejectButtons = document.querySelectorAll(".admin-reject-btn");
+    const viewButtons = document.querySelectorAll(".admin-view-btn");
+
+    approveButtons.forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const email = btn.getAttribute("data-email");
+        await this.approveTutorRegistration(email);
       });
     });
 
-    document.querySelectorAll(".admin-reject-btn").forEach((button) => {
-      button.addEventListener("click", async () => {
-        const email = button.getAttribute("data-email");
-        const reason = prompt("Nhap ly do tu choi:", "") || "";
-        await this.rejectTutorRegistration(email, reason.trim());
+    rejectButtons.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const email = btn.getAttribute("data-email");
+        const reason = prompt("Nhập lý do từ chối:");
+        if (reason !== null) {
+          this.rejectTutorRegistration(email, reason);
+        }
       });
     });
-
-    document.querySelectorAll(".admin-view-btn").forEach((button) => {
-      button.addEventListener("click", async () => {
-        await this.viewTutorDetails(button.getAttribute("data-email"));
+    
+    viewButtons.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const email = btn.getAttribute("data-email");
+        this.viewTutorDetails(email);
       });
     });
   }
 
   async approveTutorRegistration(email) {
-    if (!email) return;
-    const tutorDoc = await this.findTutorDocumentByEmail(email);
-    if (!tutorDoc) {
-      alert("Khong tim thay ho so gia su.");
-      return;
+    try {
+      const registrationsCol = collection(db, "tutor_registrations");
+      const q = query(registrationsCol, where("email", "==", email));
+      const querySnapshot = await getDocs(q);
+
+      if (querySnapshot.empty) {
+        alert("Không tìm thấy hồ sơ gia sư!");
+        return;
+      }
+
+      const tutorDoc = querySnapshot.docs[0];
+      const docRef = doc(db, "tutor_registrations", tutorDoc.id);
+
+      // 1. Cập nhật trạng thái duyệt
+      await updateDoc(docRef, {
+        status: "approved",
+        updatedAt: new Date().toISOString()
+      });
+
+      // 2. LƯU THÔNG BÁO VÀO DATABASE (Để gia sư nhận được)
+      await addDoc(collection(db, "notifications"), {
+        recipientEmail: email.toLowerCase().trim(),
+        title: "Hồ sơ đã được duyệt",
+        message: "Chúc mừng! Bạn đã trở thành gia sư của EduBridge.",
+        type: "success",
+        createdAt: serverTimestamp(),
+        isRead: false
+      });
+
+      // 3. Tải lại danh sách (Để card biến mất ngay lập tức)
+      await this.renderApprovals(); 
+      await this.loadDashboardStats();
+      
+      alert("Đã duyệt và gửi thông báo thành công!");
+
+    } catch (error) {
+      console.error("Lỗi khi duyệt:", error);
+      alert("Lỗi hệ thống: " + error.message);
     }
-
-    const tutor = tutorDoc.data();
-    await updateDoc(tutorDoc.ref, {
-      status: "approved",
-      rejectReason: "",
-      updatedAt: new Date().toISOString()
-    });
-
-    await this.pushNotification(
-      email,
-      "Ho so gia su cua ban da duoc duyet va hien thi tren he thong.",
-      "tutor-approval-status",
-      { status: "approved" }
-    );
-    await this.logActivity("approve_tutor", { tutorEmail: email, tutorName: tutor.name || "" });
-
-    this.markNotificationAsRead(tutorDoc.id);
-    await this.loadDashboardStats();
-    await this.renderApprovals();
-    if (this.currentTab === "tutor-list") await this.renderTutors();
-    alert("Da duyet ho so gia su.");
   }
 
   async rejectTutorRegistration(email, reason) {
-    if (!email) return;
-    const tutorDoc = await this.findTutorDocumentByEmail(email);
-    if (!tutorDoc) {
-      alert("Khong tim thay ho so gia su.");
-      return;
+    try {
+      const registrations = await this.readJson("edubridge_tutor_registrations");
+      const tutor = registrations.find((item) => item.email?.toLowerCase() === email.toLowerCase());
+      
+      if (tutor) {
+        tutor.status = "rejected";
+        tutor.rejectReason = reason;
+        tutor.updatedAt = new Date().toISOString();
+        await this.writeJson("edubridge_tutor_registrations", registrations);
+        
+        // Mark related notification as read
+        this.markNotificationAsReadByEmail(email);
+        
+        // Log activity
+        await this.logActivity("reject_tutor", {
+          tutorEmail: email,
+          tutorName: tutor.name,
+          action: "rejected",
+          reason: reason
+        });
+        
+        await this.renderApprovals();
+        await this.loadDashboardStats();
+        alert("Đã từ chối gia sư!");
+      }
+    } catch (error) {
+      console.error("Error rejecting tutor:", error);
+      alert("Có lỗi xảy ra khi từ chối gia sư!");
     }
-
-    const tutor = tutorDoc.data();
-    await updateDoc(tutorDoc.ref, {
-      status: "rejected",
-      rejectReason: String(reason || "").trim(),
-      updatedAt: new Date().toISOString()
-    });
-
-    await this.pushNotification(
-      email,
-      "Ho so gia su cua ban chua duoc duyet. Vui long cap nhat lai thong tin va gui lai.",
-      "tutor-approval-status",
-      { status: "rejected", reason: String(reason || "").trim() }
-    );
-    await this.logActivity("reject_tutor", {
-      tutorEmail: email,
-      tutorName: tutor.name || "",
-      reason: String(reason || "").trim()
-    });
-
-    this.markNotificationAsRead(tutorDoc.id);
-    await this.loadDashboardStats();
-    await this.renderApprovals();
-    alert("Da tu choi ho so gia su.");
   }
 
   async viewTutorDetails(email) {
-    if (!email) return;
-    const registrations = await this.readJson("edubridge_tutor_registrations");
-    const tutor = registrations.find((item) => String(item.email || "").toLowerCase() === String(email).toLowerCase());
-    if (!tutor) {
-      alert("Khong tim thay thong tin gia su.");
-      return;
+    try {
+      const registrations = await this.readJson("edubridge_tutor_registrations");
+      const tutor = registrations.find((item) => item.email?.toLowerCase() === email.toLowerCase());
+      
+      if (tutor) {
+        this.showTutorDetailModal(tutor);
+      }
+    } catch (error) {
+      console.error("Error viewing tutor details:", error);
+      alert("Có lỗi xảy ra khi xem chi tiết gia sư!");
     }
-    this.showTutorDetailModal(tutor);
   }
 
-  async renderModerators() {
-    if (!this.moderatorList) return;
-    if (!this.canManageModerators) {
-      this.moderatorList.innerHTML = "";
-      return;
+  async logActivity(action, details) {
+    try {
+      if (!this.currentUser) return;
+      
+      const activityData = {
+        action: action,
+        adminId: this.currentUser.uid,
+        adminEmail: this.currentUser.email,
+        details: details,
+        timestamp: serverTimestamp()
+      };
+      
+      await addDoc(collection(db, "admin_activities"), activityData);
+    } catch (error) {
+      console.error("Error logging activity:", error);
     }
-
-    const moderators = await this.getModeratorEmails();
-    this.moderatorList.innerHTML = moderators.length
-      ? moderators.map((email) => `
-          <li class="history-item">
-            <strong>${email}</strong>
-            <div class="request-modal-actions">
-              <button type="button" class="btn btn-secondary remove-moderator-btn" data-email="${email}">Xoa quyen</button>
-            </div>
-          </li>
-        `).join("")
-      : '<li class="history-item">Chua co moderator nao.</li>';
-
-    this.moderatorList.querySelectorAll(".remove-moderator-btn").forEach((button) => {
-      button.addEventListener("click", async () => {
-        const email = String(button.getAttribute("data-email") || "").toLowerCase();
-        const next = (await this.getModeratorEmails()).filter((item) => item !== email);
-        await this.saveModeratorEmails(next);
-        await this.renderModerators();
-      });
-    });
   }
 
+  // === TUTOR MANAGEMENT ===
   async renderTutors() {
     const registrations = await this.readJson("edubridge_tutor_registrations");
     const tutors = registrations.filter((item) => item.status === "approved");
-    const keywordFilter = String(this.tutorSearchKeyword?.value || "").trim().toLowerCase();
-    const statusFilter = String(this.tutorSearchStatus?.value || "").trim().toLowerCase();
+    
+    const keywordFilter = (this.tutorSearchKeyword?.value || "").toLowerCase();
+    const statusFilter = this.tutorSearchStatus?.value || "";
 
-    const filtered = tutors.filter((item) => {
-      if (statusFilter && String(item.activeState || "available").toLowerCase() !== statusFilter) return false;
+    let filtered = tutors.filter((item) => {
+      if (statusFilter && item.activeState !== statusFilter) return false;
       if (
         keywordFilter &&
-        !String(item.name || "").toLowerCase().includes(keywordFilter) &&
-        !String(item.email || "").toLowerCase().includes(keywordFilter) &&
-        !String(item.subject || "").toLowerCase().includes(keywordFilter)
+        !item.name?.toLowerCase().includes(keywordFilter) &&
+        !item.email?.toLowerCase().includes(keywordFilter) &&
+        !item.subject?.toLowerCase().includes(keywordFilter)
       ) {
         return false;
       }
@@ -842,82 +859,128 @@ class AdminManager {
   }
 
   tutorManageCard(item) {
+<<<<<<< HEAD
     const isBusy = String(item.activeState || "available").toLowerCase() === "busy";
     const badge = isBusy
       ? '<span class="tutor-status tutor-status-busy">Dang ban</span>'
       : '<span class="tutor-status tutor-status-available">Co san</span>';
+=======
+    const status = item.activeState || "available";
+    const price = (item.price || 0).toLocaleString("vi-VN");
+    const statusBadge = status === "busy"
+      ? `<span class="tutor-status tutor-status-busy">Đang bận</span>`
+      : `<span class="tutor-status tutor-status-available">Có sẵn</span>`;
+>>>>>>> parent of 066b3bf (.)
 
     return `
       <article class="tutor-card">
         <div class="tutor-header">
-          <h3>${item.name || "Gia su"}</h3>
-          ${badge}
+          <h3>${item.name || "Gia sư"}</h3>
+          ${statusBadge}
         </div>
-        <p class="tutor-meta">${item.subject || "Chua cap nhat"} | ${item.level || "Chua cap nhat"}</p>
-        <p class="tutor-bio"><strong>Email:</strong> ${item.email || ""}</p>
-        <p class="tutor-duration"><strong>Khu vuc:</strong> ${item.location || "Chua cap nhat"}</p>
-        <p class="tutor-duration"><strong>Gia:</strong> ${Number(item.price || 0).toLocaleString("vi-VN")} VND/buoi</p>
+        <p class="tutor-meta">${item.subject || "Chưa cập nhật"} • ${item.level || "Chưa cập nhật"}</p>
+        <p class="tutor-bio"><strong>Email:</strong> ${item.email}</p>
+        <p class="tutor-duration"><strong>Khu vực:</strong> ${item.location || "Chưa cập nhật"}</p>
+        <p class="tutor-duration"><strong>Giá:</strong> ${price} VND/buổi</p>
         <div class="request-modal-actions">
           <button type="button" class="btn btn-secondary tutor-toggle-status-btn" data-email="${item.email}">
+<<<<<<< HEAD
             ${isBusy ? "Mo lai" : "Danh dau ban"}
+=======
+            ${status === "busy" ? "Mở lại" : "Đánh dấu bận"}
+>>>>>>> parent of 066b3bf (.)
           </button>
-          <button type="button" class="btn btn-secondary tutor-remove-btn" data-email="${item.email}">Xoa</button>
+          <button type="button" class="btn btn-secondary tutor-remove-btn" data-email="${item.email}">Xóa</button>
         </div>
       </article>
     `;
   }
 
   attachTutorManageListeners() {
-    document.querySelectorAll(".tutor-toggle-status-btn").forEach((button) => {
-      button.addEventListener("click", async () => this.toggleTutorStatus(button.getAttribute("data-email")));
+    const toggleButtons = document.querySelectorAll(".tutor-toggle-status-btn");
+    const removeButtons = document.querySelectorAll(".tutor-remove-btn");
+
+    toggleButtons.forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const email = btn.getAttribute("data-email");
+        await this.toggleTutorStatus(email);
+      });
     });
 
-    document.querySelectorAll(".tutor-remove-btn").forEach((button) => {
-      button.addEventListener("click", async () => {
-        const email = button.getAttribute("data-email");
-        if (!email) return;
-        if (!confirm("Ban chac chan muon xoa gia su nay?")) return;
-        await this.removeTutor(email);
+    removeButtons.forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const email = btn.getAttribute("data-email");
+        if (confirm("Bạn chắc chắn muốn xóa gia sư này?")) {
+          await this.removeTutor(email);
+        }
       });
     });
   }
 
   async toggleTutorStatus(email) {
-    const tutorDoc = await this.findTutorDocumentByEmail(email);
-    if (!tutorDoc) return;
-    const current = String(tutorDoc.data().activeState || "available").toLowerCase();
-    await updateDoc(tutorDoc.ref, {
-      activeState: current === "busy" ? "available" : "busy",
-      updatedAt: new Date().toISOString()
+    const registrations = await this.readJson("edubridge_tutor_registrations");
+    registrations.forEach((item) => {
+      if (item.email?.toLowerCase() === email.toLowerCase()) {
+        item.activeState = item.activeState === "busy" ? "available" : "busy";
+      }
     });
+    await this.writeJson("edubridge_tutor_registrations", registrations);
     await this.renderTutors();
   }
 
   async removeTutor(email) {
-    const tutorDoc = await this.findTutorDocumentByEmail(email);
-    if (!tutorDoc) {
-      alert("Khong tim thay gia su.");
-      return;
-    }
+    try {
+      // 1. Phải có await ở đây
+      const rawData = await this.readJson("edubridge_tutor_registrations");
+      
+      // 2. ÉP KIỂU DỮ LIỆU (Sửa lỗi registrations.filter is not a function)
+      let registrations = [];
+      if (Array.isArray(rawData)) {
+        registrations = rawData;
+      } else if (rawData && typeof rawData === 'object') {
+        // Nếu nó là object bọc mảng (ví dụ { value: [...] }) hoặc object các bản ghi
+        registrations = rawData.value || Object.values(rawData);
+      }
 
-    await deleteDoc(tutorDoc.ref);
-    await this.logActivity("remove_tutor", { tutorEmail: email });
-    await this.loadDashboardStats();
-    await this.renderTutors();
-    await this.renderApprovals();
-    alert("Da xoa gia su.");
+      // Kiểm tra lại lần nữa, nếu vẫn không phải mảng thì báo lỗi rõ ràng
+      if (!Array.isArray(registrations)) {
+        console.error("Dữ liệu trả về không thể chuyển sang mảng:", rawData);
+        throw new Error("Cấu trúc dữ liệu không hợp lệ");
+      }
+
+      // 3. Thực hiện lọc (Dòng 916 của bạn)
+      const filtered = registrations.filter(
+        (item) => item && item.email && item.email.toLowerCase() !== email.toLowerCase()
+      );
+
+      // 4. Ghi lại dữ liệu
+      await this.writeJson("edubridge_tutor_registrations", filtered);
+
+      // 5. Cập nhật giao diện
+      alert("Đã xóa gia sư thành công!");
+      await this.renderTutors();
+      await this.loadDashboardStats();
+
+    } catch (error) {
+      console.error("Lỗi chi tiết tại removeTutor:", error);
+      alert("Không thể xóa: " + error.message);
+    }
   }
 
+  // === STUDENT MANAGEMENT ===
   async renderStudents() {
-    const students = await this.readJson("edubridge_students");
-    const keywordFilter = String(this.studentSearchKeyword?.value || "").trim().toLowerCase();
+    const students = await this.readJson("edubridge_students") || [];
+    const keywordFilter = (this.studentSearchKeyword?.value || "").toLowerCase();
 
-    const filtered = students.filter((item) => {
-      if (!keywordFilter) return true;
-      return (
-        String(item.name || "").toLowerCase().includes(keywordFilter) ||
-        String(item.email || "").toLowerCase().includes(keywordFilter)
-      );
+    let filtered = students.filter((item) => {
+      if (
+        keywordFilter &&
+        !item.name?.toLowerCase().includes(keywordFilter) &&
+        !item.email?.toLowerCase().includes(keywordFilter)
+      ) {
+        return false;
+      }
+      return true;
     });
 
     this.studentManageList.innerHTML = filtered.map((item) => this.studentCard(item)).join("");
@@ -925,36 +988,36 @@ class AdminManager {
   }
 
   studentCard(item) {
-    const assignedCount = Array.isArray(item.assignedTutors) ? item.assignedTutors.length : 0;
+    const joinedAt = item.joinedAt ? new Date(item.joinedAt).toLocaleDateString("vi-VN") : "Chưa cập nhật";
     return `
       <article class="tutor-card">
-        <h3>${item.name || "Hoc vien"}</h3>
-        <p class="tutor-meta">${item.email || ""}</p>
-        <p class="tutor-duration"><strong>Tham gia:</strong> ${this.formatDateTime(item.joinedAt)}</p>
-        <p class="tutor-duration"><strong>Trang thai:</strong> ${item.status || "active"}</p>
-        <p class="tutor-duration"><strong>Gia su da ket noi:</strong> ${assignedCount}</p>
+        <h3>${item.name || "Học viên"}</h3>
+        <p class="tutor-meta">${item.email}</p>
+        <p class="tutor-duration"><strong>Tham gia:</strong> ${joinedAt}</p>
+        <p class="tutor-duration"><strong>Trạng thái:</strong> ${item.status || "active"}</p>
       </article>
     `;
   }
 
+  // === REQUEST MANAGEMENT ===
   async renderRequests() {
-    const requests = await this.readJson("edubridge_requests");
-    const statusFilter = String(this.requestSearchStatus?.value || "").trim();
-    const keywordFilter = String(this.requestSearchKeyword?.value || "").trim().toLowerCase();
+    const requests = await this.readJson("edubridge_requests") || [];
+    const statusFilter = this.requestSearchStatus?.value || "";
+    const keywordFilter = (this.requestSearchKeyword?.value || "").toLowerCase();
 
-    const filtered = requests.filter((item) => {
+    let filtered = requests.filter((item) => {
       if (statusFilter && item.status !== statusFilter) return false;
       if (
         keywordFilter &&
-        !String(item.tutorName || "").toLowerCase().includes(keywordFilter) &&
-        !String(item.studentName || "").toLowerCase().includes(keywordFilter) &&
-        !String(item.tutorEmail || "").toLowerCase().includes(keywordFilter) &&
-        !String(item.studentEmail || "").toLowerCase().includes(keywordFilter)
+        !item.tutorName?.toLowerCase().includes(keywordFilter) &&
+        !item.studentName?.toLowerCase().includes(keywordFilter) &&
+        !item.tutorEmail?.toLowerCase().includes(keywordFilter) &&
+        !item.studentEmail?.toLowerCase().includes(keywordFilter)
       ) {
         return false;
       }
       return true;
-    }).sort((a, b) => this.getComparableDate(b.createdAt) - this.getComparableDate(a.createdAt));
+    });
 
     this.requestManageList.innerHTML = filtered.map((item) => this.requestCard(item)).join("");
     this.requestManageEmpty.hidden = filtered.length !== 0;
@@ -963,129 +1026,138 @@ class AdminManager {
 
   requestCard(item) {
     const statusLabel = this.getRequestStatusLabel(item.status);
+    const pricePerSession = (item.pricePerSession || 0).toLocaleString("vi-VN");
     const buttons = item.status === "waiting_tutor"
-      ? `
-          <button type="button" class="btn btn-primary request-approve-btn" data-id="${item.id}">Duyet thu cong</button>
-          <button type="button" class="btn btn-secondary request-reject-btn" data-id="${item.id}">Tu choi</button>
-          <button type="button" class="btn btn-secondary request-delete-btn" data-id="${item.id}">Xoa</button>
-        `
-      : '<button type="button" class="btn btn-secondary request-delete-btn" data-id="' + item.id + '">Xoa</button>';
+      ? `<button type="button" class="btn btn-primary request-approve-btn" data-id="${item.id}">Duyệt</button>
+         <button type="button" class="btn btn-secondary request-reject-btn" data-id="${item.id}">Từ chối</button>`
+      : `<button type="button" class="btn btn-secondary request-delete-btn" data-id="${item.id}">Xóa</button>`;
 
     return `
       <article class="tutor-card">
         <div class="tutor-header">
-          <h3>Yeu cau tu ${item.studentName || "Hoc vien"}</h3>
+          <h3>Yêu cầu từ ${item.studentName || "Học viên"}</h3>
           <span class="tutor-status tutor-status-available">${statusLabel}</span>
         </div>
-        <p class="tutor-meta"><strong>Gia su:</strong> ${item.tutorName || "Chua cap nhat"}</p>
-        <p class="tutor-bio"><strong>Hoc vien:</strong> ${item.studentEmail || ""}</p>
-        <p class="tutor-duration"><strong>Mon:</strong> ${item.subject || ""}</p>
-        <p class="tutor-duration"><strong>Gia/buoi:</strong> ${Number(item.pricePerSession || 0).toLocaleString("vi-VN")} VND</p>
-        <p class="tutor-duration"><strong>Ghi chu:</strong> ${item.note || "(khong co)"}</p>
-        <p class="tutor-duration"><small>Tao luc: ${this.formatDateTime(item.createdAt)}</small></p>
+        <p class="tutor-meta"><strong>Gia sư:</strong> ${item.tutorName || "Chưa cập nhật"}</p>
+        <p class="tutor-bio"><strong>Học viên:</strong> ${item.studentEmail}</p>
+        <p class="tutor-duration"><strong>Môn:</strong> ${item.subject}</p>
+        <p class="tutor-duration"><strong>Giá/buổi:</strong> ${pricePerSession} VND • ${item.sessionHours} giờ</p>
+        <p class="tutor-duration"><strong>Ghi chú:</strong> ${item.note || "(không có)"}</p>
+        <p class="tutor-duration"><small>Gửi lúc: ${new Date(item.createdAt).toLocaleString("vi-VN")}</small></p>
         <div class="request-modal-actions">${buttons}</div>
       </article>
     `;
   }
 
   getRequestStatusLabel(status) {
-    if (status === "waiting_tutor") return "Cho gia su phan hoi";
-    if (status === "accepted_waiting_funds") return "Cho nop tien";
-    if (status === "in_teaching") return "Dang hoc";
-    if (status === "completed") return "Hoan thanh";
-    if (status === "declined") return "Tu choi";
-    if (status === "expired") return "Het han";
-    if (status === "refunded") return "Da hoan tien";
-    return status || "Khong ro";
+    if (status === "approved") return "Đã duyệt";
+    if (status === "rejected") return "Từ chối";
+    return "Chờ trả lời";
   }
 
   attachRequestListeners() {
-    document.querySelectorAll(".request-approve-btn").forEach((button) => {
-      button.addEventListener("click", async () => {
-        await this.approveRequest(button.getAttribute("data-id"));
+    const approveButtons = document.querySelectorAll(".request-approve-btn");
+    const rejectButtons = document.querySelectorAll(".request-reject-btn");
+    const deleteButtons = document.querySelectorAll(".request-delete-btn");
+
+    approveButtons.forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const id = Number(btn.getAttribute("data-id"));
+        await this.approveRequest(id);
       });
     });
 
-    document.querySelectorAll(".request-reject-btn").forEach((button) => {
-      button.addEventListener("click", async () => {
-        await this.rejectRequest(button.getAttribute("data-id"));
+    rejectButtons.forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const id = Number(btn.getAttribute("data-id"));
+        await this.rejectRequest(id);
       });
     });
 
-    document.querySelectorAll(".request-delete-btn").forEach((button) => {
-      button.addEventListener("click", async () => {
-        const id = button.getAttribute("data-id");
-        if (!confirm("Ban chac chan muon xoa yeu cau nay?")) return;
-        await this.deleteRequest(id);
+    deleteButtons.forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const id = Number(btn.getAttribute("data-id"));
+        if (confirm("Bạn chắc chắn muốn xóa yêu cầu này?")) {
+          await this.deleteRequest(id);
+        }
       });
     });
-  }
-
-  async updateRequestStatus(requestId, updater) {
-    const requestRef = doc(db, "requests", String(requestId));
-    const requestSnap = await getDoc(requestRef);
-    if (!requestSnap.exists()) return null;
-    const current = { id: requestSnap.id, ...requestSnap.data() };
-    const next = updater(current);
-    await setDoc(requestRef, next);
-    return next;
   }
 
   async approveRequest(requestId) {
-    const next = await this.updateRequestStatus(requestId, (request) => ({
-      ...request,
-      status: "accepted_waiting_funds",
-      adminReviewedAt: new Date().toISOString()
-    }));
-    if (!next) return;
-
-    await this.pushNotification(
-      next.studentEmail,
-      `Yeu cau ket noi voi gia su ${next.tutorName || ""} da duoc admin duyet.`,
-      "matching-status",
-      { requestId: next.id, status: "accepted_waiting_funds" }
-    );
-    await this.pushNotification(
-      next.tutorEmail,
-      `Admin da duyet yeu cau hoc tu ${next.studentName || ""}.`,
-      "matching-status",
-      { requestId: next.id, status: "accepted_waiting_funds" }
-    );
-
-    await this.loadDashboardStats();
-    await this.renderRequests();
-    alert("Da duyet yeu cau ket noi.");
+    const requests = await this.readJson("edubridge_requests") || [];
+    const request = requests.find((item) => item.id === requestId);
+    
+    if (request) {
+      // Add tutor to tutor registrations with approved status
+      const registrations = await this.readJson("edubridge_tutor_registrations") || [];
+      
+      // Check if tutor already exists
+      const existingTutor = registrations.find((r) => r.email?.toLowerCase() === request.tutorEmail?.toLowerCase());
+      if (!existingTutor) {
+        registrations.push({
+          id: Date.now(),
+          email: request.tutorEmail,
+          name: request.tutorName,
+          subject: request.subject,
+          level: "Chưa cập nhật",
+          experience: "Gia sư được kết nối qua yêu cầu học viên",
+          location: "Chưa cập nhật",
+          availableTime: "Chưa cập nhật",
+          price: request.pricePerSession || 250000,
+          sessionHours: request.sessionHours || 2,
+          gender: "female",
+          rating: 4,
+          activeState: "available",
+          status: "approved",
+          rejectReason: "",
+          submittedAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        });
+        await this.writeJson("edubridge_tutor_registrations", registrations);
+      }
+      
+      // Add tutor to student's profile
+      const students = await this.readJson("edubridge_students") || [];
+      const student = students.find((s) => s.email?.toLowerCase() === request.studentEmail?.toLowerCase());
+      if (student) {
+        student.assignedTutors = student.assignedTutors || [];
+        if (!student.assignedTutors.find((t) => t.email?.toLowerCase() === request.tutorEmail?.toLowerCase())) {
+          student.assignedTutors.push({
+            name: request.tutorName,
+            email: request.tutorEmail,
+            subject: request.subject,
+            connectedAt: new Date().toISOString()
+          });
+        }
+        await this.writeJson("edubridge_students", students);
+      }
+      
+      // DELETE the request
+      const filtered = requests.filter((item) => item.id !== requestId);
+      await this.writeJson("edubridge_requests", filtered);
+      
+      await this.renderRequests();
+      await this.renderTutors();
+      alert("Đã duyệt yêu cầu! Gia sư được thêm vào danh sách quản lý.");
+    }
   }
 
   async rejectRequest(requestId) {
-    const next = await this.updateRequestStatus(requestId, (request) => ({
-      ...request,
-      status: "declined",
-      adminReviewedAt: new Date().toISOString()
-    }));
-    if (!next) return;
-
-    await this.pushNotification(
-      next.studentEmail,
-      `Yeu cau ket noi voi gia su ${next.tutorName || ""} da bi tu choi.`,
-      "matching-status",
-      { requestId: next.id, status: "declined" }
-    );
-    await this.pushNotification(
-      next.tutorEmail,
-      `Yeu cau hoc tu ${next.studentName || ""} da bi admin tu choi.`,
-      "matching-status",
-      { requestId: next.id, status: "declined" }
-    );
-
+    const requests = await this.readJson("edubridge_requests") || [];
+    // DELETE the request immediately when rejected
+    const filtered = requests.filter((item) => item.id !== requestId);
+    await this.writeJson("edubridge_requests", filtered);
     await this.renderRequests();
-    alert("Da tu choi yeu cau ket noi.");
+    alert("Đã từ chối yêu cầu!");
   }
 
   async deleteRequest(requestId) {
-    await deleteDoc(doc(db, "requests", String(requestId)));
-    await this.loadDashboardStats();
+    const requests = await this.readJson("edubridge_requests") || [];
+    const filtered = requests.filter((item) => item.id !== requestId);
+    await this.writeJson("edubridge_requests", filtered);
     await this.renderRequests();
+<<<<<<< HEAD
   }
 
   async renderWithdrawals() {
@@ -1265,9 +1337,13 @@ class AdminManager {
 
     await this.renderDisputes();
     alert("Da dong tranh chap.");
+=======
+    alert("Đã xóa yêu cầu!");
+>>>>>>> parent of 066b3bf (.)
   }
 }
 
+// Initialize when DOM is ready
 document.addEventListener("DOMContentLoaded", () => {
   new AdminManager();
 });
