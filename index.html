@@ -3,219 +3,539 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="description" content="Nền tảng trung gian kết nối gia sư và học viên — an toàn, minh bạch, hiệu quả." />
+  <meta name="description" content="EduBridge — Nền tảng kết nối gia sư & học viên an toàn, minh bạch, hiệu quả." />
   <title>EduBridge — Kết nối gia sư & học viên</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Be+Vietnam+Pro:wght@300;400;500;600;700&display=swap&subset=vietnamese" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <header class="site-header">
-    <div class="wrap header-inner">
-      <a class="logo" href="#">EduBridge</a>
-      <nav class="nav">
-        <a href="#cach-hoat-dong">Cách hoạt động</a>
-        <a href="#phan-he">Phân hệ</a>
-        <a href="#thanh-toan">Thanh toán</a>
-        <a href="#loi-ich">Lợi ích</a>
-        <a id="nav-auth-link" href="dang-nhap.html">Đăng nhập</a>
-      </nav>
+
+<!-- ═══════════════════════ HEADER ═══════════════════════════ -->
+<header class="site-header" id="site-header">
+  <div class="wrap header-inner">
+    <a class="logo" href="#">
+      <span class="logo-mark">
+        <svg viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M9 2L16 6v6L9 16 2 12V6L9 2z" stroke="white" stroke-width="1.5" stroke-linejoin="round"/>
+          <path d="M6 9.5L8.5 12 13 7" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </span>
+      EduBridge
+    </a>
+
+    <nav class="nav">
+      <a href="#cach-hoat-dong">Cách hoạt động</a>
+      <a href="#gia-su">Gia sư</a>
+      <a href="#phan-he">Tính năng</a>
+      <a href="#thanh-toan">Thanh toán</a>
+    </nav>
+
+    <div class="header-actions">
+      <a id="nav-auth-link" href="dang-nhap.html" class="btn btn-ghost btn-sm">Đăng nhập</a>
+      <a href="dang-ky.html" class="btn btn-primary btn-sm">Bắt đầu miễn phí</a>
     </div>
-  </header>
+  </div>
+</header>
 
-  <main>
-    <section class="hero">
-      <div class="wrap hero-grid">
-        <div class="hero-copy">
-          <p class="eyebrow">Nền tảng trung gian</p>
-          <h1>Kết nối gia sư và học viên <span class="accent">đúng nhu cầu</span></h1>
-          <p class="lead">
-            Chúng tôi đứng giữa để lắng nghe, ghép đôi và hỗ trợ quy trình — giúp học viên tìm được người dạy phù hợp,
-            gia sư tiếp cận học viên nghiêm túc, minh bạch về lịch học và cam kết chất lượng.
-          </p>
-          <div class="hero-actions">
-            <a class="btn btn-primary" href="#dang-ky-gia-su">Tôi là gia sư</a>
-            <a class="btn btn-secondary" href="#dang-ky-hoc-vien">Tôi là học viên</a>
-          </div>
-          <ul class="trust-row">
-            <li>Ghép đôi có tư vấn</li>
-            <li>Lịch linh hoạt</li>
-            <li>Hỗ trợ trung gian</li>
-          </ul>
-        </div>
-        <div class="hero-card" aria-hidden="true">
-          <div class="flow-diagram">
-            <span class="node node-a">Học viên</span>
-            <span class="arrow">↔</span>
-            <span class="node node-hub">EduBridge</span>
-            <span class="arrow">↔</span>
-            <span class="node node-b">Gia sư</span>
-          </div>
-          <p class="hero-card-note">Một điểm liên lạc — nhiều lựa chọn phù hợp trình độ & mục tiêu.</p>
-        </div>
+<!-- ═══════════════════════ HERO ═════════════════════════════ -->
+<section class="hero">
+  <div class="wrap hero-grid">
+
+    <!-- Left copy -->
+    <div class="hero-copy">
+      <span class="eyebrow">Nền tảng trung gian giáo dục</span>
+
+      <h1>Tìm gia sư <em>phù hợp</em><br>trong vài phút</h1>
+
+      <p class="hero-sub">
+        Chúng tôi ghép đôi học viên với gia sư đã được kiểm duyệt — 
+        minh bạch về lịch học, học phí, và cam kết chất lượng.
+      </p>
+
+      <!-- Search bar -->
+      <div class="hero-search">
+        <svg class="hero-search-icon" viewBox="0 0 20 20" fill="none">
+          <circle cx="9" cy="9" r="6" stroke="currentColor" stroke-width="1.8"/>
+          <path d="M14 14l3 3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
+        <input type="text" placeholder="Tìm theo môn học, khu vực..." id="hero-search-input" />
+        <a href="tim-gia-su.html" class="btn btn-primary btn-sm">Tìm gia sư</a>
       </div>
-    </section>
 
-    <section id="dang-ky-gia-su" class="split-section">
-      <div class="wrap split-grid">
-        <article class="panel panel-tutor">
-          <h2>Dành cho gia sư</h2>
-          <p>Bạn muốn mở rộng lớp dạy, có học viên đúng trình độ và thời gian phù hợp? Để lại thông tin chuyên môn và khung giờ rảnh — chúng tôi kết nối khi có nhu cầu khớp.</p>
-          <ul>
-            <li>Hồ sơ được lọc theo môn & cấp độ</li>
-            <li>Thông báo khi có học viên phù hợp</li>
-            <li>Hỗ trợ thống nhất lịch & mức học phí</li>
-          </ul>
-          <a class="btn btn-primary btn-block" href="dang-ky-gia-su.html">Đăng ký làm gia sư</a>
-        </article>
-        <article id="dang-ky-hoc-vien" class="panel panel-student">
-          <h2>Dành cho học viên</h2>
-          <p>Bạn cần ôn thi, nâng band, hay học dài hạn? Mô tả mục tiêu và thời gian — chúng tôi giới thiệu gia sư đã được sàng lọc theo tiêu chí bạn đưa ra.</p>
-          <ul>
-            <li>Tư vấn nhu cầu trước khi ghép</li>
-            <li>Ưu tiên gia sư có kinh nghiệm tương ứng</li>
-            <li>Theo dõi buổi đầu & phản hồi</li>
-          </ul>
-          <a class="btn btn-secondary btn-block" href="tim-gia-su.html">Tìm gia sư</a>
-        </article>
-      </div>
-    </section>
-
-    <section id="cach-hoat-dong" class="steps-section">
-      <div class="wrap">
-        <h2 class="section-title">Cách hoạt động</h2>
-        <p class="section-intro">Từ đăng yêu cầu đến bắt đầu học và giải ngân học phí theo mô hình trung gian an toàn.</p>
-        <ol class="steps">
-          <li>
-            <span class="step-num">1</span>
-            <strong>Tạo hồ sơ</strong>
-            <span>Gia sư hoàn thiện KYC/chuyên môn, phụ huynh đăng nhu cầu học chi tiết.</span>
-          </li>
-          <li>
-            <span class="step-num">2</span>
-            <strong>Ghép đôi & phản hồi</strong>
-            <span>Phụ huynh gửi yêu cầu kết nối, gia sư chấp nhận/từ chối trong 24 giờ.</span>
-          </li>
-          <li>
-            <span class="step-num">3</span>
-            <strong>Khóa tiền trung gian</strong>
-            <span>Sau khi gia sư nhận lớp, phụ huynh nạp tháng đầu + phí dịch vụ vào ví hệ thống.</span>
-          </li>
-          <li>
-            <span class="step-num">4</span>
-            <strong>Dạy thử/Dạy thật</strong>
-            <span>Hai bên được mở khóa liên hệ và triển khai lớp theo lịch đã thống nhất.</span>
-          </li>
-          <li>
-            <span class="step-num">5</span>
-            <strong>Giải ngân tự động</strong>
-            <span>Hết giai đoạn cam kết, hệ thống tự chia 30% cho Admin và 70% cho Gia sư.</span>
-          </li>
-        </ol>
-      </div>
-    </section>
-
-    <section id="phan-he" class="modules-section">
-      <div class="wrap">
-        <h2 class="section-title">Yêu cầu theo từng phân hệ</h2>
-        <p class="section-intro">Bản tóm tắt các chức năng cốt lõi theo tài liệu đã gộp.</p>
-        <div class="modules-grid">
-          <article class="module-card">
-            <h3>Phân hệ Gia sư</h3>
-            <ul>
-              <li>Quản lý hồ sơ KYC: thông tin cá nhân, bằng cấp/thẻ sinh viên, chứng chỉ.</li>
-              <li>Thiết lập chuyên môn: môn dạy, cấp độ, mức học phí theo giờ/tháng.</li>
-              <li>Cài đặt lịch rảnh trong tuần để tăng tỉ lệ ghép lớp.</li>
-              <li>Trạng thái kiểm duyệt: PENDING, APPROVED, REJECTED (kèm lý do chỉnh sửa).</li>
-              <li>Trạng thái hoạt động: AVAILABLE/BUSY để hiển thị hoặc tạm ẩn trên marketplace.</li>
-            </ul>
-          </article>
-          <article class="module-card">
-            <h3>Phân hệ Phụ huynh/Học sinh</h3>
-            <ul>
-              <li>Quản lý hồ sơ liên hệ và khu vực học (Quận/Huyện).</li>
-              <li>Đăng yêu cầu tìm gia sư (môn, mục tiêu, mức giá, yêu cầu đặc biệt).</li>
-              <li>Lọc gia sư theo môn, khoảng giá, khu vực, giới tính và đánh giá.</li>
-              <li>Theo dõi trạng thái ghép đôi: chờ phản hồi → chờ nạp tiền → đang học → hoàn thành.</li>
-              <li>Mở khóa đánh giá 1-5 sao và nhận xét sau thời gian học.</li>
-            </ul>
-          </article>
-          <article class="module-card">
-            <h3>Phân hệ Admin</h3>
-            <ul>
-              <li>Duyệt/từ chối hồ sơ gia sư và quản lý tài khoản vi phạm.</li>
-              <li>Cấu hình phí hoa hồng: mặc định 30% tháng đầu và phí cố định phụ huynh.</li>
-              <li>Duyệt danh sách rút tiền từ ví hệ thống về ngân hàng của gia sư.</li>
-              <li>Can thiệp tranh chấp, hỗ trợ hoàn tiền khi phát sinh report.</li>
-              <li>Giám sát toàn bộ dòng tiền và log giao dịch nền tảng.</li>
-            </ul>
-          </article>
-        </div>
-      </div>
-    </section>
-
-    <section class="status-section">
-      <div class="wrap">
-        <h2 class="section-title">Luồng trạng thái ghép đôi</h2>
-        <p class="section-intro">Minh bạch tiến trình từ lúc gửi yêu cầu đến khi hoàn thành lớp học.</p>
-        <div class="status-track">
-          <span class="status-chip">Đang chờ gia sư phản hồi</span>
-          <span class="status-chip">Đã chấp nhận</span>
-          <span class="status-chip">Chờ nạp tiền</span>
-          <span class="status-chip">Đang học</span>
-          <span class="status-chip">Hoàn thành</span>
-        </div>
-      </div>
-    </section>
-
-    <section id="thanh-toan" class="escrow-section">
-      <div class="wrap">
-        <h2 class="section-title">Cơ chế thanh toán trung gian (Escrow)</h2>
-        <p class="section-intro">Bảo vệ quyền lợi 3 bên: Phụ huynh, Gia sư và EduBridge.</p>
-        <div class="escrow-grid">
-          <article class="escrow-card">
-            <h3>Bước 1: Khóa tiền</h3>
-            <p>Phụ huynh nạp tiền tháng đầu + phí dịch vụ sau khi gia sư bấm chấp nhận. Số tiền được giữ trong ví hệ thống.</p>
-          </article>
-          <article class="escrow-card">
-            <h3>Bước 2: Bàn giao</h3>
-            <p>Hệ thống mở khóa liên hệ để hai bên dạy thử/dạy thật. Admin sẵn sàng can thiệp nếu phát sinh tranh chấp.</p>
-          </article>
-          <article class="escrow-card">
-            <h3>Bước 3: Giải ngân</h3>
-            <p>Sau giai đoạn cam kết, hệ thống tự động chia tiền: 30% vào ví doanh thu Admin và 70% vào ví Gia sư để rút ngân hàng.</p>
-          </article>
-        </div>
-      </div>
-    </section>
-
-    <section id="loi-ich" class="benefits">
-      <div class="wrap benefits-grid">
-        <div class="benefit">
-          <h3>Minh bạch</h3>
-          <p>Thông tin nhu cầu và cam kết được truyền đạt rõ giữa gia sư và học viên trước khi bắt đầu.</p>
-        </div>
-        <div class="benefit">
-          <h3>Tiết kiệm thời gian</h3>
-          <p>Không phải lướt hàng loạt tin không đúng trình độ — bên trung gian lọc & đề xuất.</p>
-        </div>
-        <div class="benefit">
-          <h3>An toàn giao tiếp</h3>
-          <p>Điểm liên lạc thống nhất; hạn chế rủi ro khi làm quen trực tuyến.</p>
-        </div>
-      </div>
-    </section>
-
-  </main>
-
-  <footer class="site-footer">
-    <div class="wrap footer-inner">
-      <span class="logo">EduBridge</span>
-      <p>© 2026 — Trang demo kết nối gia sư & học viên.</p>
+      <!-- Trust signals -->
+      <ul class="hero-trust">
+        <li>Gia sư đã kiểm duyệt</li>
+        <li>Thanh toán an toàn</li>
+        <li>Hỗ trợ 24/7</li>
+      </ul>
     </div>
-  </footer>
-  <script type="module" src="auth-nav.js?v=1"></script>
 
+    <!-- Right visual -->
+    <div class="hero-panel">
+      <div style="position:relative; padding: 1rem 0;">
+        <!-- Floating stats -->
+        <div class="hero-stat-float stat-1">
+          <span class="stat-icon">⭐</span>
+          <div>
+            <div style="font-size:13px;font-weight:800;color:var(--ink-100)">4.9/5</div>
+            <div style="font-size:11px;color:var(--ink-40);font-weight:400">Đánh giá TB</div>
+          </div>
+        </div>
+
+        <div class="hero-card-main">
+          <!-- Mini tutor showcase -->
+          <div style="display:flex;flex-direction:column;gap:12px;">
+
+            <div style="display:flex;align-items:center;justify-content:space-between;padding-bottom:14px;border-bottom:1px solid var(--border)">
+              <span style="font-family:var(--font-display);font-size:1.1rem;color:var(--ink-100);letter-spacing:-0.01em">Gia sư nổi bật</span>
+              <a href="tim-gia-su.html" style="font-size:12px;font-weight:600;color:var(--brand)">Xem tất cả →</a>
+            </div>
+
+            <!-- Tutor mini row -->
+            <div class="hero-tutor-row" style="display:flex;align-items:center;gap:12px;padding:10px;background:var(--page-bg);border-radius:12px;border:1px solid var(--border)">
+              <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#d1fae5,#a7f3d0);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">👩‍🏫</div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:14px;font-weight:700;color:var(--ink-100)">Nguyễn Thị Hoa</div>
+                <div style="font-size:12px;color:var(--ink-40)">Toán THPT • TP.HCM</div>
+              </div>
+              <div style="text-align:right;flex-shrink:0">
+                <div style="font-size:13px;font-weight:700;color:var(--brand)">250k/buổi</div>
+                <div style="font-size:11px;color:#f59e0b">★★★★★</div>
+              </div>
+            </div>
+
+            <div class="hero-tutor-row" style="display:flex;align-items:center;gap:12px;padding:10px;background:var(--page-bg);border-radius:12px;border:1px solid var(--border)">
+              <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#dbeafe,#bfdbfe);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">👨‍💻</div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:14px;font-weight:700;color:var(--ink-100)">Trần Minh Khoa</div>
+                <div style="font-size:12px;color:var(--ink-40)">Tiếng Anh IELTS • Hà Nội</div>
+              </div>
+              <div style="text-align:right;flex-shrink:0">
+                <div style="font-size:13px;font-weight:700;color:var(--brand)">300k/buổi</div>
+                <div style="font-size:11px;color:#f59e0b">★★★★★</div>
+              </div>
+            </div>
+
+            <div class="hero-tutor-row" style="display:flex;align-items:center;gap:12px;padding:10px;background:var(--page-bg);border-radius:12px;border:1px solid var(--border)">
+              <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#fef3c7,#fde68a);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">👩‍🔬</div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:14px;font-weight:700;color:var(--ink-100)">Lê Thị Mai</div>
+                <div style="font-size:12px;color:var(--ink-40)">Hóa học • Online</div>
+              </div>
+              <div style="text-align:right;flex-shrink:0">
+                <div style="font-size:13px;font-weight:700;color:var(--brand)">220k/buổi</div>
+                <div style="font-size:11px;color:#f59e0b">★★★★☆</div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Floating stat 2 -->
+        <div class="hero-stat-float stat-2">
+          <span class="stat-icon">🎓</span>
+          <div>
+            <div style="font-size:13px;font-weight:800;color:var(--ink-100)">1,200+</div>
+            <div style="font-size:11px;color:var(--ink-40);font-weight:400">Gia sư đã duyệt</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════ STATS STRIP ══════════════════════ -->
+<div class="stats-strip">
+  <div class="wrap">
+    <div class="stats-grid">
+      <div class="stat-item">
+        <div class="stat-number">1,<span>200</span>+</div>
+        <div class="stat-label">Gia sư đã kiểm duyệt</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number"><span>8,</span>500+</div>
+        <div class="stat-label">Học viên đã kết nối</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number">4.<span>9</span>/5</div>
+        <div class="stat-label">Điểm đánh giá trung bình</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number"><span>98</span>%</div>
+        <div class="stat-label">Hài lòng sau buổi đầu</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════ HOW IT WORKS ═════════════════════ -->
+<section id="cach-hoat-dong" class="how-section">
+  <div class="wrap">
+    <div class="section-header">
+      <span class="eyebrow">Đơn giản & Minh bạch</span>
+      <h2 class="t-section">Chỉ 3 bước để bắt đầu học</h2>
+      <p>Từ lúc đăng ký đến khi ngồi học — toàn bộ quy trình được thiết kế để tiết kiệm thời gian của bạn.</p>
+    </div>
+
+    <ol class="steps-grid">
+      <li class="step-card">
+        <div class="step-number">1</div>
+        <h3>Mô tả nhu cầu</h3>
+        <p>Cho chúng tôi biết môn học, cấp độ, mục tiêu và ngân sách. Chỉ mất 2 phút.</p>
+      </li>
+      <li class="step-card">
+        <div class="step-number">2</div>
+        <h3>Nhận đề xuất gia sư</h3>
+        <p>Hệ thống gợi ý những gia sư phù hợp nhất. Xem hồ sơ, đánh giá và chọn người bạn thích.</p>
+      </li>
+      <li class="step-card">
+        <div class="step-number">3</div>
+        <h3>Học & Thanh toán an toàn</h3>
+        <p>Tiền được giữ trong escrow, chỉ giải ngân sau khi bạn xác nhận hài lòng.</p>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<!-- ═══════════════════════ SPLIT PANELS ═════════════════════ -->
+<section id="dang-ky-gia-su" class="split-section" style="background:var(--page-bg);">
+  <div class="wrap">
+    <div class="split-grid">
+      <article class="panel panel-tutor">
+        <span class="eyebrow">Dành cho gia sư</span>
+        <h2>Tiếp cận học viên nghiêm túc</h2>
+        <p>Xây dựng hồ sơ chuyên nghiệp, nhận thông báo khi có học viên phù hợp và quản lý lịch dạy dễ dàng.</p>
+        <ul>
+          <li>Hồ sơ được kiểm duyệt & hiển thị ưu tiên</li>
+          <li>Thông báo ngay khi có yêu cầu phù hợp</li>
+          <li>Thanh toán nhanh — rút tiền về ngân hàng</li>
+          <li>Bảo vệ quyền lợi qua hệ thống tranh chấp</li>
+        </ul>
+        <a class="btn btn-primary" href="dang-ky-gia-su.html">Đăng ký làm gia sư →</a>
+      </article>
+
+      <article id="dang-ky-hoc-vien" class="panel panel-student">
+        <span class="eyebrow">Dành cho học viên</span>
+        <h2>Tìm được đúng người dạy</h2>
+        <p>Lọc theo môn, giá, khu vực và thời gian rảnh. Học thử trước khi cam kết lâu dài.</p>
+        <ul>
+          <li>Tư vấn nhu cầu & ghép đôi thông minh</li>
+          <li>Xem hồ sơ, đánh giá thực của học viên khác</li>
+          <li>Thanh toán an toàn — hoàn tiền nếu không hài lòng</li>
+          <li>Theo dõi tiến độ và lịch sử buổi học</li>
+        </ul>
+        <a class="btn btn-secondary" href="tim-gia-su.html">Tìm gia sư ngay →</a>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════ FEATURED TUTORS ══════════════════ -->
+<section id="gia-su" class="tutors-section">
+  <div class="wrap">
+    <div class="section-header">
+      <span class="eyebrow">Đội ngũ gia sư</span>
+      <h2 class="t-section">Gia sư nổi bật tuần này</h2>
+      <p>Tất cả gia sư đều được kiểm duyệt hồ sơ, bằng cấp và nhận xét từ học viên thực.</p>
+    </div>
+
+    <div class="tutor-grid" id="featured-tutor-grid">
+      <!-- Card 1 -->
+      <article class="tutor-card">
+        <div class="tutor-card-banner" style="background:linear-gradient(135deg,#d1fae5,#a7f3d0)"></div>
+        <div class="tutor-card-body">
+          <div class="tutor-avatar" style="background:linear-gradient(135deg,#6ee7b7,#34d399)">NH</div>
+          <div class="tutor-name-row">
+            <span class="tutor-name">Nguyễn Thị Hoa</span>
+            <svg class="verified-badge" viewBox="0 0 16 16" fill="none">
+              <circle cx="8" cy="8" r="7.25" fill="#0a5f4a" stroke="white" stroke-width="1.5"/>
+              <path d="M5 8l2 2 4-4" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div style="font-size:12px;color:var(--ink-40);margin-bottom:2px">ĐH Sư phạm TP.HCM • 5 năm kinh nghiệm</div>
+          <div class="tutor-subjects">
+            <span class="subject-tag">Toán 12</span>
+            <span class="subject-tag">Đại số</span>
+            <span class="subject-tag">Lượng giác</span>
+          </div>
+          <div class="tutor-meta-row">
+            <div class="tutor-rating">
+              <div class="stars">★★★★★</div>
+              <span>4.9</span>
+              <span style="font-size:11px;font-weight:400;color:var(--ink-40)">(127)</span>
+            </div>
+            <div class="tutor-price">250.000đ <span>/buổi</span></div>
+          </div>
+          <a href="tim-gia-su.html" class="btn btn-primary tutor-card-cta btn-sm">Gửi yêu cầu</a>
+        </div>
+      </article>
+
+      <!-- Card 2 -->
+      <article class="tutor-card">
+        <div class="tutor-card-banner" style="background:linear-gradient(135deg,#dbeafe,#bfdbfe)"></div>
+        <div class="tutor-card-body">
+          <div class="tutor-avatar" style="background:linear-gradient(135deg,#93c5fd,#60a5fa)">MK</div>
+          <div class="tutor-name-row">
+            <span class="tutor-name">Trần Minh Khoa</span>
+            <svg class="verified-badge" viewBox="0 0 16 16" fill="none">
+              <circle cx="8" cy="8" r="7.25" fill="#0a5f4a" stroke="white" stroke-width="1.5"/>
+              <path d="M5 8l2 2 4-4" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div style="font-size:12px;color:var(--ink-40);margin-bottom:2px">ĐH Ngoại ngữ Hà Nội • IELTS 8.5</div>
+          <div class="tutor-subjects">
+            <span class="subject-tag">IELTS</span>
+            <span class="subject-tag">TOEIC</span>
+            <span class="subject-tag">Giao tiếp</span>
+          </div>
+          <div class="tutor-meta-row">
+            <div class="tutor-rating">
+              <div class="stars">★★★★★</div>
+              <span>5.0</span>
+              <span style="font-size:11px;font-weight:400;color:var(--ink-40)">(89)</span>
+            </div>
+            <div class="tutor-price">300.000đ <span>/buổi</span></div>
+          </div>
+          <a href="tim-gia-su.html" class="btn btn-primary tutor-card-cta btn-sm">Gửi yêu cầu</a>
+        </div>
+      </article>
+
+      <!-- Card 3 -->
+      <article class="tutor-card">
+        <div class="tutor-card-banner" style="background:linear-gradient(135deg,#fef3c7,#fde68a)"></div>
+        <div class="tutor-card-body">
+          <div class="tutor-avatar" style="background:linear-gradient(135deg,#fcd34d,#f59e0b)">LM</div>
+          <div class="tutor-name-row">
+            <span class="tutor-name">Lê Thị Mai</span>
+            <svg class="verified-badge" viewBox="0 0 16 16" fill="none">
+              <circle cx="8" cy="8" r="7.25" fill="#0a5f4a" stroke="white" stroke-width="1.5"/>
+              <path d="M5 8l2 2 4-4" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div style="font-size:12px;color:var(--ink-40);margin-bottom:2px">ĐH Khoa học tự nhiên • Online toàn quốc</div>
+          <div class="tutor-subjects">
+            <span class="subject-tag">Hóa 10-12</span>
+            <span class="subject-tag">Hóa đại cương</span>
+          </div>
+          <div class="tutor-meta-row">
+            <div class="tutor-rating">
+              <div class="stars">★★★★☆</div>
+              <span>4.7</span>
+              <span style="font-size:11px;font-weight:400;color:var(--ink-40)">(63)</span>
+            </div>
+            <div class="tutor-price">220.000đ <span>/buổi</span></div>
+          </div>
+          <a href="tim-gia-su.html" class="btn btn-primary tutor-card-cta btn-sm">Gửi yêu cầu</a>
+        </div>
+      </article>
+    </div>
+
+    <div style="text-align:center;margin-top:2.5rem">
+      <a href="tim-gia-su.html" class="btn btn-secondary btn-lg">Xem tất cả gia sư →</a>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════ HOW PLATFORM WORKS ═══════════════ -->
+<section id="phan-he" class="steps-section">
+  <div class="wrap">
+    <h2 class="section-title">Quy trình từng bước</h2>
+    <p class="section-intro">Từ đăng yêu cầu đến học và giải ngân theo mô hình escrow an toàn.</p>
+    <ol class="steps">
+      <li>
+        <span class="step-num">1</span>
+        <strong>Tạo hồ sơ</strong>
+        <span>Gia sư điền thông tin KYC, học viên đăng nhu cầu.</span>
+      </li>
+      <li>
+        <span class="step-num">2</span>
+        <strong>Ghép đôi & phản hồi</strong>
+        <span>Học viên gửi yêu cầu, gia sư phản hồi trong 24 giờ.</span>
+      </li>
+      <li>
+        <span class="step-num">3</span>
+        <strong>Khóa tiền escrow</strong>
+        <span>Học viên nạp tháng đầu + phí vào ví hệ thống.</span>
+      </li>
+      <li>
+        <span class="step-num">4</span>
+        <strong>Bắt đầu học</strong>
+        <span>Hai bên liên hệ trực tiếp theo lịch đã thống nhất.</span>
+      </li>
+      <li>
+        <span class="step-num">5</span>
+        <strong>Giải ngân tự động</strong>
+        <span>Hệ thống chia 30% admin + 70% gia sư khi hoàn thành.</span>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<!-- ═══════════════════════ STATUS FLOW ══════════════════════ -->
+<section class="status-section">
+  <div class="wrap">
+    <h2 class="section-title" style="margin-bottom:1rem">Trạng thái ghép đôi</h2>
+    <div class="status-track">
+      <span class="status-chip">⏳ Chờ gia sư phản hồi</span>
+      <span style="color:var(--ink-10);font-size:1.2rem">→</span>
+      <span class="status-chip">✅ Đã chấp nhận</span>
+      <span style="color:var(--ink-10);font-size:1.2rem">→</span>
+      <span class="status-chip">💳 Chờ nạp tiền</span>
+      <span style="color:var(--ink-10);font-size:1.2rem">→</span>
+      <span class="status-chip">📚 Đang học</span>
+      <span style="color:var(--ink-10);font-size:1.2rem">→</span>
+      <span class="status-chip">🎉 Hoàn thành</span>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════ TESTIMONIALS ═════════════════════ -->
+<section id="danh-gia" class="testimonials-section">
+  <div class="wrap">
+    <div class="section-header">
+      <span class="eyebrow">Học viên & Phụ huynh nói gì</span>
+      <h2 class="t-section">Kết quả thực tế</h2>
+      <p>Hơn 8.500 học viên đã tìm được gia sư phù hợp qua EduBridge.</p>
+    </div>
+
+    <div class="testimonials-grid">
+      <div class="testimonial-card">
+        <p class="testimonial-quote">Con tôi tăng 3 điểm Toán chỉ sau 2 tháng học với gia sư qua EduBridge. Hệ thống escrow rất an tâm, tiền chỉ chuyển khi tôi hài lòng.</p>
+        <div class="testimonial-author">
+          <div class="author-avatar">PH</div>
+          <div class="author-info">
+            <div class="author-name">Phạm Thị Hương</div>
+            <div class="author-role">Phụ huynh học sinh lớp 12 · Hà Nội</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="testimonial-card">
+        <p class="testimonial-quote">Tìm được gia sư IELTS 8.5 chỉ trong 1 ngày. Lịch học linh hoạt, thanh toán minh bạch — đúng thứ mình cần khi đi làm ban ngày.</p>
+        <div class="testimonial-author">
+          <div class="author-avatar">NL</div>
+          <div class="author-info">
+            <div class="author-name">Nguyễn Văn Long</div>
+            <div class="author-role">Học viên IELTS · TP.HCM</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="testimonial-card">
+        <p class="testimonial-quote">Tôi dạy được 15 học viên mỗi tháng nhờ EduBridge. Hồ sơ được admin duyệt nhanh, học viên chất lượng và đúng giờ.</p>
+        <div class="testimonial-author">
+          <div class="author-avatar">TH</div>
+          <div class="author-info">
+            <div class="author-name">Trần Thị Hoài</div>
+            <div class="author-role">Gia sư Tiếng Anh · Online</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════ ESCROW ════════════════════════════ -->
+<section id="thanh-toan" class="escrow-section">
+  <div class="wrap">
+    <h2 class="section-title">Thanh toán trung gian (Escrow)</h2>
+    <p class="section-intro">Bảo vệ quyền lợi 3 bên: Phụ huynh, Gia sư và EduBridge — hoàn toàn minh bạch.</p>
+    <div class="escrow-grid">
+      <div class="escrow-card">
+        <h3>Bước 1 — Khóa tiền</h3>
+        <p>Sau khi gia sư chấp nhận, phụ huynh nạp học phí tháng đầu + phí dịch vụ. Số tiền được giữ an toàn trong ví hệ thống.</p>
+      </div>
+      <div class="escrow-card">
+        <h3>Bước 2 — Tiến hành học</h3>
+        <p>Hệ thống mở khóa thông tin liên hệ. Hai bên dạy và học theo lịch đã thống nhất. Admin hỗ trợ nếu phát sinh vấn đề.</p>
+      </div>
+      <div class="escrow-card">
+        <h3>Bước 3 — Giải ngân</h3>
+        <p>Sau giai đoạn cam kết, hệ thống tự động chia: <strong style="color:white">70% cho gia sư</strong> và 30% phí dịch vụ. Gia sư rút về tài khoản bất cứ lúc nào.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════ FEATURES ═════════════════════════ -->
+<section id="loi-ich" class="benefits">
+  <div class="wrap">
+    <div class="section-header">
+      <span class="eyebrow">Tại sao chọn EduBridge</span>
+      <h2 class="t-section">Được xây dựng để bạn tin tưởng</h2>
+    </div>
+    <div class="benefits-grid">
+      <div class="benefit">
+        <div style="font-size:2rem;margin-bottom:1rem">🔍</div>
+        <h3>Minh bạch hoàn toàn</h3>
+        <p>Mọi thông tin gia sư đều hiển thị rõ: bằng cấp, kinh nghiệm, đánh giá thực từ học viên.</p>
+      </div>
+      <div class="benefit">
+        <div style="font-size:2rem;margin-bottom:1rem">🔒</div>
+        <h3>Thanh toán an toàn</h3>
+        <p>Hệ thống escrow đảm bảo tiền chỉ giải ngân khi cả hai bên hài lòng. Không rủi ro mất tiền.</p>
+      </div>
+      <div class="benefit">
+        <div style="font-size:2rem;margin-bottom:1rem">⚡</div>
+        <h3>Kết nối nhanh chóng</h3>
+        <p>Từ gửi yêu cầu đến học thử — thường chỉ mất chưa đến 24 giờ với hệ thống thông báo realtime.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════ CTA BANNER ═══════════════════════ -->
+<section style="padding:clamp(3.5rem,7vw,5.5rem) 0;background:var(--surface);border-top:1px solid var(--border)">
+  <div class="wrap" style="text-align:center;max-width:640px">
+    <span class="eyebrow" style="justify-content:center">Bắt đầu ngay hôm nay</span>
+    <h2 style="font-family:var(--font-display);font-size:clamp(1.9rem,4vw,2.8rem);color:var(--ink-100);letter-spacing:-0.025em;margin-bottom:1rem">
+      Học viên phù hợp đang chờ bạn
+    </h2>
+    <p style="color:var(--ink-40);font-size:1.05rem;margin-bottom:2rem;line-height:1.7">
+      Tham gia cùng hơn 8.500 học viên và 1.200 gia sư trên EduBridge.
+    </p>
+    <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+      <a href="tim-gia-su.html" class="btn btn-primary btn-lg">Tìm gia sư ngay</a>
+      <a href="dang-ky-gia-su.html" class="btn btn-secondary btn-lg">Đăng ký dạy học</a>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════ FOOTER ════════════════════════════ -->
+<footer class="site-footer">
+  <div class="wrap footer-inner">
+    <a class="logo" href="#">
+      <span class="logo-mark" style="width:24px;height:24px;border-radius:6px">
+        <svg viewBox="0 0 18 18" fill="none" style="width:13px;height:13px">
+          <path d="M9 2L16 6v6L9 16 2 12V6L9 2z" stroke="white" stroke-width="1.5" stroke-linejoin="round"/>
+          <path d="M6 9.5L8.5 12 13 7" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </span>
+      EduBridge
+    </a>
+    <p>© 2026 EduBridge — Nền tảng kết nối gia sư & học viên.</p>
+  </div>
+</footer>
+
+<script type="module" src="auth-nav.js?v=1"></script>
+<script>
+  // Sticky header shadow on scroll
+  const header = document.getElementById('site-header');
+  window.addEventListener('scroll', () => {
+    header.classList.toggle('scrolled', window.scrollY > 10);
+  }, { passive: true });
+
+  // Hero search redirect
+  const heroInput = document.getElementById('hero-search-input');
+  if (heroInput) {
+    heroInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        window.location.href = 'tim-gia-su.html';
+      }
+    });
+  }
+</script>
 </body>
 </html>
