@@ -159,8 +159,7 @@ class TutorBrowser {
           activeState:  item.activeState || "available",
           paletteIdx:   idx % PALETTES.length,
         };
-      })
-      .filter(t => t.activeState !== "busy" || true); // keep busy ones but show badge
+      });
   }
 
   // ── Filters ──────────────────────────────────────────────────────────────
@@ -194,7 +193,17 @@ class TutorBrowser {
   }
 
   getFilteredTutors() {
+    const SUBJECT_MAP = {
+      "toan": "toán",
+      "tieng-anh": "tiếng anh",
+      "hoa": "hóa",
+      "vat-ly": "vật lý",
+      "van": "văn",
+    };
+
     const keyword      = (this.keywordEl?.value  || "").trim().toLowerCase();
+    const subjectKey   = (this.subjectEl?.value  || "").trim();
+    const subjectName  = SUBJECT_MAP[subjectKey] || "";
     const mode         = (this.modeEl?.value     || "").trim();
     const maxPrice     = Number(this.priceEl?.value    || 0);
     const area         = (this.areaEl?.value     || "").trim().toLowerCase();
@@ -207,6 +216,7 @@ class TutorBrowser {
       // Hide busy tutors from results
       if ((t.activeState || "available") === "busy") return false;
       if (keyword   && !t.name.toLowerCase().includes(keyword) && !t.subjectLabel.toLowerCase().includes(keyword)) return false;
+      if (subjectName && !t.subjectLabel.toLowerCase().includes(subjectName)) return false;
       if (mode      && t.mode !== mode) return false;
       if (maxPrice  && t.price > maxPrice) return false;
       if (area      && !String(t.area || "").toLowerCase().includes(area)) return false;

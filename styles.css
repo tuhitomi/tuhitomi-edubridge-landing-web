@@ -944,6 +944,7 @@ img { display: block; max-width: 100%; }
 }
 .tutor-status-available { background: var(--success-light); color: var(--success); }
 .tutor-status-busy { background: var(--warning-light); color: var(--warning); }
+.tutor-status-pending { background: #fef3c7; color: #92400e; }
 
 /* ── TESTIMONIALS ───────────────────────────────────────────── */
 .testimonials-section {

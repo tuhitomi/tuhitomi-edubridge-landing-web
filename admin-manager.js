@@ -665,7 +665,7 @@ class AdminManager {
   tutorApprovalCard(item) {
     const status = String(item.status || "pending").toLowerCase();
     const price = Number(item.price || 0).toLocaleString("vi-VN");
-    const statusClass = status === "approved" ? "tutor-status-available" : status === "rejected" ? "tutor-status-busy" : "tutor-status-available";
+    const statusClass = status === "approved" ? "tutor-status-available" : status === "rejected" ? "tutor-status-busy" : "tutor-status-pending";
     const actionButtons = status === "pending"
       ? `
           <button type="button" class="btn btn-primary admin-approve-btn" data-email="${item.email}">Duyet</button>

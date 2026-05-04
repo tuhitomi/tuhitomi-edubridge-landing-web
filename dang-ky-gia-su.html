@@ -85,7 +85,7 @@
   <script type="module" src="auth-nav.js?v=1"></script>
   <script type="module">
     import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
-    import { collection, doc, getDocs, writeBatch, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+    import { collection, doc, getDocs, writeBatch, setDoc, getDoc, addDoc } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
     import { auth, db } from "./firebase-config.js";
 
     var DEFAULT_ADMIN_EMAIL = "tu620014@gmail.com";
@@ -168,7 +168,6 @@
         var reviewerEmails = await getReviewerEmails();
 
         var tutorRecord = {
-          id: Date.now(),
           email: userEmail,
           name: String(formData.get("full_name") || "").trim(),
           subject: String(formData.get("subject") || "").trim(),
@@ -187,8 +186,7 @@
 
         for (var index = 0; index < reviewerEmails.length; index++) {
           var reviewerEmail = reviewerEmails[index];
-          var notification = {
-            id: Date.now() + 1 + index,
+          await addDoc(collection(db, 'notifications'), {
             userEmail: reviewerEmail,
             type: "tutor-approval-request",
             read: false,
@@ -198,12 +196,10 @@
               tutorEmail: userEmail,
               tutorName: tutorRecord.name
             }
-          };
-          await setDocNoRead('notifications', notification.id.toString(), notification);
+          });
         }
 
-        var userNotification = {
-          id: Date.now() + 2,
+        await addDoc(collection(db, 'notifications'), {
           userEmail: userEmail,
           type: "tutor-approval-status",
           read: false,
@@ -212,8 +208,7 @@
           payload: {
             status: "pending"
           }
-        };
-        await setDocNoRead('notifications', userNotification.id.toString(), userNotification);
+        });
         window.dispatchEvent(new Event("edubridge-notifications-updated"));
 
         alert("Đăng ký thành công!");
