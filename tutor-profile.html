@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Hồ sơ gia sư — EduBridge</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Be+Vietnam+Pro:wght@300;400;500;600;700&display=swap&subset=vietnamese" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<!-- ── HEADER ─────────────────────────────────────────────── -->
+<header class="site-header" id="site-header">
+  <div class="wrap header-inner">
+    <a class="logo" href="index.html">
+      <span class="logo-mark">
+        <svg viewBox="0 0 18 18" fill="none"><path d="M9 2L16 6v6L9 16 2 12V6L9 2z" stroke="white" stroke-width="1.5" stroke-linejoin="round"/><path d="M6 9.5L8.5 12 13 7" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+      EduBridge
+    </a>
+    <nav class="nav">
+      <a href="tim-gia-su.html">← Quay lại danh sách</a>
+    </nav>
+    <div class="header-actions">
+      <a id="nav-auth-link" href="dang-nhap.html" class="btn btn-ghost btn-sm">Đăng nhập</a>
+    </div>
+  </div>
+</header>
+
+<!-- ── LOADING STATE ──────────────────────────────────────── -->
+<div id="profile-loading" style="padding:4rem 0;text-align:center">
+  <div class="wrap">
+    <div style="display:inline-flex;flex-direction:column;align-items:center;gap:1rem;color:var(--ink-40)">
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" style="animation:spin 1s linear infinite">
+        <circle cx="12" cy="12" r="10" stroke="var(--border)" stroke-width="3"/>
+        <path d="M12 2a10 10 0 0 1 10 10" stroke="var(--brand)" stroke-width="3" stroke-linecap="round"/>
+      </svg>
+      <span style="font-size:var(--text-sm)">Đang tải hồ sơ gia sư…</span>
+    </div>
+  </div>
+</div>
+
+<style>
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+
+<!-- ── MAIN CONTENT (hidden until loaded) ────────────────── -->
+<main id="profile-main" style="display:none;padding:2rem 0 5rem">
+  <div class="wrap">
+
+    <!-- Breadcrumb -->
+    <nav style="font-size:var(--text-xs);color:var(--ink-40);margin-bottom:1.5rem;display:flex;align-items:center;gap:6px">
+      <a href="index.html" style="color:var(--ink-40)">Trang chủ</a>
+      <span>›</span>
+      <a href="tim-gia-su.html" style="color:var(--ink-40)">Gia sư</a>
+      <span>›</span>
+      <span id="bc-name" style="color:var(--ink-100);font-weight:600"></span>
+    </nav>
+
+    <div class="tutor-profile-layout">
+
+      <!-- ══ LEFT: Main info ══════════════════════════════ -->
+      <div class="tutor-profile-main">
+
+        <!-- Profile header -->
+        <div class="profile-header-card">
+          <div style="display:flex;align-items:flex-start;gap:1.25rem;flex-wrap:wrap">
+            <div class="profile-avatar-lg" id="prof-avatar"></div>
+            <div style="flex:1;min-width:200px">
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">
+                <h1 class="profile-name" id="prof-name"></h1>
+                <svg width="20" height="20" viewBox="0 0 16 16" fill="none">
+                  <circle cx="8" cy="8" r="7.25" fill="#0a5f4a" stroke="white" stroke-width="1.5"/>
+                  <path d="M5 8l2 2 4-4" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+              <div style="font-size:var(--text-sm);color:var(--ink-40);margin-bottom:10px" id="prof-meta"></div>
+
+              <!-- Quick stats row -->
+              <div style="display:flex;gap:1.5rem;flex-wrap:wrap">
+                <div style="text-align:center">
+                  <div style="font-family:var(--font-display);font-size:1.4rem;color:var(--ink-100);letter-spacing:-0.02em" id="prof-rating-num">—</div>
+                  <div style="font-size:10px;color:var(--ink-40);font-weight:600;letter-spacing:0.06em;text-transform:uppercase">Điểm TB</div>
+                </div>
+                <div style="width:1px;background:var(--border)"></div>
+                <div style="text-align:center">
+                  <div style="font-family:var(--font-display);font-size:1.4rem;color:var(--ink-100);letter-spacing:-0.02em" id="prof-review-count">0</div>
+                  <div style="font-size:10px;color:var(--ink-40);font-weight:600;letter-spacing:0.06em;text-transform:uppercase">Đánh giá</div>
+                </div>
+                <div style="width:1px;background:var(--border)"></div>
+                <div style="text-align:center">
+                  <div id="prof-status-badge"></div>
+                  <div style="font-size:10px;color:var(--ink-40);font-weight:600;letter-spacing:0.06em;text-transform:uppercase">Trạng thái</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Subjects -->
+          <div class="tutor-subjects" id="prof-subjects" style="margin-top:1.25rem"></div>
+        </div>
+
+        <!-- About -->
+        <div class="profile-section">
+          <div class="profile-section-title">Giới thiệu</div>
+          <p id="prof-bio" style="font-size:var(--text-sm);color:var(--ink-60);line-height:1.8;white-space:pre-wrap"></p>
+        </div>
+
+        <!-- Experience -->
+        <div class="profile-section">
+          <div class="profile-section-title">Kinh nghiệm & Bằng cấp</div>
+          <div id="prof-experience" style="font-size:var(--text-sm);color:var(--ink-60);line-height:1.8;white-space:pre-wrap"></div>
+        </div>
+
+        <!-- Teaching info -->
+        <div class="profile-section">
+          <div class="profile-section-title">Thông tin dạy học</div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem" id="prof-teaching-info"></div>
+        </div>
+
+        <!-- ── REVIEWS SECTION ─────────────────────────── -->
+        <div class="profile-section">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:0.5rem">
+            <div class="profile-section-title" style="margin:0;border:none;padding:0">Đánh giá từ học viên</div>
+            <span id="review-count-badge" style="font-size:var(--text-xs);color:var(--ink-40);font-weight:500"></span>
+          </div>
+
+          <!-- Rating summary -->
+          <div id="rating-summary-container"></div>
+
+          <!-- Review form (only for completed sessions) -->
+          <div id="review-form-wrapper" style="display:none;margin-top:1.5rem">
+            <div class="review-form-card">
+              <h3>Viết đánh giá của bạn</h3>
+              <p style="font-size:var(--text-sm);color:var(--ink-40);margin:0">Chia sẻ trải nghiệm để giúp học viên khác tìm được gia sư phù hợp.</p>
+
+              <div>
+                <label style="font-size:var(--text-xs);font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--ink-60);display:block;margin-bottom:8px">Điểm đánh giá *</label>
+                <div class="star-picker-wrap" id="star-picker-container"></div>
+              </div>
+
+              <div>
+                <label style="font-size:var(--text-xs);font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--ink-60);display:block;margin-bottom:6px">Nhận xét (không bắt buộc)</label>
+                <textarea id="review-comment-input" placeholder="Gia sư dạy rõ ràng, kiên nhẫn, đúng giờ…" maxlength="1000"></textarea>
+                <div style="text-align:right;font-size:11px;color:var(--ink-20);margin-top:3px"><span id="char-count">0</span>/1000</div>
+              </div>
+
+              <div id="review-error" style="display:none;color:var(--danger);font-size:var(--text-sm);background:var(--danger-light);padding:10px 13px;border-radius:var(--r-md)"></div>
+
+              <button id="submit-review-btn" class="btn btn-primary">Gửi đánh giá</button>
+            </div>
+          </div>
+
+          <!-- Reviews list -->
+          <div class="reviews-list" id="reviews-list-container" style="margin-top:1.5rem"></div>
+
+          <!-- Load more -->
+          <div id="load-more-reviews" style="display:none;text-align:center;margin-top:1rem">
+            <button id="load-more-btn" class="btn btn-ghost btn-sm">Xem thêm đánh giá</button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ══ RIGHT: Sticky booking sidebar ══════════════ -->
+      <div class="tutor-profile-sidebar">
+
+        <!-- Booking card -->
+        <div class="booking-card">
+          <div>
+            <div class="booking-price" id="sidebar-price">—<span>/buổi</span></div>
+            <div style="font-size:11px;color:var(--ink-40);margin-top:3px" id="sidebar-session-hours"></div>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:0">
+            <div class="booking-info-row">
+              <span>Khu vực</span>
+              <span id="sidebar-location">—</span>
+            </div>
+            <div class="booking-info-row">
+              <span>Giờ rảnh</span>
+              <span id="sidebar-time" style="text-align:right;max-width:160px;font-size:12px">—</span>
+            </div>
+            <div class="booking-info-row">
+              <span>Trạng thái</span>
+              <span id="sidebar-status">—</span>
+            </div>
+          </div>
+
+          <a id="request-btn" href="tim-gia-su.html" class="btn btn-primary btn-block btn-lg">
+            Gửi yêu cầu kết nối
+          </a>
+          <p style="font-size:11px;color:var(--ink-40);text-align:center;margin:0;line-height:1.5">
+            🔒 Thanh toán an toàn qua Escrow<br>Hoàn tiền nếu không hài lòng
+          </p>
+        </div>
+
+        <!-- Tutor stats mini -->
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);padding:1.25rem">
+          <div class="profile-section-title">Chỉ số</div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div style="display:flex;justify-content:space-between;align-items:center;font-size:var(--text-sm)">
+              <span style="color:var(--ink-40)">Điểm đánh giá</span>
+              <span style="font-weight:700;color:var(--ink-100)" id="stat-rating">—</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;font-size:var(--text-sm)">
+              <span style="color:var(--ink-40)">Số đánh giá</span>
+              <span style="font-weight:700;color:var(--ink-100)" id="stat-reviews">0</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- ── ERROR STATE ────────────────────────────────────────── -->
+<div id="profile-error" style="display:none;padding:5rem 0;text-align:center">
+  <div class="wrap">
+    <div style="font-size:3rem;margin-bottom:1rem">😕</div>
+    <h2 style="font-family:var(--font-display);color:var(--ink-100);margin-bottom:0.5rem">Không tìm thấy gia sư</h2>
+    <p style="color:var(--ink-40);margin-bottom:1.5rem">Hồ sơ không tồn tại hoặc đã bị ẩn.</p>
+    <a href="tim-gia-su.html" class="btn btn-primary">Quay lại danh sách gia sư</a>
+  </div>
+</div>
+
+<footer class="site-footer">
+  <div class="wrap footer-inner">
+    <a class="logo" href="index.html">EduBridge</a>
+    <p>© 2026 EduBridge — Nền tảng kết nối gia sư & học viên.</p>
+  </div>
+</footer>
+
+<script type="module" src="auth-nav.js?v=1"></script>
+<script type="module">
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+import { getDocs, collection, query, where, limit, orderBy }
+  from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+import { auth, db } from "./firebase-config.js";
+import {
+  getTutorReviews, renderReviewCards, renderRatingSummary,
+  renderStarPicker, submitReview, renderOneReview
+} from "./reviews.js";
+
+// ── Parse ?email= or ?id= from URL
+const params   = new URLSearchParams(location.search);
+const emailParam = (params.get("email") || "").toLowerCase().trim();
+
+const $ = id => document.getElementById(id);
+
+function initials(name = "") {
+  return name.trim().split(/\s+/).slice(-2).map(w => w[0]).join("").toUpperCase().slice(0,2) || "GS";
+}
+
+function renderStarsText(r) {
+  const n = Math.round(Math.max(0, Math.min(5, Number(r) || 0)));
+  return "★".repeat(n) + "☆".repeat(5-n);
+}
+
+const PALETTES = [
+  "linear-gradient(135deg,#34d399,#059669)",
+  "linear-gradient(135deg,#60a5fa,#3b82f6)",
+  "linear-gradient(135deg,#f59e0b,#d97706)",
+  "linear-gradient(135deg,#ec4899,#db2777)",
+  "linear-gradient(135deg,#8b5cf6,#7c3aed)",
+];
+
+// ── Load tutor data
+async function loadTutor() {
+  if (!emailParam) { showError(); return; }
+
+  try {
+    const snap = await getDocs(query(
+      collection(db, "tutor_registrations"),
+      where("email", "==", emailParam),
+      where("status", "==", "approved"),
+      limit(1)
+    ));
+
+    if (snap.empty) { showError(); return; }
+
+    const tutor = { id: snap.docs[0].id, ...snap.docs[0].data() };
+    renderProfile(tutor);
+    await loadReviews(tutor);
+
+  } catch (err) {
+    console.error(err);
+    showError();
+  }
+}
+
+function showError() {
+  $("profile-loading").style.display = "none";
+  $("profile-error").style.display   = "block";
+}
+
+function renderProfile(t) {
+  document.title = `${t.name || "Gia sư"} — EduBridge`;
+  $("bc-name").textContent = t.name || "Gia sư";
+
+  // Avatar
+  const avatar = $("prof-avatar");
+  const idx = Math.abs((t.email || "").charCodeAt(0)) % PALETTES.length;
+  avatar.style.background = PALETTES[idx];
+  avatar.textContent = initials(t.name);
+
+  // Name + meta
+  $("prof-name").textContent = t.name || "Gia sư";
+  $("prof-meta").textContent = [t.level, t.location].filter(Boolean).join(" • ");
+
+  // Rating quick stats
+  const avg = t.avgRating ? Number(t.avgRating).toFixed(1) : "—";
+  $("prof-rating-num").textContent = avg !== "—" ? avg + " " + renderStarsText(avg) : "Mới";
+  $("prof-review-count").textContent = t.reviewCount || 0;
+  $("stat-rating").textContent = avg;
+  $("stat-reviews").textContent = t.reviewCount || 0;
+
+  // Status badge
+  const isBusy = (t.activeState || "available") === "busy";
+  $("prof-status-badge").innerHTML = `<span class="tutor-status ${isBusy ? "tutor-status-busy" : "tutor-status-available"}">${isBusy ? "Đang bận" : "Sẵn sàng"}</span>`;
+
+  // Subjects
+  const subjects = (t.subject || "").split(/[,、\/]/).filter(Boolean);
+  $("prof-subjects").innerHTML = subjects.map(s =>
+    `<span class="subject-tag">${s.trim()}</span>`
+  ).join("") || '<span class="subject-tag">Nhiều môn</span>';
+
+  // Bio & experience
+  $("prof-bio").textContent = t.bio || t.experience || "Gia sư chưa cập nhật phần giới thiệu.";
+  $("prof-experience").textContent = t.experience || "Chưa cập nhật.";
+
+  // Teaching info grid
+  const infoItems = [
+    { label: "Môn dạy",       value: t.subject || "—" },
+    { label: "Cấp độ",        value: t.level || "—" },
+    { label: "Khu vực",       value: t.location || "—" },
+    { label: "Giờ rảnh",      value: t.availableTime || "—" },
+  ];
+  $("prof-teaching-info").innerHTML = infoItems.map(i => `
+    <div style="background:var(--page-bg);border:1px solid var(--border);border-radius:var(--r-lg);padding:1rem">
+      <div style="font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-40);margin-bottom:4px">${i.label}</div>
+      <div style="font-size:var(--text-sm);font-weight:600;color:var(--ink-100)">${i.value}</div>
+    </div>`).join("");
+
+  // Sidebar
+  $("sidebar-price").innerHTML = t.price
+    ? `${Number(t.price).toLocaleString("vi-VN")}đ<span>/buổi</span>`
+    : `<span style="font-size:1rem">Thỏa thuận</span>`;
+  $("sidebar-session-hours").textContent = t.sessionHours ? `${t.sessionHours} giờ/buổi` : "";
+  $("sidebar-location").textContent = t.location || "—";
+  $("sidebar-time").textContent = t.availableTime || "—";
+  $("sidebar-status").innerHTML = isBusy
+    ? `<span style="color:var(--warning);font-weight:600">Đang bận</span>`
+    : `<span style="color:var(--success);font-weight:600">Sẵn sàng</span>`;
+
+  // Request button
+  $("request-btn").href = `tim-gia-su.html?email=${encodeURIComponent(t.email)}`;
+
+  // Show main
+  $("profile-loading").style.display = "none";
+  $("profile-main").style.display    = "block";
+}
+
+// ── Reviews
+let allReviews = [];
+const PAGE_SIZE = 5;
+let visibleCount = PAGE_SIZE;
+
+async function loadReviews(tutor) {
+  allReviews = await getTutorReviews(tutor.email, 50);
+
+  // Summary
+  renderRatingSummary(allReviews, "rating-summary-container");
+
+  // Badge
+  $("review-count-badge").textContent = allReviews.length > 0
+    ? `${allReviews.length} đánh giá`
+    : "";
+
+  // Render first page
+  renderPage();
+
+  // Load more button
+  if (allReviews.length > PAGE_SIZE) {
+    $("load-more-reviews").style.display = "block";
+  }
+
+  $("load-more-btn")?.addEventListener("click", () => {
+    visibleCount += PAGE_SIZE;
+    renderPage();
+    if (visibleCount >= allReviews.length) {
+      $("load-more-reviews").style.display = "none";
+    }
+  });
+
+  // Show review form if user has a completed session with this tutor
+  onAuthStateChanged(auth, async user => {
+    if (!user?.email) return;
+    const userEmail = user.email.toLowerCase();
+
+    // Check if this user already reviewed
+    const alreadyReviewed = allReviews.some(r => r.studentEmail === userEmail);
+    if (alreadyReviewed) return;
+
+    // Check if they have a completed request with this tutor
+    try {
+      const reqSnap = await getDocs(query(
+        collection(db, "requests"),
+        where("studentEmail", "==", userEmail),
+        where("tutorEmail", "==", tutor.email.toLowerCase()),
+        where("status", "==", "completed"),
+        limit(1)
+      ));
+
+      if (!reqSnap.empty) {
+        const requestId = reqSnap.docs[0].id;
+        showReviewForm(user, tutor, requestId);
+      }
+    } catch { /* no completed session */ }
+  });
+}
+
+function renderPage() {
+  const slice = allReviews.slice(0, visibleCount);
+  const container = $("reviews-list-container");
+
+  if (allReviews.length === 0) {
+    container.innerHTML = `
+      <div class="reviews-empty">
+        <div class="reviews-empty-icon">💬</div>
+        <p>Chưa có đánh giá nào. Hãy là người đầu tiên!</p>
+      </div>`;
+    return;
+  }
+
+  container.innerHTML = slice.map(r => renderOneReview(r)).join("");
+}
+
+// ── Review form
+function showReviewForm(user, tutor, requestId) {
+  $("review-form-wrapper").style.display = "block";
+
+  let selectedRating = 0;
+  const picker = renderStarPicker("star-picker-container", val => { selectedRating = val; });
+
+  const textarea = $("review-comment-input");
+  const charCount = $("char-count");
+  textarea?.addEventListener("input", () => {
+    charCount.textContent = textarea.value.length;
+  });
+
+  $("submit-review-btn")?.addEventListener("click", async () => {
+    const errEl = $("review-error");
+    errEl.style.display = "none";
+
+    if (!selectedRating) {
+      errEl.textContent = "Vui lòng chọn số sao đánh giá.";
+      errEl.style.display = "block";
+      return;
+    }
+
+    const btn = $("submit-review-btn");
+    btn.disabled = true;
+    btn.textContent = "Đang gửi…";
+
+    try {
+      await submitReview({
+        tutorEmail:  tutor.email,
+        studentEmail: user.email,
+        studentName: user.displayName || user.email,
+        rating:      selectedRating,
+        comment:     textarea?.value || "",
+        requestId,
+      });
+
+      // Hide form, prepend new review
+      $("review-form-wrapper").style.display = "none";
+
+      const newReview = {
+        studentEmail: user.email,
+        studentName:  user.displayName || user.email,
+        rating:       selectedRating,
+        comment:      textarea?.value || "",
+        createdAt:    new Date().toISOString(),
+        isPublic:     true,
+      };
+      allReviews.unshift(newReview);
+
+      // Re-render
+      renderPage();
+      renderRatingSummary(allReviews, "rating-summary-container");
+      $("review-count-badge").textContent = `${allReviews.length} đánh giá`;
+
+      // Update stat
+      const avg2 = (allReviews.reduce((s,r)=>s+r.rating,0)/allReviews.length).toFixed(1);
+      $("stat-rating").textContent = avg2;
+      $("stat-reviews").textContent = allReviews.length;
+
+      // Show success toast
+      showToast("✅ Cảm ơn bạn đã đánh giá!");
+
+    } catch (err) {
+      errEl.textContent = err.message || "Có lỗi xảy ra. Vui lòng thử lại.";
+      errEl.style.display = "block";
+      btn.disabled = false;
+      btn.textContent = "Gửi đánh giá";
+    }
+  });
+}
+
+// ── Toast notification
+function showToast(msg) {
+  const toast = document.createElement("div");
+  toast.textContent = msg;
+  Object.assign(toast.style, {
+    position: "fixed", bottom: "2rem", left: "50%", transform: "translateX(-50%)",
+    background: "var(--ink-100)", color: "white",
+    padding: "12px 22px", borderRadius: "999px",
+    fontFamily: "var(--font-body)", fontSize: "14px", fontWeight: "600",
+    boxShadow: "var(--shadow-xl)", zIndex: "2000",
+    animation: "fadeSlideUp 0.3s ease both",
+  });
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 3500);
+}
+
+// ── Scroll header
+const header = document.getElementById("site-header");
+window.addEventListener("scroll", () => {
+  header?.classList.toggle("scrolled", window.scrollY > 10);
+}, { passive: true });
+
+// ── Start
+loadTutor();
+</script>
+</body>
+</html>

@@ -237,99 +237,15 @@
   <div class="wrap">
     <div class="section-header">
       <span class="eyebrow">Đội ngũ gia sư</span>
-      <h2 class="t-section">Gia sư nổi bật tuần này</h2>
+      <h2 class="t-section">Gia sư nổi bật</h2>
       <p>Tất cả gia sư đều được kiểm duyệt hồ sơ, bằng cấp và nhận xét từ học viên thực.</p>
     </div>
 
+    <!-- Skeleton loading state -->
     <div class="tutor-grid" id="featured-tutor-grid">
-      <!-- Card 1 -->
-      <article class="tutor-card">
-        <div class="tutor-card-banner" style="background:linear-gradient(135deg,#d1fae5,#a7f3d0)"></div>
-        <div class="tutor-card-body">
-          <div class="tutor-avatar" style="background:linear-gradient(135deg,#6ee7b7,#34d399)">NH</div>
-          <div class="tutor-name-row">
-            <span class="tutor-name">Nguyễn Thị Hoa</span>
-            <svg class="verified-badge" viewBox="0 0 16 16" fill="none">
-              <circle cx="8" cy="8" r="7.25" fill="#0a5f4a" stroke="white" stroke-width="1.5"/>
-              <path d="M5 8l2 2 4-4" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </div>
-          <div style="font-size:12px;color:var(--ink-40);margin-bottom:2px">ĐH Sư phạm TP.HCM • 5 năm kinh nghiệm</div>
-          <div class="tutor-subjects">
-            <span class="subject-tag">Toán 12</span>
-            <span class="subject-tag">Đại số</span>
-            <span class="subject-tag">Lượng giác</span>
-          </div>
-          <div class="tutor-meta-row">
-            <div class="tutor-rating">
-              <div class="stars">★★★★★</div>
-              <span>4.9</span>
-              <span style="font-size:11px;font-weight:400;color:var(--ink-40)">(127)</span>
-            </div>
-            <div class="tutor-price">250.000đ <span>/buổi</span></div>
-          </div>
-          <a href="tim-gia-su.html" class="btn btn-primary tutor-card-cta btn-sm">Gửi yêu cầu</a>
-        </div>
-      </article>
-
-      <!-- Card 2 -->
-      <article class="tutor-card">
-        <div class="tutor-card-banner" style="background:linear-gradient(135deg,#dbeafe,#bfdbfe)"></div>
-        <div class="tutor-card-body">
-          <div class="tutor-avatar" style="background:linear-gradient(135deg,#93c5fd,#60a5fa)">MK</div>
-          <div class="tutor-name-row">
-            <span class="tutor-name">Trần Minh Khoa</span>
-            <svg class="verified-badge" viewBox="0 0 16 16" fill="none">
-              <circle cx="8" cy="8" r="7.25" fill="#0a5f4a" stroke="white" stroke-width="1.5"/>
-              <path d="M5 8l2 2 4-4" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </div>
-          <div style="font-size:12px;color:var(--ink-40);margin-bottom:2px">ĐH Ngoại ngữ Hà Nội • IELTS 8.5</div>
-          <div class="tutor-subjects">
-            <span class="subject-tag">IELTS</span>
-            <span class="subject-tag">TOEIC</span>
-            <span class="subject-tag">Giao tiếp</span>
-          </div>
-          <div class="tutor-meta-row">
-            <div class="tutor-rating">
-              <div class="stars">★★★★★</div>
-              <span>5.0</span>
-              <span style="font-size:11px;font-weight:400;color:var(--ink-40)">(89)</span>
-            </div>
-            <div class="tutor-price">300.000đ <span>/buổi</span></div>
-          </div>
-          <a href="tim-gia-su.html" class="btn btn-primary tutor-card-cta btn-sm">Gửi yêu cầu</a>
-        </div>
-      </article>
-
-      <!-- Card 3 -->
-      <article class="tutor-card">
-        <div class="tutor-card-banner" style="background:linear-gradient(135deg,#fef3c7,#fde68a)"></div>
-        <div class="tutor-card-body">
-          <div class="tutor-avatar" style="background:linear-gradient(135deg,#fcd34d,#f59e0b)">LM</div>
-          <div class="tutor-name-row">
-            <span class="tutor-name">Lê Thị Mai</span>
-            <svg class="verified-badge" viewBox="0 0 16 16" fill="none">
-              <circle cx="8" cy="8" r="7.25" fill="#0a5f4a" stroke="white" stroke-width="1.5"/>
-              <path d="M5 8l2 2 4-4" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </div>
-          <div style="font-size:12px;color:var(--ink-40);margin-bottom:2px">ĐH Khoa học tự nhiên • Online toàn quốc</div>
-          <div class="tutor-subjects">
-            <span class="subject-tag">Hóa 10-12</span>
-            <span class="subject-tag">Hóa đại cương</span>
-          </div>
-          <div class="tutor-meta-row">
-            <div class="tutor-rating">
-              <div class="stars">★★★★☆</div>
-              <span>4.7</span>
-              <span style="font-size:11px;font-weight:400;color:var(--ink-40)">(63)</span>
-            </div>
-            <div class="tutor-price">220.000đ <span>/buổi</span></div>
-          </div>
-          <a href="tim-gia-su.html" class="btn btn-primary tutor-card-cta btn-sm">Gửi yêu cầu</a>
-        </div>
-      </article>
+      <div class="tutor-card-skeleton"></div>
+      <div class="tutor-card-skeleton"></div>
+      <div class="tutor-card-skeleton"></div>
     </div>
 
     <div style="text-align:center;margin-top:2.5rem">
@@ -520,20 +436,138 @@
 </footer>
 
 <script type="module" src="auth-nav.js?v=1"></script>
+<script type="module">
+import { getDocs, collection, query, where, orderBy, limit, getDoc, doc }
+  from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+import { db } from "./firebase-config.js";
+
+// ── Colour palettes per index (banner + avatar gradient)
+const PALETTES = [
+  { banner: "linear-gradient(135deg,#d1fae5,#a7f3d0)", avatar: "linear-gradient(135deg,#34d399,#059669)" },
+  { banner: "linear-gradient(135deg,#dbeafe,#bfdbfe)", avatar: "linear-gradient(135deg,#60a5fa,#3b82f6)" },
+  { banner: "linear-gradient(135deg,#fef3c7,#fde68a)", avatar: "linear-gradient(135deg,#f59e0b,#d97706)" },
+  { banner: "linear-gradient(135deg,#fce7f3,#fbcfe8)", avatar: "linear-gradient(135deg,#ec4899,#db2777)" },
+  { banner: "linear-gradient(135deg,#ede9fe,#ddd6fe)", avatar: "linear-gradient(135deg,#8b5cf6,#7c3aed)" },
+  { banner: "linear-gradient(135deg,#ffedd5,#fed7aa)", avatar: "linear-gradient(135deg,#f97316,#ea580c)" },
+];
+
+function initials(name = "") {
+  return name.trim().split(/\s+/).slice(-2).map(w => w[0]).join("").toUpperCase().slice(0, 2) || "GS";
+}
+
+function renderStars(rating) {
+  const r = Math.round(Math.max(0, Math.min(5, Number(rating) || 0)));
+  return "★".repeat(r) + "☆".repeat(5 - r);
+}
+
+function verifiedSVG() {
+  return `<svg class="verified-badge" viewBox="0 0 16 16" fill="none">
+    <circle cx="8" cy="8" r="7.25" fill="#0a5f4a" stroke="white" stroke-width="1.5"/>
+    <path d="M5 8l2 2 4-4" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>`;
+}
+
+function buildCard(tutor, palette) {
+  const tags = (tutor.subject || "")
+    .split(/[,、\/]/).slice(0, 3)
+    .map(s => `<span class="subject-tag">${s.trim()}</span>`).join("");
+
+  const avg   = Number(tutor.avgRating || tutor.rating || 4).toFixed(1);
+  const count = tutor.reviewCount || 0;
+  const price = tutor.price
+    ? Number(tutor.price).toLocaleString("vi-VN") + "đ"
+    : "Thỏa thuận";
+
+  return `
+    <article class="tutor-card">
+      <div class="tutor-card-banner" style="background:${palette.banner}"></div>
+      <div class="tutor-card-body">
+        <div class="tutor-avatar" style="background:${palette.avatar}">${initials(tutor.name)}</div>
+        <div class="tutor-name-row">
+          <span class="tutor-name">${tutor.name || "Gia sư"}</span>
+          ${verifiedSVG()}
+        </div>
+        <div style="font-size:12px;color:var(--ink-40);margin-bottom:4px;line-height:1.4">
+          ${tutor.level ? tutor.level + " • " : ""}${tutor.location || "Toàn quốc"}
+        </div>
+        <div class="tutor-subjects">${tags || '<span class="subject-tag">Nhiều môn</span>'}</div>
+        <div class="tutor-meta-row">
+          <div class="tutor-rating">
+            <div class="stars">${renderStars(avg)}</div>
+            <span>${avg}</span>
+            <span style="font-size:11px;font-weight:400;color:var(--ink-40)">${count > 0 ? `(${count})` : "Mới"}</span>
+          </div>
+          <div class="tutor-price">${price} <span>/buổi</span></div>
+        </div>
+        <a href="tim-gia-su.html" class="btn btn-primary tutor-card-cta btn-sm">Gửi yêu cầu</a>
+      </div>
+    </article>`;
+}
+
+function buildEmpty() {
+  return `<div style="grid-column:1/-1;text-align:center;padding:3rem;color:var(--ink-40)">
+    <div style="font-size:2.5rem;margin-bottom:0.75rem">👨‍🏫</div>
+    <p style="font-size:1rem;margin-bottom:1rem">Chưa có gia sư nào được duyệt.</p>
+    <a href="dang-ky-gia-su.html" class="btn btn-primary btn-sm">Đăng ký làm gia sư →</a>
+  </div>`;
+}
+
+async function loadFeaturedTutors() {
+  const grid = document.getElementById("featured-tutor-grid");
+  if (!grid) return;
+
+  try {
+    // Fetch top 6 approved tutors, sort by avgRating desc then by submittedAt desc
+    const snap = await getDocs(
+      query(collection(db, "tutor_registrations"),
+        where("status", "==", "approved"),
+        orderBy("avgRating", "desc"),
+        limit(6)
+      )
+    );
+
+    let tutors = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+    // Fallback: if no avgRating field yet, just get newest 6
+    if (tutors.length === 0) {
+      const snap2 = await getDocs(
+        query(collection(db, "tutor_registrations"),
+          where("status", "==", "approved"),
+          limit(6)
+        )
+      );
+      tutors = snap2.docs.map(d => ({ id: d.id, ...d.data() }));
+    }
+
+    if (tutors.length === 0) {
+      grid.innerHTML = buildEmpty();
+      return;
+    }
+
+    // Show max 3 on homepage, shuffle for variety
+    const displayed = tutors.slice(0, 3);
+    grid.innerHTML = displayed.map((t, i) => buildCard(t, PALETTES[i % PALETTES.length])).join("");
+
+  } catch (err) {
+    // Firestore index not ready or permission issue — show placeholder
+    console.warn("Featured tutors load error:", err);
+    grid.innerHTML = buildEmpty();
+  }
+}
+
+loadFeaturedTutors();
+</script>
+
 <script>
-  // Sticky header shadow on scroll
   const header = document.getElementById('site-header');
   window.addEventListener('scroll', () => {
     header.classList.toggle('scrolled', window.scrollY > 10);
   }, { passive: true });
 
-  // Hero search redirect
   const heroInput = document.getElementById('hero-search-input');
   if (heroInput) {
-    heroInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        window.location.href = 'tim-gia-su.html';
-      }
+    heroInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter') window.location.href = 'tim-gia-su.html';
     });
   }
 </script>
