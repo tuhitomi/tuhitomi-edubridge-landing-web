@@ -3,218 +3,236 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="description" content="Trang quan tri duyet ho so gia su EduBridge." />
-  <title>Quan tri - EduBridge</title>
+  <meta name="description" content="Trang quản trị duyệt hồ sơ gia sư EduBridge." />
+  <title>Quản trị — EduBridge</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Lora:ital,wght@0,500;0,700;1,500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <header class="site-header">
-    <div class="wrap header-inner">
-      <a class="logo" href="index.html">EduBridge</a>
-      <nav class="nav">
-        <a href="index.html#cach-hoat-dong">Cach hoat dong</a>
-        <a href="index.html#loi-ich">Loi ich</a>
-        <div class="header-actions">
-          <button id="notification-btn" class="notification-btn" title="Thong bao">
-            <span class="notification-icon">GS</span>
-            <span id="notification-count" class="notification-count" style="display: none;">0</span>
-          </button>
-          <a id="nav-auth-link" href="dang-nhap.html">Dang xuat</a>
-        </div>
-      </nav>
+
+<!-- ═══════════════════════ HEADER ═══════════════════════════ -->
+<header class="site-header" id="site-header">
+  <div class="wrap header-inner">
+    <a class="logo" href="index.html">
+      <span class="logo-mark">
+        <svg viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M9 2L16 6v6L9 16 2 12V6L9 2z" stroke="white" stroke-width="1.5" stroke-linejoin="round"/>
+          <path d="M6 9.5L8.5 12 13 7" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </span>
+      EduBridge
+    </a>
+
+    <nav class="nav">
+      <a href="index.html">Trang chủ</a>
+      <a href="tim-gia-su.html">Gia sư</a>
+    </nav>
+
+    <div class="header-actions">
+      <a id="nav-auth-link" href="dang-nhap.html" class="btn btn-ghost btn-sm">Đăng nhập</a>
     </div>
-  </header>
+  </div>
+</header>
 
-  <main class="auth-page">
-    <div id="notification-dropdown" class="notification-dropdown" style="display: none;">
-      <div class="notification-header">
-        <h3>Thong bao</h3>
-        <div class="notification-actions">
-          <button id="mark-all-read" class="btn btn-small">Danh dau tat ca da doc</button>
-          <button id="clear-read-storage" class="btn btn-small btn-outline" style="margin-left: 0.5rem;">Reset</button>
-        </div>
-      </div>
-      <div id="notification-list" class="notification-list"></div>
-      <div class="notification-footer">
-        <a href="#" id="view-all-notifications">Xem tat ca thong bao</a>
+<main class="auth-page">
+  <!-- Notification dropdown -->
+  <div id="notification-dropdown" class="notification-dropdown" style="display: none;">
+    <div class="notification-header">
+      <h3>Thông báo</h3>
+      <div class="notification-actions">
+        <button id="mark-all-read" class="btn btn-small">Đánh dấu tất cả đã đọc</button>
+        <button id="clear-read-storage" class="btn btn-small btn-outline" style="margin-left: 0.5rem;">Reset</button>
       </div>
     </div>
+    <div id="notification-list" class="notification-list"></div>
+    <div class="notification-footer">
+      <a href="#" id="view-all-notifications">Xem tất cả thông báo</a>
+    </div>
+  </div>
 
-    <section class="wrap tutor-search-section">
-      <div class="dashboard-cards">
-        <div class="dashboard-card">
-          <div class="card-icon">GS</div>
-          <div class="card-content">
-            <h3 id="total-tutors">0</h3>
-            <p>Tong gia su</p>
-          </div>
-        </div>
-        <div class="dashboard-card">
-          <div class="card-icon">PD</div>
-          <div class="card-content">
-            <h3 id="pending-approvals">0</h3>
-            <p>Ho so cho duyet</p>
-          </div>
-        </div>
-        <div class="dashboard-card">
-          <div class="card-icon">KN</div>
-          <div class="card-content">
-            <h3 id="successful-connections">0</h3>
-            <p>Luot ket noi</p>
-          </div>
-        </div>
-        <div class="dashboard-card">
-          <div class="card-icon">HV</div>
-          <div class="card-content">
-            <h3 id="total-students">0</h3>
-            <p>Tong hoc vien</p>
-          </div>
+  <section class="wrap tutor-search-section">
+    <!-- ── Dashboard Cards ── -->
+    <div class="dashboard-cards">
+      <div class="dashboard-card">
+        <div class="card-icon">👨‍🏫</div>
+        <div class="card-content">
+          <h3 id="total-tutors">0</h3>
+          <p>Tổng gia sư</p>
         </div>
       </div>
-
-      <div class="admin-tabs">
-        <button type="button" class="admin-tab-btn admin-tab-btn-active" data-tab="tutor-approvals">Duyet gia su</button>
-        <button type="button" class="admin-tab-btn" data-tab="tutor-list">Quan ly gia su</button>
-        <button type="button" class="admin-tab-btn" data-tab="student-list">Quan ly hoc vien</button>
-        <button type="button" class="admin-tab-btn" data-tab="requests">Yeu cau ket noi</button>
-        <button type="button" class="admin-tab-btn" data-tab="withdrawals">Rut tien</button>
-        <button type="button" class="admin-tab-btn" data-tab="disputes">Tranh chap</button>
-      </div>
-
-      <div id="tab-tutor-approvals" class="admin-tab-content admin-tab-content-active">
-        <h1 class="section-title">Duyet ho so gia su</h1>
-        <p class="section-intro">Kiem tra, duyet hoac tu choi cac ho so dang cho xu ly.</p>
-        <form class="tutor-filters" id="admin-filters">
-          <label>
-            Trang thai
-            <select id="filter-status">
-              <option value="">Tat ca</option>
-              <option value="pending">Cho duyet</option>
-              <option value="approved">Da duyet</option>
-              <option value="rejected">Tu choi</option>
-            </select>
-          </label>
-          <label>
-            Tim nhanh
-            <input type="text" id="filter-keyword" placeholder="Ten, email, mon day..." />
-          </label>
-        </form>
-
-        <form class="auth-form auth-form-single" id="moderator-form" hidden>
-          <h3>Quan ly moderator</h3>
-          <p class="auth-note">Chi admin chinh moi co quyen them hoac xoa moderator.</p>
-          <label>
-            Email moderator
-            <input type="email" id="moderator-email-input" placeholder="moderator@example.com" />
-          </label>
-          <button type="submit" class="btn btn-primary btn-block">Them moderator</button>
-          <ul id="moderator-list" class="history-list"></ul>
-        </form>
-
-        <div id="admin-tutor-list" class="tutor-list"></div>
-        <p id="admin-empty" class="tutor-empty" hidden>Khong co ho so phu hop.</p>
-      </div>
-
-      <div id="tab-tutor-list" class="admin-tab-content">
-        <h1 class="section-title">Quan ly gia su</h1>
-        <p class="section-intro">Danh sach gia su da duoc duyet.</p>
-        <form class="tutor-filters" id="tutor-search-filters">
-          <label>
-            Tim nhanh
-            <input type="text" id="tutor-search-keyword" placeholder="Ten, email, mon day..." />
-          </label>
-          <label>
-            Trang thai
-            <select id="tutor-search-status">
-              <option value="">Tat ca</option>
-              <option value="available">Available</option>
-              <option value="busy">Busy</option>
-            </select>
-          </label>
-        </form>
-        <div id="tutor-manage-list" class="tutor-list"></div>
-        <p id="tutor-manage-empty" class="tutor-empty">Chua co gia su nao.</p>
-      </div>
-
-      <div id="tab-student-list" class="admin-tab-content">
-        <h1 class="section-title">Quan ly hoc vien</h1>
-        <p class="section-intro">Danh sach hoc vien da dang ky.</p>
-        <form class="tutor-filters" id="student-search-filters">
-          <label>
-            Tim nhanh
-            <input type="text" id="student-search-keyword" placeholder="Ten, email..." />
-          </label>
-        </form>
-        <div id="student-manage-list" class="tutor-list"></div>
-        <p id="student-manage-empty" class="tutor-empty">Chua co hoc vien nao.</p>
-      </div>
-
-      <div id="tab-requests" class="admin-tab-content">
-        <h1 class="section-title">Yeu cau ket noi</h1>
-        <p class="section-intro">Theo doi va xu ly cac yeu cau ket noi giua hoc vien va gia su.</p>
-        <form class="tutor-filters" id="request-search-filters">
-          <label>
-            Trang thai
-            <select id="request-search-status">
-              <option value="">Tat ca</option>
-              <option value="waiting_tutor">Cho gia su phan hoi</option>
-              <option value="accepted_waiting_funds">Cho nop tien</option>
-              <option value="in_teaching">Dang hoc</option>
-              <option value="completed">Hoan thanh</option>
-              <option value="declined">Tu choi</option>
-              <option value="expired">Het han</option>
-              <option value="refunded">Da hoan tien</option>
-            </select>
-          </label>
-          <label>
-            Tim nhanh
-            <input type="text" id="request-search-keyword" placeholder="Ten gia su, hoc vien, email..." />
-          </label>
-        </form>
-        <div id="request-manage-list" class="tutor-list"></div>
-        <p id="request-manage-empty" class="tutor-empty">Khong co yeu cau nao.</p>
-      </div>
-
-      <div id="tab-withdrawals" class="admin-tab-content">
-        <h2 class="section-title">Yeu cau rut tien</h2>
-        <div id="withdrawal-list" class="tutor-list"></div>
-        <p id="withdrawal-empty" class="tutor-empty" hidden>Chua co yeu cau rut tien nao.</p>
-      </div>
-
-      <div id="tab-disputes" class="admin-tab-content">
-        <h2 class="section-title">Tranh chap can xu ly</h2>
-        <div id="dispute-list" class="tutor-list"></div>
-        <p id="dispute-empty" class="tutor-empty" hidden>Chua co tranh chap nao.</p>
-      </div>
-    </section>
-
-    <div id="tutor-detail-modal" class="modal" style="display: none;">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h2 id="modal-tutor-name">Chi tiet gia su</h2>
-          <button id="close-modal" class="close-modal">&times;</button>
+      <div class="dashboard-card">
+        <div class="card-icon">📋</div>
+        <div class="card-content">
+          <h3 id="pending-approvals">0</h3>
+          <p>Hồ sơ chờ duyệt</p>
         </div>
-        <div class="modal-body" id="modal-tutor-details"></div>
-        <div class="modal-footer">
-          <button id="modal-approve-btn" class="btn btn-primary">Duyet</button>
-          <button id="modal-reject-btn" class="btn btn-secondary">Tu choi</button>
-          <button id="modal-close-btn" class="btn btn-outline">Dong</button>
+      </div>
+      <div class="dashboard-card">
+        <div class="card-icon">🔗</div>
+        <div class="card-content">
+          <h3 id="successful-connections">0</h3>
+          <p>Lượt kết nối</p>
+        </div>
+      </div>
+      <div class="dashboard-card">
+        <div class="card-icon">🎓</div>
+        <div class="card-content">
+          <h3 id="total-students">0</h3>
+          <p>Tổng học viên</p>
         </div>
       </div>
     </div>
-  </main>
 
-  <footer class="site-footer">
-    <div class="wrap footer-inner">
-      <span class="logo">EduBridge</span>
-      <p>&copy; 2026 Demo ket noi gia su va hoc vien.</p>
+    <!-- ── Admin Tabs ── -->
+    <div class="admin-tabs">
+      <button type="button" class="admin-tab-btn admin-tab-btn-active" data-tab="tutor-approvals">Duyệt gia sư</button>
+      <button type="button" class="admin-tab-btn" data-tab="tutor-list">Quản lý gia sư</button>
+      <button type="button" class="admin-tab-btn" data-tab="student-list">Quản lý học viên</button>
+      <button type="button" class="admin-tab-btn" data-tab="requests">Yêu cầu kết nối</button>
+      <button type="button" class="admin-tab-btn" data-tab="withdrawals">Rút tiền</button>
+      <button type="button" class="admin-tab-btn" data-tab="disputes">Tranh chấp</button>
     </div>
-  </footer>
 
-  <script type="module" src="auth-nav.js?v=1"></script>
-  <script type="module" src="admin-manager.js"></script>
+    <!-- ── Tab: Duyệt gia sư ── -->
+    <div id="tab-tutor-approvals" class="admin-tab-content admin-tab-content-active">
+      <h1 class="section-title">Duyệt hồ sơ gia sư</h1>
+      <p class="section-intro">Kiểm tra, duyệt hoặc từ chối các hồ sơ đang chờ xử lý.</p>
+      <form class="tutor-filters" id="admin-filters">
+        <label>
+          Trạng thái
+          <select id="filter-status">
+            <option value="">Tất cả</option>
+            <option value="pending">Chờ duyệt</option>
+            <option value="approved">Đã duyệt</option>
+            <option value="rejected">Từ chối</option>
+          </select>
+        </label>
+        <label>
+          Tìm nhanh
+          <input type="text" id="filter-keyword" placeholder="Tên, email, môn dạy..." />
+        </label>
+      </form>
+
+      <form class="auth-form auth-form-single" id="moderator-form" hidden>
+        <h3>Quản lý moderator</h3>
+        <p class="auth-note">Chỉ admin chính mới có quyền thêm hoặc xóa moderator.</p>
+        <label>
+          Email moderator
+          <input type="email" id="moderator-email-input" placeholder="moderator@example.com" />
+        </label>
+        <button type="submit" class="btn btn-primary btn-block">Thêm moderator</button>
+        <ul id="moderator-list" class="history-list"></ul>
+      </form>
+
+      <div id="admin-tutor-list" class="tutor-list"></div>
+      <p id="admin-empty" class="tutor-empty" hidden>Không có hồ sơ phù hợp.</p>
+    </div>
+
+    <!-- ── Tab: Quản lý gia sư ── -->
+    <div id="tab-tutor-list" class="admin-tab-content">
+      <h1 class="section-title">Quản lý gia sư</h1>
+      <p class="section-intro">Danh sách gia sư đã được duyệt.</p>
+      <form class="tutor-filters" id="tutor-search-filters">
+        <label>
+          Tìm nhanh
+          <input type="text" id="tutor-search-keyword" placeholder="Tên, email, môn dạy..." />
+        </label>
+        <label>
+          Trạng thái
+          <select id="tutor-search-status">
+            <option value="">Tất cả</option>
+            <option value="available">Sẵn sàng</option>
+            <option value="busy">Bận</option>
+          </select>
+        </label>
+      </form>
+      <div id="tutor-manage-list" class="tutor-list"></div>
+      <p id="tutor-manage-empty" class="tutor-empty">Chưa có gia sư nào.</p>
+    </div>
+
+    <!-- ── Tab: Quản lý học viên ── -->
+    <div id="tab-student-list" class="admin-tab-content">
+      <h1 class="section-title">Quản lý học viên</h1>
+      <p class="section-intro">Danh sách học viên đã đăng ký.</p>
+      <form class="tutor-filters" id="student-search-filters">
+        <label>
+          Tìm nhanh
+          <input type="text" id="student-search-keyword" placeholder="Tên, email..." />
+        </label>
+      </form>
+      <div id="student-manage-list" class="tutor-list"></div>
+      <p id="student-manage-empty" class="tutor-empty">Chưa có học viên nào.</p>
+    </div>
+
+    <!-- ── Tab: Yêu cầu kết nối ── -->
+    <div id="tab-requests" class="admin-tab-content">
+      <h1 class="section-title">Yêu cầu kết nối</h1>
+      <p class="section-intro">Theo dõi và xử lý các yêu cầu kết nối giữa học viên và gia sư.</p>
+      <form class="tutor-filters" id="request-search-filters">
+        <label>
+          Trạng thái
+          <select id="request-search-status">
+            <option value="">Tất cả</option>
+            <option value="waiting_tutor">Chờ gia sư phản hồi</option>
+            <option value="accepted_waiting_funds">Chờ nộp tiền</option>
+            <option value="in_teaching">Đang học</option>
+            <option value="completed">Hoàn thành</option>
+            <option value="declined">Từ chối</option>
+            <option value="expired">Hết hạn</option>
+            <option value="refunded">Đã hoàn tiền</option>
+          </select>
+        </label>
+        <label>
+          Tìm nhanh
+          <input type="text" id="request-search-keyword" placeholder="Tên gia sư, học viên, email..." />
+        </label>
+      </form>
+      <div id="request-manage-list" class="tutor-list"></div>
+      <p id="request-manage-empty" class="tutor-empty">Không có yêu cầu nào.</p>
+    </div>
+
+    <!-- ── Tab: Rút tiền ── -->
+    <div id="tab-withdrawals" class="admin-tab-content">
+      <h2 class="section-title">Yêu cầu rút tiền</h2>
+      <div id="withdrawal-list" class="tutor-list"></div>
+      <p id="withdrawal-empty" class="tutor-empty" hidden>Chưa có yêu cầu rút tiền nào.</p>
+    </div>
+
+    <!-- ── Tab: Tranh chấp ── -->
+    <div id="tab-disputes" class="admin-tab-content">
+      <h2 class="section-title">Tranh chấp cần xử lý</h2>
+      <div id="dispute-list" class="tutor-list"></div>
+      <p id="dispute-empty" class="tutor-empty" hidden>Chưa có tranh chấp nào.</p>
+    </div>
+  </section>
+
+  <!-- ── Tutor Detail Modal ── -->
+  <div id="tutor-detail-modal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="modal-tutor-name">Chi tiết gia sư</h2>
+        <button id="close-modal" class="close-modal">&times;</button>
+      </div>
+      <div class="modal-body" id="modal-tutor-details"></div>
+      <div class="modal-footer">
+        <button id="modal-approve-btn" class="btn btn-primary">Duyệt</button>
+        <button id="modal-reject-btn" class="btn btn-secondary">Từ chối</button>
+        <button id="modal-close-btn" class="btn btn-outline">Đóng</button>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap footer-inner">
+    <span class="logo">EduBridge</span>
+    <p>&copy; 2026 Nền tảng kết nối gia sư và học viên.</p>
+  </div>
+</footer>
+
+<script type="module" src="auth-nav.js?v=1"></script>
+<script type="module" src="admin-manager.js"></script>
 </body>
 </html>

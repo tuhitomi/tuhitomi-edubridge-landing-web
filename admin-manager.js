@@ -112,7 +112,7 @@ class AdminManager {
         this.canManageModerators = this.currentUserEmail === this.primaryAdminEmail;
 
         if (!this.isAdmin) {
-          alert("Ban khong co quyen truy cap trang quan tri.");
+          alert("Bạn không có quyền truy cập trang quản trị.");
           window.location.href = "index.html";
           return;
         }
@@ -125,7 +125,7 @@ class AdminManager {
         await this.switchTab(this.currentTab);
       } catch (error) {
         console.error("Error checking admin permissions:", error);
-        alert("Khong the kiem tra quyen quan tri.");
+        alert("Không thể kiểm tra quyền quản trị.");
         window.location.href = "index.html";
       }
     });
@@ -137,7 +137,7 @@ class AdminManager {
     const logoutLink = document.getElementById("nav-auth-link");
     if (!logoutLink) return;
 
-    logoutLink.textContent = "Dang xuat";
+    logoutLink.textContent = "Đăng xuất";
     logoutLink.href = "#";
     logoutLink.onclick = async (event) => {
       event.preventDefault();
@@ -278,11 +278,11 @@ class AdminManager {
 
       const email = String(this.moderatorEmailInput?.value || "").trim().toLowerCase();
       if (!email || !email.includes("@")) {
-        alert("Nhap email moderator hop le.");
+        alert("Nhập email moderator hợp lệ.");
         return;
       }
       if (email === this.primaryAdminEmail) {
-        alert("Khong the them email admin chinh vao danh sach moderator.");
+        alert("Không thể thêm email admin chính vào danh sách moderator.");
         return;
       }
 
@@ -294,7 +294,7 @@ class AdminManager {
 
       this.moderatorEmailInput.value = "";
       await this.renderModerators();
-      alert("Da them moderator moi.");
+      alert("Đã thêm moderator mới.");
     });
   }
 
@@ -410,8 +410,8 @@ class AdminManager {
           .sort((a, b) => this.getComparableDate(b.submittedAt || b.updatedAt) - this.getComparableDate(a.submittedAt || a.updatedAt))
           .map((item) => ({
             id: item.id,
-            title: "Ho so gia su moi",
-            message: `${item.name || item.email || "Gia su"} dang cho duyet`,
+            title: "Hồ sơ gia sư mới",
+            message: `${item.name || item.email || "Gia sư"} đang chờ duyệt`,
             createdAt: item.submittedAt || item.updatedAt || new Date().toISOString(),
             tutorData: item,
             isRead: readIds.includes(item.id)
@@ -443,7 +443,7 @@ class AdminManager {
     const recent = this.notifications.slice(0, 10);
     this.notificationList.innerHTML = recent.length
       ? recent.map((item) => this.renderNotification(item)).join("")
-      : '<div class="notification-item"><div class="notification-content"><div class="notification-title">Khong co thong bao moi</div></div></div>';
+      : '<div class="notification-item"><div class="notification-content"><div class="notification-title">Không có thông báo mới</div></div></div>';
 
     this.notificationList.querySelectorAll(".notification-item").forEach((element, index) => {
       element.addEventListener("click", () => {
@@ -514,10 +514,10 @@ class AdminManager {
   getTimeAgo(value) {
     const date = this.toDate(value);
     const diffSeconds = Math.max(0, Math.floor((Date.now() - date.getTime()) / 1000));
-    if (diffSeconds < 60) return "Vua xong";
-    if (diffSeconds < 3600) return `${Math.floor(diffSeconds / 60)} phut truoc`;
-    if (diffSeconds < 86400) return `${Math.floor(diffSeconds / 3600)} gio truoc`;
-    return `${Math.floor(diffSeconds / 86400)} ngay truoc`;
+    if (diffSeconds < 60) return "Vừa xong";
+    if (diffSeconds < 3600) return `${Math.floor(diffSeconds / 60)} phút trước`;
+    if (diffSeconds < 86400) return `${Math.floor(diffSeconds / 3600)} giờ trước`;
+    return `${Math.floor(diffSeconds / 86400)} ngày trước`;
   }
 
   toDate(value) {
@@ -533,7 +533,7 @@ class AdminManager {
 
   formatDateTime(value) {
     const date = this.toDate(value);
-    return Number.isNaN(date.getTime()) ? "Chua cap nhat" : date.toLocaleString("vi-VN");
+    return Number.isNaN(date.getTime()) ? "Chưa cập nhật" : date.toLocaleString("vi-VN");
   }
 
   async loadDashboardStats() {
@@ -556,7 +556,7 @@ class AdminManager {
   showTutorDetailModal(tutorData) {
     if (!this.tutorDetailModal || !tutorData) return;
 
-    this.modalTutorName.textContent = `Chi tiet: ${tutorData.name || tutorData.email || "Gia su"}`;
+    this.modalTutorName.textContent = `Chi tiết: ${tutorData.name || tutorData.email || "Gia sư"}`;
     this.modalTutorDetails.innerHTML = this.renderTutorDetails(tutorData);
     this.modalApproveBtn?.setAttribute("data-email", tutorData.email || "");
     this.modalRejectBtn?.setAttribute("data-email", tutorData.email || "");
@@ -571,39 +571,39 @@ class AdminManager {
   }
 
   renderTutorDetails(tutorData) {
-    const priceText = tutorData.price ? `${Number(tutorData.price).toLocaleString("vi-VN")} VND/buoi` : "Chua cap nhat";
+    const priceText = tutorData.price ? `${Number(tutorData.price).toLocaleString("vi-VN")} VND/buổi` : "Chưa cập nhật";
     return `
       <div class="tutor-detail-grid">
         <div class="detail-section">
-          <h3>Thong tin ca nhan</h3>
-          <p><strong>Ho ten:</strong> ${tutorData.name || "Chua cap nhat"}</p>
-          <p><strong>Email:</strong> ${tutorData.email || "Chua cap nhat"}</p>
-          <p><strong>So dien thoai:</strong> ${tutorData.phone || "Chua cap nhat"}</p>
-          <p><strong>Khu vuc:</strong> ${tutorData.location || "Chua cap nhat"}</p>
+          <h3>Thông tin cá nhân</h3>
+          <p><strong>Họ tên:</strong> ${tutorData.name || "Chưa cập nhật"}</p>
+          <p><strong>Email:</strong> ${tutorData.email || "Chưa cập nhật"}</p>
+          <p><strong>Số điện thoại:</strong> ${tutorData.phone || "Chưa cập nhật"}</p>
+          <p><strong>Khu vực:</strong> ${tutorData.location || "Chưa cập nhật"}</p>
         </div>
         <div class="detail-section">
-          <h3>Thong tin giang day</h3>
-          <p><strong>Mon hoc:</strong> ${tutorData.subject || "Chua cap nhat"}</p>
-          <p><strong>Trinh do:</strong> ${tutorData.level || "Chua cap nhat"}</p>
-          <p><strong>Kinh nghiem:</strong> ${tutorData.experience || "Chua cap nhat"}</p>
-          <p><strong>Hoc phi:</strong> ${priceText}</p>
-          <p><strong>Thoi gian ranh:</strong> ${tutorData.availableTime || tutorData.schedule || "Chua cap nhat"}</p>
+          <h3>Thông tin giảng dạy</h3>
+          <p><strong>Môn học:</strong> ${tutorData.subject || "Chưa cập nhật"}</p>
+          <p><strong>Trình độ:</strong> ${tutorData.level || "Chưa cập nhật"}</p>
+          <p><strong>Kinh nghiệm:</strong> ${tutorData.experience || "Chưa cập nhật"}</p>
+          <p><strong>Học phí:</strong> ${priceText}</p>
+          <p><strong>Thời gian rảnh:</strong> ${tutorData.availableTime || tutorData.schedule || "Chưa cập nhật"}</p>
         </div>
         <div class="detail-section">
-          <h3>Trang thai</h3>
-          <p><strong>Duyet:</strong> ${this.getTutorStatusLabel(tutorData.status)}</p>
-          <p><strong>Hoat dong:</strong> ${tutorData.activeState === "busy" ? "Busy" : "Available"}</p>
-          <p><strong>Gui luc:</strong> ${this.formatDateTime(tutorData.submittedAt || tutorData.createdAt)}</p>
-          ${tutorData.rejectReason ? `<p><strong>Ly do tu choi:</strong> ${tutorData.rejectReason}</p>` : ""}
+          <h3>Trạng thái</h3>
+          <p><strong>Duyệt:</strong> ${this.getTutorStatusLabel(tutorData.status)}</p>
+          <p><strong>Hoạt động:</strong> ${tutorData.activeState === "busy" ? "Bận" : "Sẵn sàng"}</p>
+          <p><strong>Gửi lúc:</strong> ${this.formatDateTime(tutorData.submittedAt || tutorData.createdAt)}</p>
+          ${tutorData.rejectReason ? `<p><strong>Lý do từ chối:</strong> ${tutorData.rejectReason}</p>` : ""}
         </div>
       </div>
     `;
   }
 
   getTutorStatusLabel(status) {
-    if (status === "approved") return "Da duyet";
-    if (status === "rejected") return "Tu choi";
-    return "Cho duyet";
+    if (status === "approved") return "Đã duyệt";
+    if (status === "rejected") return "Từ chối";
+    return "Chờ duyệt";
   }
 
   async findTutorDocumentByEmail(email) {
@@ -668,25 +668,25 @@ class AdminManager {
     const statusClass = status === "approved" ? "tutor-status-available" : status === "rejected" ? "tutor-status-busy" : "tutor-status-pending";
     const actionButtons = status === "pending"
       ? `
-          <button type="button" class="btn btn-primary admin-approve-btn" data-email="${item.email}">Duyet</button>
-          <button type="button" class="btn btn-secondary admin-reject-btn" data-email="${item.email}">Tu choi</button>
+          <button type="button" class="btn btn-primary admin-approve-btn" data-email="${item.email}">Duyệt</button>
+          <button type="button" class="btn btn-secondary admin-reject-btn" data-email="${item.email}">Từ chối</button>
         `
       : "";
 
     return `
       <article class="tutor-card">
         <div class="tutor-header">
-          <h3>${item.name || "Gia su"}</h3>
+          <h3>${item.name || "Gia sư"}</h3>
           <span class="tutor-status ${statusClass}">${this.getTutorStatusLabel(status)}</span>
         </div>
-        <p class="tutor-meta">${item.subject || "Chua cap nhat"} | ${item.level || "Chua cap nhat"}</p>
+        <p class="tutor-meta">${item.subject || "Chưa cập nhật"} | ${item.level || "Chưa cập nhật"}</p>
         <p class="tutor-bio"><strong>Email:</strong> ${item.email || ""}</p>
-        <p class="tutor-duration"><strong>Khu vuc:</strong> ${item.location || "Chua cap nhat"}</p>
-        <p class="tutor-duration"><strong>Gia:</strong> ${price} VND/buoi</p>
-        ${item.rejectReason ? `<p class="tutor-duration"><strong>Ly do tu choi:</strong> ${item.rejectReason}</p>` : ""}
+        <p class="tutor-duration"><strong>Khu vực:</strong> ${item.location || "Chưa cập nhật"}</p>
+        <p class="tutor-duration"><strong>Giá:</strong> ${price} VND/buổi</p>
+        ${item.rejectReason ? `<p class="tutor-duration"><strong>Lý do từ chối:</strong> ${item.rejectReason}</p>` : ""}
         <div class="request-modal-actions">
           ${actionButtons}
-          <button type="button" class="btn btn-secondary admin-view-btn" data-email="${item.email}">Xem chi tiet</button>
+          <button type="button" class="btn btn-secondary admin-view-btn" data-email="${item.email}">Xem chi tiết</button>
         </div>
       </article>
     `;
@@ -702,7 +702,7 @@ class AdminManager {
     document.querySelectorAll(".admin-reject-btn").forEach((button) => {
       button.addEventListener("click", async () => {
         const email = button.getAttribute("data-email");
-        const reason = prompt("Nhap ly do tu choi:", "") || "";
+        const reason = prompt("Nhập lý do từ chối:", "") || "";
         await this.rejectTutorRegistration(email, reason.trim());
       });
     });
@@ -718,7 +718,7 @@ class AdminManager {
     if (!email) return;
     const tutorDoc = await this.findTutorDocumentByEmail(email);
     if (!tutorDoc) {
-      alert("Khong tim thay ho so gia su.");
+      alert("Không tìm thấy hồ sơ gia sư.");
       return;
     }
 
@@ -731,7 +731,7 @@ class AdminManager {
 
     await this.pushNotification(
       email,
-      "Ho so gia su cua ban da duoc duyet va hien thi tren he thong.",
+      "Hồ sơ gia sư của bạn đã được duyệt và hiển thị trên hệ thống.",
       "tutor-approval-status",
       { status: "approved" }
     );
@@ -741,14 +741,14 @@ class AdminManager {
     await this.loadDashboardStats();
     await this.renderApprovals();
     if (this.currentTab === "tutor-list") await this.renderTutors();
-    alert("Da duyet ho so gia su.");
+    alert("Đã duyệt hồ sơ gia sư.");
   }
 
   async rejectTutorRegistration(email, reason) {
     if (!email) return;
     const tutorDoc = await this.findTutorDocumentByEmail(email);
     if (!tutorDoc) {
-      alert("Khong tim thay ho so gia su.");
+      alert("Không tìm thấy hồ sơ gia sư.");
       return;
     }
 
@@ -761,7 +761,7 @@ class AdminManager {
 
     await this.pushNotification(
       email,
-      "Ho so gia su cua ban chua duoc duyet. Vui long cap nhat lai thong tin va gui lai.",
+      "Hồ sơ gia sư của bạn chưa được duyệt. Vui lòng cập nhật lại thông tin và gửi lại.",
       "tutor-approval-status",
       { status: "rejected", reason: String(reason || "").trim() }
     );
@@ -774,7 +774,7 @@ class AdminManager {
     this.markNotificationAsRead(tutorDoc.id);
     await this.loadDashboardStats();
     await this.renderApprovals();
-    alert("Da tu choi ho so gia su.");
+    alert("Đã từ chối hồ sơ gia sư.");
   }
 
   async viewTutorDetails(email) {
@@ -782,7 +782,7 @@ class AdminManager {
     const registrations = await this.readJson("edubridge_tutor_registrations");
     const tutor = registrations.find((item) => String(item.email || "").toLowerCase() === String(email).toLowerCase());
     if (!tutor) {
-      alert("Khong tim thay thong tin gia su.");
+      alert("Không tìm thấy thông tin gia sư.");
       return;
     }
     this.showTutorDetailModal(tutor);
@@ -805,7 +805,7 @@ class AdminManager {
             </div>
           </li>
         `).join("")
-      : '<li class="history-item">Chua co moderator nao.</li>';
+      : '<li class="history-item">Chưa có moderator nào.</li>';
 
     this.moderatorList.querySelectorAll(".remove-moderator-btn").forEach((button) => {
       button.addEventListener("click", async () => {
@@ -844,24 +844,24 @@ class AdminManager {
   tutorManageCard(item) {
     const isBusy = String(item.activeState || "available").toLowerCase() === "busy";
     const badge = isBusy
-      ? '<span class="tutor-status tutor-status-busy">Busy</span>'
-      : '<span class="tutor-status tutor-status-available">Available</span>';
+      ? '<span class="tutor-status tutor-status-busy">Bận</span>'
+      : '<span class="tutor-status tutor-status-available">Sẵn sàng</span>';
 
     return `
       <article class="tutor-card">
         <div class="tutor-header">
-          <h3>${item.name || "Gia su"}</h3>
+          <h3>${item.name || "Gia sư"}</h3>
           ${badge}
         </div>
-        <p class="tutor-meta">${item.subject || "Chua cap nhat"} | ${item.level || "Chua cap nhat"}</p>
+        <p class="tutor-meta">${item.subject || "Chưa cập nhật"} | ${item.level || "Chưa cập nhật"}</p>
         <p class="tutor-bio"><strong>Email:</strong> ${item.email || ""}</p>
-        <p class="tutor-duration"><strong>Khu vuc:</strong> ${item.location || "Chua cap nhat"}</p>
-        <p class="tutor-duration"><strong>Gia:</strong> ${Number(item.price || 0).toLocaleString("vi-VN")} VND/buoi</p>
+        <p class="tutor-duration"><strong>Khu vực:</strong> ${item.location || "Chưa cập nhật"}</p>
+        <p class="tutor-duration"><strong>Giá:</strong> ${Number(item.price || 0).toLocaleString("vi-VN")} VND/buổi</p>
         <div class="request-modal-actions">
           <button type="button" class="btn btn-secondary tutor-toggle-status-btn" data-email="${item.email}">
-            ${isBusy ? "Mo lai" : "Danh dau busy"}
+            ${isBusy ? "Mở lại" : "Đánh dấu bận"}
           </button>
-          <button type="button" class="btn btn-secondary tutor-remove-btn" data-email="${item.email}">Xoa</button>
+          <button type="button" class="btn btn-secondary tutor-remove-btn" data-email="${item.email}">Xóa</button>
         </div>
       </article>
     `;
@@ -876,7 +876,7 @@ class AdminManager {
       button.addEventListener("click", async () => {
         const email = button.getAttribute("data-email");
         if (!email) return;
-        if (!confirm("Ban chac chan muon xoa gia su nay?")) return;
+        if (!confirm("Bạn chắc chắn muốn xóa gia sư này?")) return;
         await this.removeTutor(email);
       });
     });
@@ -896,7 +896,7 @@ class AdminManager {
   async removeTutor(email) {
     const tutorDoc = await this.findTutorDocumentByEmail(email);
     if (!tutorDoc) {
-      alert("Khong tim thay gia su.");
+      alert("Không tìm thấy gia sư.");
       return;
     }
 
@@ -905,7 +905,7 @@ class AdminManager {
     await this.loadDashboardStats();
     await this.renderTutors();
     await this.renderApprovals();
-    alert("Da xoa gia su.");
+    alert("Đã xóa gia sư.");
   }
 
   async renderStudents() {
@@ -928,11 +928,11 @@ class AdminManager {
     const assignedCount = Array.isArray(item.assignedTutors) ? item.assignedTutors.length : 0;
     return `
       <article class="tutor-card">
-        <h3>${item.name || "Hoc vien"}</h3>
+        <h3>${item.name || "Học viên"}</h3>
         <p class="tutor-meta">${item.email || ""}</p>
         <p class="tutor-duration"><strong>Tham gia:</strong> ${this.formatDateTime(item.joinedAt)}</p>
-        <p class="tutor-duration"><strong>Trang thai:</strong> ${item.status || "active"}</p>
-        <p class="tutor-duration"><strong>Gia su da ket noi:</strong> ${assignedCount}</p>
+        <p class="tutor-duration"><strong>Trạng thái:</strong> ${item.status || "active"}</p>
+        <p class="tutor-duration"><strong>Gia sư đã kết nối:</strong> ${assignedCount}</p>
       </article>
     `;
   }
@@ -965,38 +965,38 @@ class AdminManager {
     const statusLabel = this.getRequestStatusLabel(item.status);
     const buttons = item.status === "waiting_tutor"
       ? `
-          <button type="button" class="btn btn-primary request-approve-btn" data-id="${item.id}">Duyet thu cong</button>
-          <button type="button" class="btn btn-secondary request-reject-btn" data-id="${item.id}">Tu choi</button>
-          <button type="button" class="btn btn-secondary request-delete-btn" data-id="${item.id}">Xoa</button>
+          <button type="button" class="btn btn-primary request-approve-btn" data-id="${item.id}">Duyệt thủ công</button>
+          <button type="button" class="btn btn-secondary request-reject-btn" data-id="${item.id}">Từ chối</button>
+          <button type="button" class="btn btn-secondary request-delete-btn" data-id="${item.id}">Xóa</button>
         `
-      : '<button type="button" class="btn btn-secondary request-delete-btn" data-id="' + item.id + '">Xoa</button>';
+      : '<button type="button" class="btn btn-secondary request-delete-btn" data-id="' + item.id + '">Xóa</button>';
 
     return `
       <article class="tutor-card">
         <div class="tutor-header">
-          <h3>Yeu cau tu ${item.studentName || "Hoc vien"}</h3>
+          <h3>Yêu cầu từ ${item.studentName || "Học viên"}</h3>
           <span class="tutor-status tutor-status-available">${statusLabel}</span>
         </div>
-        <p class="tutor-meta"><strong>Gia su:</strong> ${item.tutorName || "Chua cap nhat"}</p>
-        <p class="tutor-bio"><strong>Hoc vien:</strong> ${item.studentEmail || ""}</p>
-        <p class="tutor-duration"><strong>Mon:</strong> ${item.subject || ""}</p>
-        <p class="tutor-duration"><strong>Gia/buoi:</strong> ${Number(item.pricePerSession || 0).toLocaleString("vi-VN")} VND</p>
-        <p class="tutor-duration"><strong>Ghi chu:</strong> ${item.note || "(khong co)"}</p>
-        <p class="tutor-duration"><small>Tao luc: ${this.formatDateTime(item.createdAt)}</small></p>
+        <p class="tutor-meta"><strong>Gia sư:</strong> ${item.tutorName || "Chưa cập nhật"}</p>
+        <p class="tutor-bio"><strong>Học viên:</strong> ${item.studentEmail || ""}</p>
+        <p class="tutor-duration"><strong>Môn:</strong> ${item.subject || ""}</p>
+        <p class="tutor-duration"><strong>Giá/buổi:</strong> ${Number(item.pricePerSession || 0).toLocaleString("vi-VN")} VND</p>
+        <p class="tutor-duration"><strong>Ghi chú:</strong> ${item.note || "(không có)"}</p>
+        <p class="tutor-duration"><small>Tạo lúc: ${this.formatDateTime(item.createdAt)}</small></p>
         <div class="request-modal-actions">${buttons}</div>
       </article>
     `;
   }
 
   getRequestStatusLabel(status) {
-    if (status === "waiting_tutor") return "Cho gia su phan hoi";
-    if (status === "accepted_waiting_funds") return "Cho nop tien";
-    if (status === "in_teaching") return "Dang hoc";
-    if (status === "completed") return "Hoan thanh";
-    if (status === "declined") return "Tu choi";
-    if (status === "expired") return "Het han";
-    if (status === "refunded") return "Da hoan tien";
-    return status || "Khong ro";
+    if (status === "waiting_tutor") return "Chờ gia sư phản hồi";
+    if (status === "accepted_waiting_funds") return "Chờ nộp tiền";
+    if (status === "in_teaching") return "Đang học";
+    if (status === "completed") return "Hoàn thành";
+    if (status === "declined") return "Từ chối";
+    if (status === "expired") return "Hết hạn";
+    if (status === "refunded") return "Đã hoàn tiền";
+    return status || "Không rõ";
   }
 
   attachRequestListeners() {
@@ -1015,7 +1015,7 @@ class AdminManager {
     document.querySelectorAll(".request-delete-btn").forEach((button) => {
       button.addEventListener("click", async () => {
         const id = button.getAttribute("data-id");
-        if (!confirm("Ban chac chan muon xoa yeu cau nay?")) return;
+        if (!confirm("Bạn chắc chắn muốn xóa yêu cầu này?")) return;
         await this.deleteRequest(id);
       });
     });
@@ -1041,20 +1041,20 @@ class AdminManager {
 
     await this.pushNotification(
       next.studentEmail,
-      `Yeu cau ket noi voi gia su ${next.tutorName || ""} da duoc admin duyet.`,
+      `Yêu cầu kết nối với gia sư ${next.tutorName || ""} đã được admin duyệt.`,
       "matching-status",
       { requestId: next.id, status: "accepted_waiting_funds" }
     );
     await this.pushNotification(
       next.tutorEmail,
-      `Admin da duyet yeu cau hoc tu ${next.studentName || ""}.`,
+      `Admin đã duyệt yêu cầu học từ ${next.studentName || ""}.`,
       "matching-status",
       { requestId: next.id, status: "accepted_waiting_funds" }
     );
 
     await this.loadDashboardStats();
     await this.renderRequests();
-    alert("Da duyet yeu cau ket noi.");
+    alert("Đã duyệt yêu cầu kết nối.");
   }
 
   async rejectRequest(requestId) {
@@ -1067,19 +1067,19 @@ class AdminManager {
 
     await this.pushNotification(
       next.studentEmail,
-      `Yeu cau ket noi voi gia su ${next.tutorName || ""} da bi tu choi.`,
+      `Yêu cầu kết nối với gia sư ${next.tutorName || ""} đã bị từ chối.`,
       "matching-status",
       { requestId: next.id, status: "declined" }
     );
     await this.pushNotification(
       next.tutorEmail,
-      `Yeu cau hoc tu ${next.studentName || ""} da bi admin tu choi.`,
+      `Yêu cầu học từ ${next.studentName || ""} đã bị admin từ chối.`,
       "matching-status",
       { requestId: next.id, status: "declined" }
     );
 
     await this.renderRequests();
-    alert("Da tu choi yeu cau ket noi.");
+    alert("Đã từ chối yêu cầu kết nối.");
   }
 
   async deleteRequest(requestId) {
@@ -1103,18 +1103,18 @@ class AdminManager {
   }
 
   withdrawalCard(item) {
-    const status = item.status === "approved" ? "Da duyet" : "Cho duyet";
+    const status = item.status === "approved" ? "Đã duyệt" : "Chờ duyệt";
     const action = item.status === "pending"
-      ? `<button type="button" class="btn btn-primary approve-withdraw-btn" data-id="${item.id}">Duyet rut tien</button>`
+      ? `<button type="button" class="btn btn-primary approve-withdraw-btn" data-id="${item.id}">Duyệt rút tiền</button>`
       : "";
 
     return `
       <article class="tutor-card">
-        <h3>${item.tutorName || item.tutorEmail || "Gia su"}</h3>
+        <h3>${item.tutorName || item.tutorEmail || "Gia sư"}</h3>
         <p class="tutor-meta">${item.tutorEmail || ""}</p>
-        <p class="tutor-duration"><strong>So tien:</strong> ${Number(item.amount || 0).toLocaleString("vi-VN")} VND</p>
-        <p class="tutor-duration"><strong>Trang thai:</strong> ${status}</p>
-        <p class="tutor-duration"><small>Tao luc: ${this.formatDateTime(item.createdAt)}</small></p>
+        <p class="tutor-duration"><strong>Số tiền:</strong> ${Number(item.amount || 0).toLocaleString("vi-VN")} VND</p>
+        <p class="tutor-duration"><strong>Trạng thái:</strong> ${status}</p>
+        <p class="tutor-duration"><small>Tạo lúc: ${this.formatDateTime(item.createdAt)}</small></p>
         <div class="request-modal-actions">${action}</div>
       </article>
     `;
@@ -1133,13 +1133,13 @@ class AdminManager {
 
     await this.pushNotification(
       withdrawal.tutorEmail,
-      `Yeu cau rut tien ${Number(withdrawal.amount || 0).toLocaleString("vi-VN")} VND da duoc duyet.`,
+      `Yêu cầu rút tiền ${Number(withdrawal.amount || 0).toLocaleString("vi-VN")} VND đã được duyệt.`,
       "withdrawal-approved",
       { amount: withdrawal.amount || 0 }
     );
 
     await this.renderWithdrawals();
-    alert("Da duyet yeu cau rut tien.");
+    alert("Đã duyệt yêu cầu rút tiền.");
   }
 
   async renderDisputes() {
@@ -1167,13 +1167,13 @@ class AdminManager {
   disputeCard(item) {
     return `
       <article class="tutor-card">
-        <h3>Yeu cau #${item.requestId || item.id}</h3>
+        <h3>Yêu cầu #${item.requestId || item.id}</h3>
         <p class="tutor-meta">${item.reporterEmail || ""} (${item.reporterRole || "unknown"})</p>
-        <p class="tutor-bio">${item.reason || "Khong co noi dung"}</p>
-        <p class="tutor-duration"><small>Tao luc: ${this.formatDateTime(item.createdAt)}</small></p>
+        <p class="tutor-bio">${item.reason || "Không có nội dung"}</p>
+        <p class="tutor-duration"><small>Tạo lúc: ${this.formatDateTime(item.createdAt)}</small></p>
         <div class="request-modal-actions">
-          <button type="button" class="btn btn-primary dispute-refund-btn" data-id="${item.id}">Refund cho hoc vien</button>
-          <button type="button" class="btn btn-secondary dispute-close-btn" data-id="${item.id}">Dong khong refund</button>
+          <button type="button" class="btn btn-primary dispute-refund-btn" data-id="${item.id}">Refund cho học viên</button>
+          <button type="button" class="btn btn-secondary dispute-close-btn" data-id="${item.id}">Đóng không refund</button>
         </div>
       </article>
     `;
@@ -1215,20 +1215,20 @@ class AdminManager {
 
     await this.pushNotification(
       dispute.studentEmail,
-      `Tranh chap cua yeu cau #${dispute.requestId} da duoc xu ly va hoan tien.`,
+      `Tranh chấp của yêu cầu #${dispute.requestId} đã được xử lý và hoàn tiền.`,
       "dispute-resolved",
       { requestId: dispute.requestId, result: "refunded" }
     );
     await this.pushNotification(
       dispute.tutorEmail,
-      `Tranh chap cua yeu cau #${dispute.requestId} da duoc admin xu ly theo huong hoan tien.`,
+      `Tranh chấp của yêu cầu #${dispute.requestId} đã được admin xử lý theo hướng hoàn tiền.`,
       "dispute-resolved",
       { requestId: dispute.requestId, result: "refunded" }
     );
 
     await this.renderDisputes();
     await this.renderRequests();
-    alert("Da xu ly tranh chap va hoan tien.");
+    alert("Đã xử lý tranh chấp và hoàn tiền.");
   }
 
   async resolveWithoutRefund(disputeId) {
@@ -1244,13 +1244,13 @@ class AdminManager {
 
     await this.pushNotification(
       dispute.reporterEmail,
-      `Tranh chap cua yeu cau #${dispute.requestId} da duoc dong khong refund.`,
+      `Tranh chấp của yêu cầu #${dispute.requestId} đã được đóng không refund.`,
       "dispute-resolved",
       { requestId: dispute.requestId, result: "closed" }
     );
 
     await this.renderDisputes();
-    alert("Da dong tranh chap.");
+    alert("Đã đóng tranh chấp.");
   }
 }
 
