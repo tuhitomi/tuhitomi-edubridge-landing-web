@@ -24,7 +24,8 @@ function isPermissionDeniedError(error) {
 let notificationsUnsubscribe = null;
 const avatarIconSvg =
   '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
-  '<path fill="currentColor" d="M12 12c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5Zm0 2c-4.42 0-8 2.24-8 5v1h16v-1c0-2.76-3.58-5-8-5Z" />' +
+  '<circle cx="12" cy="8" r="4" fill="currentColor"/>' +
+  '<path fill="currentColor" d="M12 14c-5 0-8 2.5-8 5v1h16v-1c0-2.5-3-5-8-5Z"/>' +
   "</svg>";
 const bellIconSvg =
   '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
@@ -187,6 +188,7 @@ if (navAuthLink) {
   ensureAdminLink();
   ensureBellLink();
   onAuthStateChanged(auth, async function (user) {
+    var signupCta = document.getElementById("nav-signup-cta");
     if (user) {
       if (user.emailVerified) {
         navAuthLink.href = "profile.html";
@@ -194,12 +196,15 @@ if (navAuthLink) {
         navAuthLink.classList.add("nav-auth-icon");
         navAuthLink.setAttribute("aria-label", "Trang cá nhân");
         navAuthLink.title = "Trang cá nhân";
+        // Hide signup CTA when already logged in
+        if (signupCta) signupCta.style.display = "none";
       } else {
         navAuthLink.href = "dang-nhap.html";
         navAuthLink.textContent = "Đăng nhập";
         navAuthLink.classList.remove("nav-auth-icon");
         navAuthLink.removeAttribute("aria-label");
         navAuthLink.removeAttribute("title");
+        if (signupCta) signupCta.style.display = "";
       }
       await updateBellBadge(user);
       await updateAdminLink(user);
@@ -211,6 +216,8 @@ if (navAuthLink) {
     navAuthLink.classList.remove("nav-auth-icon");
     navAuthLink.removeAttribute("aria-label");
     navAuthLink.removeAttribute("title");
+    // Show signup CTA when logged out
+    if (signupCta) signupCta.style.display = "";
     
     // Cleanup notification listener when user logs out
     if (notificationsUnsubscribe) {
