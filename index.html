@@ -93,41 +93,11 @@
               <a href="tim-gia-su.html" style="font-size:12px;font-weight:600;color:var(--brand)">Xem tất cả →</a>
             </div>
 
-            <!-- Tutor mini row -->
-            <div class="hero-tutor-row" style="display:flex;align-items:center;gap:12px;padding:10px;background:var(--page-bg);border-radius:12px;border:1px solid var(--border)">
-              <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#d1fae5,#a7f3d0);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">👩‍🏫</div>
-              <div style="flex:1;min-width:0">
-                <div style="font-size:14px;font-weight:700;color:var(--ink-100)">Nguyễn Thị Hoa</div>
-                <div style="font-size:12px;color:var(--ink-40)">Toán THPT • TP.HCM</div>
-              </div>
-              <div style="text-align:right;flex-shrink:0">
-                <div style="font-size:13px;font-weight:700;color:var(--brand)">250k/buổi</div>
-                <div style="font-size:11px;color:#f59e0b">★★★★★</div>
-              </div>
-            </div>
-
-            <div class="hero-tutor-row" style="display:flex;align-items:center;gap:12px;padding:10px;background:var(--page-bg);border-radius:12px;border:1px solid var(--border)">
-              <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#dbeafe,#bfdbfe);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">👨‍💻</div>
-              <div style="flex:1;min-width:0">
-                <div style="font-size:14px;font-weight:700;color:var(--ink-100)">Trần Minh Khoa</div>
-                <div style="font-size:12px;color:var(--ink-40)">Tiếng Anh IELTS • Hà Nội</div>
-              </div>
-              <div style="text-align:right;flex-shrink:0">
-                <div style="font-size:13px;font-weight:700;color:var(--brand)">300k/buổi</div>
-                <div style="font-size:11px;color:#f59e0b">★★★★★</div>
-              </div>
-            </div>
-
-            <div class="hero-tutor-row" style="display:flex;align-items:center;gap:12px;padding:10px;background:var(--page-bg);border-radius:12px;border:1px solid var(--border)">
-              <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#fef3c7,#fde68a);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">👩‍🔬</div>
-              <div style="flex:1;min-width:0">
-                <div style="font-size:14px;font-weight:700;color:var(--ink-100)">Lê Thị Mai</div>
-                <div style="font-size:12px;color:var(--ink-40)">Hóa học • Online</div>
-              </div>
-              <div style="text-align:right;flex-shrink:0">
-                <div style="font-size:13px;font-weight:700;color:var(--brand)">220k/buổi</div>
-                <div style="font-size:11px;color:#f59e0b">★★★★☆</div>
-              </div>
+            <!-- Dynamic tutor rows (loaded from Firestore) -->
+            <div id="hero-tutor-rows">
+              <div class="hero-tutor-skeleton"></div>
+              <div class="hero-tutor-skeleton"></div>
+              <div class="hero-tutor-skeleton"></div>
             </div>
 
           </div>
@@ -512,12 +482,35 @@ function buildEmpty() {
   </div>`;
 }
 
+// ── Build a hero mini-row (for the hero panel) ──
+function buildHeroRow(tutor, palette) {
+  const avg = Number(tutor.avgRating || tutor.rating || 4).toFixed(1);
+  const price = tutor.price
+    ? Number(tutor.price).toLocaleString("vi-VN") + "đ"
+    : "Thỏa thuận";
+  const subjectShort = (tutor.subject || "Nhiều môn").split(/[,、\/]/)[0].trim();
+  const loc = tutor.location || "Toàn quốc";
+
+  return `
+    <div class="hero-tutor-row" style="display:flex;align-items:center;gap:12px;padding:10px;background:var(--page-bg);border-radius:12px;border:1px solid var(--border)">
+      <div style="width:44px;height:44px;border-radius:50%;background:${palette.avatar};display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px;font-weight:700;color:#fff;letter-spacing:0.02em">${initials(tutor.name)}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:14px;font-weight:700;color:var(--ink-100)">${tutor.name || "Gia sư"}</div>
+        <div style="font-size:12px;color:var(--ink-40)">${subjectShort} • ${loc}</div>
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        <div style="font-size:13px;font-weight:700;color:var(--brand)">${price}/buổi</div>
+        <div style="font-size:11px;color:#f59e0b">${renderStars(avg)}</div>
+      </div>
+    </div>`;
+}
+
 async function loadFeaturedTutors() {
   const grid = document.getElementById("featured-tutor-grid");
-  if (!grid) return;
+  const heroRows = document.getElementById("hero-tutor-rows");
 
   try {
-    // Fetch top 6 approved tutors, sort by avgRating desc then by submittedAt desc
+    // Fetch top 6 approved tutors, sort by avgRating desc
     const snap = await getDocs(
       query(collection(db, "tutor_registrations"),
         where("status", "==", "approved"),
@@ -539,19 +532,30 @@ async function loadFeaturedTutors() {
       tutors = snap2.docs.map(d => ({ id: d.id, ...d.data() }));
     }
 
-    if (tutors.length === 0) {
-      grid.innerHTML = buildEmpty();
-      return;
+    // ── Populate hero panel (top 3) ──
+    if (heroRows) {
+      if (tutors.length === 0) {
+        heroRows.innerHTML = '<div style="text-align:center;padding:1.5rem;color:var(--ink-40);font-size:var(--text-sm)">Chưa có gia sư nào</div>';
+      } else {
+        const heroDisplay = tutors.slice(0, 3);
+        heroRows.innerHTML = heroDisplay.map((t, i) => buildHeroRow(t, PALETTES[i % PALETTES.length])).join("");
+      }
     }
 
-    // Show max 3 on homepage, shuffle for variety
-    const displayed = tutors.slice(0, 3);
-    grid.innerHTML = displayed.map((t, i) => buildCard(t, PALETTES[i % PALETTES.length])).join("");
+    // ── Populate featured grid (top 3 cards) ──
+    if (grid) {
+      if (tutors.length === 0) {
+        grid.innerHTML = buildEmpty();
+      } else {
+        const displayed = tutors.slice(0, 3);
+        grid.innerHTML = displayed.map((t, i) => buildCard(t, PALETTES[i % PALETTES.length])).join("");
+      }
+    }
 
   } catch (err) {
-    // Firestore index not ready or permission issue — show placeholder
     console.warn("Featured tutors load error:", err);
-    grid.innerHTML = buildEmpty();
+    if (grid) grid.innerHTML = buildEmpty();
+    if (heroRows) heroRows.innerHTML = '<div style="text-align:center;padding:1.5rem;color:var(--ink-40);font-size:var(--text-sm)">Không thể tải dữ liệu</div>';
   }
 }
 
