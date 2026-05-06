@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="vi">
 <head>
   <meta charset="UTF-8" />
@@ -90,6 +90,59 @@
         <h3>Ví hệ thống</h3>
         <p class="auth-note" id="wallet-note">Admin revenue: 0 VND • Ví gia sư của bạn: 0 VND</p>
         <button type="button" class="btn btn-secondary btn-block" id="withdraw-btn">Yêu cầu rút tiền về ngân hàng</button>
+
+        <!-- ═══ TEACHING SCHEDULE (Gia sư) ═══ -->
+        <div id="tutor-schedule-section" style="display:none">
+          <div class="profile-section-header">
+            <span class="section-icon">📅</span>
+            <h3>Lịch dạy sắp tới</h3>
+            <span class="section-count" id="schedule-count">0</span>
+          </div>
+          <ul class="schedule-list" id="teaching-schedule"></ul>
+        </div>
+
+        <!-- ═══ UPDATE LEARNING RESULTS (Gia sư) ═══ -->
+        <div id="tutor-update-results-section" style="display:none">
+          <div class="profile-section-header">
+            <span class="section-icon">📝</span>
+            <h3>Cập nhật kết quả học</h3>
+          </div>
+          <div class="result-form-card">
+            <label>
+              Chọn lớp đang dạy
+              <select id="result-request-select">
+                <option value="">-- Chọn lớp học --</option>
+              </select>
+            </label>
+            <div class="result-form-row">
+              <label>
+                Ngày buổi học
+                <input type="date" id="result-session-date" />
+              </label>
+              <label>
+                Điểm số (0 — 10)
+                <input type="number" id="result-score" min="0" max="10" step="0.5" placeholder="VD: 8.5" />
+              </label>
+            </div>
+            <label>
+              Nhận xét tiến bộ
+              <textarea id="result-comment" rows="3" placeholder="VD: Học viên nắm tốt kiến thức phân số, cần luyện thêm bài tập ứng dụng..."></textarea>
+            </label>
+            <button type="button" class="btn btn-primary btn-block" id="save-result-btn">Lưu kết quả</button>
+            <p class="auth-status" id="result-status"></p>
+          </div>
+        </div>
+
+        <!-- ═══ LEARNING RESULTS TABLE (Học viên / Phụ huynh) ═══ -->
+        <div id="student-results-section" style="display:none">
+          <div class="profile-section-header">
+            <span class="section-icon">📊</span>
+            <h3>Kết quả học tập</h3>
+            <span class="section-count" id="results-count">0</span>
+          </div>
+          <div id="learning-results-container"></div>
+        </div>
+
         <h3>Lịch sử yêu cầu (học viên)</h3>
         <ul id="sent-history" class="history-list"></ul>
         <h3>Lịch sử được yêu cầu (gia sư)</h3>

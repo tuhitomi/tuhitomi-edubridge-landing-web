@@ -1,5 +1,5 @@
 import { onAuthStateChanged, signOut, updateProfile } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
-import { collection, doc, getDocs, setDoc, getDoc, addDoc, updateDoc, query, where, limit } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+import { collection, doc, getDocs, setDoc, getDoc, addDoc, updateDoc, query, where, limit, orderBy } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 import { auth, db } from "./firebase-config.js";
 
 var form = document.getElementById("profile-form");
@@ -28,6 +28,21 @@ var disputeReasonEl = document.getElementById("dispute-reason");
 var createDisputeBtn = document.getElementById("create-dispute-btn");
 var currentUser = null;
 var SERVICE_FEE = 50000;
+
+// ── Schedule & Results DOM refs ──
+var scheduleSection = document.getElementById("tutor-schedule-section");
+var scheduleList = document.getElementById("teaching-schedule");
+var scheduleCountEl = document.getElementById("schedule-count");
+var updateResultsSection = document.getElementById("tutor-update-results-section");
+var resultRequestSelect = document.getElementById("result-request-select");
+var resultSessionDate = document.getElementById("result-session-date");
+var resultScore = document.getElementById("result-score");
+var resultCommentEl = document.getElementById("result-comment");
+var saveResultBtn = document.getElementById("save-result-btn");
+var resultStatusEl = document.getElementById("result-status");
+var studentResultsSection = document.getElementById("student-results-section");
+var resultsContainer = document.getElementById("learning-results-container");
+var resultsCountEl = document.getElementById("results-count");
 
 function setStatus(message) {
   statusEl.textContent = message;
@@ -369,6 +384,168 @@ async function renderWalletInfo(email) {
   withdrawBtn.disabled = tutorBalance <= 0;
 }
 
+// ── Teaching schedule rendering (for tutors) ──
+
+async function renderTeachingSchedule(email) {
+  if (!scheduleSection || !scheduleList) return;
+  var requests = await readRequests();
+  var teaching = requests.filter(function (item) {
+    return item.tutorEmail === email && item.status === "in_teaching";
+  });
+
+  if (teaching.length === 0) {
+    scheduleSection.style.display = "block";
+    scheduleCountEl.textContent = "0";
+    scheduleList.innerHTML =
+      '<li class="schedule-empty">' +
+      '<div class="schedule-empty-icon">📭</div>' +
+      '<p>Bạn chưa có lớp nào đang dạy.<br>Khi học viên nạp tiền, lớp sẽ xuất hiện tại đây.</p>' +
+      '</li>';
+    return;
+  }
+
+  scheduleSection.style.display = "block";
+  scheduleCountEl.textContent = String(teaching.length);
+  scheduleList.innerHTML = teaching.map(function (item) {
+    var note = item.note || "Chưa có ghi chú";
+    var createdDate = "";
+    try { createdDate = new Date(item.createdAt).toLocaleDateString("vi-VN"); } catch (e) {}
+    return (
+      '<li class="schedule-card">' +
+      '<div class="schedule-card-icon">📚</div>' +
+      '<div class="schedule-card-body">' +
+      '<div class="sc-name">' + (item.studentName || "Học viên") + '</div>' +
+      '<div class="sc-detail">' +
+      '<strong>Môn:</strong> ' + (item.subject || "—") + '<br>' +
+      '<strong>Ghi chú:</strong> ' + note + '<br>' +
+      '<strong>Bắt đầu:</strong> ' + createdDate +
+      '</div>' +
+      '</div>' +
+      '<span class="schedule-card-badge">Đang dạy</span>' +
+      '</li>'
+    );
+  }).join("");
+}
+
+// ── Update results form (for tutors) ──
+
+async function renderUpdateResultForm(email) {
+  if (!updateResultsSection || !resultRequestSelect) return;
+  var requests = await readRequests();
+  var teaching = requests.filter(function (item) {
+    return item.tutorEmail === email && item.status === "in_teaching";
+  });
+
+  if (teaching.length === 0) {
+    updateResultsSection.style.display = "none";
+    return;
+  }
+
+  updateResultsSection.style.display = "block";
+  resultRequestSelect.innerHTML =
+    '<option value="">-- Chọn lớp học --</option>' +
+    teaching.map(function (item) {
+      return '<option value="' + item.id + '" data-student="' + (item.studentEmail || "") + '" data-subject="' + (item.subject || "") + '">' +
+        (item.studentName || "Học viên") + ' — ' + (item.subject || "Môn học") +
+        '</option>';
+    }).join("");
+
+  // Set default date to today
+  if (resultSessionDate) {
+    resultSessionDate.value = new Date().toISOString().split("T")[0];
+  }
+}
+
+// ── Learning results table (for students/parents) ──
+
+async function renderLearningResults(email) {
+  if (!studentResultsSection || !resultsContainer) return;
+  try {
+    var snapshot;
+    try {
+      // Try compound query (needs Firestore composite index)
+      var q = query(
+        collection(db, 'learning_results'),
+        where('studentEmail', '==', email),
+        orderBy('createdAt', 'desc')
+      );
+      snapshot = await getDocs(q);
+    } catch (indexErr) {
+      // Fallback: query without orderBy (no composite index needed), sort client-side
+      console.warn('Firestore index not ready, using fallback query:', indexErr.message);
+      var qFallback = query(
+        collection(db, 'learning_results'),
+        where('studentEmail', '==', email)
+      );
+      snapshot = await getDocs(qFallback);
+    }
+    var results = snapshot.docs.map(function (docSnap) {
+      return { id: docSnap.id, ...docSnap.data() };
+    });
+    // Sort by createdAt desc (client-side, ensures order even without index)
+    results.sort(function (a, b) {
+      return (b.createdAt || "").localeCompare(a.createdAt || "");
+    });
+
+    if (results.length === 0) {
+      studentResultsSection.style.display = "block";
+      resultsCountEl.textContent = "0";
+      resultsContainer.innerHTML =
+        '<div class="results-empty">' +
+        '<div class="results-empty-icon">📊</div>' +
+        '<p>Chưa có kết quả học tập nào.<br>Kết quả sẽ được gia sư cập nhật sau mỗi buổi học.</p>' +
+        '</div>';
+      return;
+    }
+
+    studentResultsSection.style.display = "block";
+    resultsCountEl.textContent = String(results.length);
+
+    var rows = results.map(function (r) {
+      var score = Number(r.score || 0);
+      var pct = Math.round((score / 10) * 100);
+      var scoreClass = score >= 7 ? "score-high" : (score >= 5 ? "score-mid" : "score-low");
+      var dateStr = "";
+      try {
+        dateStr = r.sessionDate
+          ? new Date(r.sessionDate + "T00:00:00").toLocaleDateString("vi-VN")
+          : new Date(r.createdAt).toLocaleDateString("vi-VN");
+      } catch (e) {}
+      return (
+        '<tr>' +
+        '<td style="font-weight:600;color:var(--ink-100)">' + (r.subject || "—") + '</td>' +
+        '<td>' + (r.tutorName || r.tutorEmail || "—") + '</td>' +
+        '<td>' + dateStr + '</td>' +
+        '<td><div class="score-cell">' +
+        '<span class="score-value">' + score.toFixed(1) + '</span>' +
+        '<div class="score-bar"><div class="score-bar-fill ' + scoreClass + '" style="width:' + pct + '%"></div></div>' +
+        '</div></td>' +
+        '<td><span class="result-comment" title="' + (r.comment || "").replace(/"/g, '&quot;') + '">' + (r.comment || "Không có nhận xét") + '</span></td>' +
+        '</tr>'
+      );
+    }).join("");
+
+    resultsContainer.innerHTML =
+      '<div class="results-table-wrap">' +
+      '<table class="results-table">' +
+      '<thead><tr>' +
+      '<th>Môn</th><th>Gia sư</th><th>Ngày</th><th>Điểm</th><th>Nhận xét</th>' +
+      '</tr></thead>' +
+      '<tbody>' + rows + '</tbody>' +
+      '</table>' +
+      '</div>';
+
+  } catch (e) {
+    console.warn('Error loading learning results:', e);
+    studentResultsSection.style.display = "block";
+    resultsContainer.innerHTML =
+      '<div class="results-empty">' +
+      '<div class="results-empty-icon">⚠️</div>' +
+      '<p>Không thể tải kết quả học tập.</p>' +
+      '</div>';
+  }
+}
+
 // ── Auth state ──
 
 onAuthStateChanged(auth, async function (user) {
@@ -383,6 +560,17 @@ onAuthStateChanged(auth, async function (user) {
   await renderHistories(user.email || "");
   await renderTutorProfile(user.email || "");
   await renderWalletInfo(String(user.email || "").toLowerCase());
+
+  // ── Schedule & Results ──
+  var emailLower = String(user.email || "").toLowerCase();
+  // Check if this user is a tutor
+  var tutorProfile = await getTutorProfileByEmail(emailLower);
+  if (tutorProfile && tutorProfile.status === "approved") {
+    await renderTeachingSchedule(emailLower);
+    await renderUpdateResultForm(emailLower);
+  }
+  // Always show learning results for any user (student/parent)
+  await renderLearningResults(emailLower);
 });
 
 form.addEventListener("submit", async function (event) {
@@ -520,3 +708,88 @@ createDisputeBtn.addEventListener("click", async function () {
   disputeReasonEl.value = "";
   alert("Đã gửi report tranh chấp. Admin sẽ xử lý sớm.");
 });
+
+// ── Save learning result (tutor) ──
+
+if (saveResultBtn) {
+  saveResultBtn.addEventListener("click", async function () {
+    if (!currentUser || !currentUser.email) return;
+    var email = String(currentUser.email || "").toLowerCase();
+    var requestId = resultRequestSelect.value || "";
+    if (!requestId) {
+      resultStatusEl.textContent = "Vui lòng chọn lớp học.";
+      return;
+    }
+    var sessionDate = (resultSessionDate.value || "").trim();
+    var score = resultScore.value;
+    var comment = (resultCommentEl.value || "").trim();
+
+    if (!sessionDate) {
+      resultStatusEl.textContent = "Vui lòng chọn ngày buổi học.";
+      return;
+    }
+    if (score === "" || score === null || score === undefined) {
+      resultStatusEl.textContent = "Vui lòng nhập điểm số.";
+      return;
+    }
+    var scoreNum = Number(score);
+    if (isNaN(scoreNum) || scoreNum < 0 || scoreNum > 10) {
+      resultStatusEl.textContent = "Điểm số phải từ 0 đến 10.";
+      return;
+    }
+
+    // Get selected option data
+    var selectedOption = resultRequestSelect.options[resultRequestSelect.selectedIndex];
+    var studentEmail = selectedOption.getAttribute("data-student") || "";
+    var subject = selectedOption.getAttribute("data-subject") || "";
+
+    saveResultBtn.disabled = true;
+    saveResultBtn.textContent = "Đang lưu…";
+    resultStatusEl.textContent = "";
+
+    try {
+      await addDoc(collection(db, 'learning_results'), {
+        requestId: requestId,
+        tutorEmail: email,
+        tutorName: currentUser.displayName || email,
+        studentEmail: studentEmail,
+        subject: subject,
+        sessionDate: sessionDate,
+        score: scoreNum,
+        comment: comment,
+        createdAt: new Date().toISOString()
+      });
+
+      // Notify student
+      if (studentEmail) {
+        await pushNotification(
+          studentEmail,
+          "Gia sư " + (currentUser.displayName || email) + " đã cập nhật kết quả học môn " + subject + ": " + scoreNum.toFixed(1) + " điểm.",
+          "learning-result",
+          { requestId: requestId, score: scoreNum, subject: subject }
+        );
+      }
+
+      // Reset form
+      resultScore.value = "";
+      resultCommentEl.value = "";
+      resultSessionDate.value = new Date().toISOString().split("T")[0];
+      resultStatusEl.textContent = "Đã lưu kết quả thành công!";
+      resultStatusEl.style.color = "var(--success)";
+
+      // Briefly flash the status then clear
+      setTimeout(function () {
+        resultStatusEl.textContent = "";
+        resultStatusEl.style.color = "";
+      }, 3000);
+
+    } catch (err) {
+      console.error('Error saving result:', err);
+      resultStatusEl.textContent = "Lỗi: Không thể lưu kết quả. Vui lòng thử lại.";
+      resultStatusEl.style.color = "var(--danger)";
+    } finally {
+      saveResultBtn.disabled = false;
+      saveResultBtn.textContent = "Lưu kết quả";
+    }
+  });
+}
