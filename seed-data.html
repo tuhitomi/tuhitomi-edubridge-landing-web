@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EduBridge - Seed Data</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+    .container {
+      max-width: 640px;
+      width: 100%;
+      background: #1e293b;
+      border-radius: 16px;
+      padding: 2rem;
+      box-shadow: 0 20px 60px rgba(0,0,0,.4);
+    }
+    h1 { font-size: 1.5rem; margin-bottom: .5rem; color: #38bdf8; }
+    p.desc { color: #94a3b8; margin-bottom: 1.5rem; font-size: .9rem; }
+    .btn-group { display: flex; flex-wrap: wrap; gap: .75rem; margin-bottom: 1.5rem; }
+    button {
+      padding: .7rem 1.4rem;
+      border: none;
+      border-radius: 10px;
+      font-size: .85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform .15s, opacity .15s;
+    }
+    button:hover { transform: translateY(-1px); }
+    button:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+    .btn-tutor { background: linear-gradient(135deg,#34d399,#059669); color: #fff; }
+    .btn-student { background: linear-gradient(135deg,#60a5fa,#3b82f6); color: #fff; }
+    .btn-review { background: linear-gradient(135deg,#fbbf24,#d97706); color: #fff; }
+    .btn-result { background: linear-gradient(135deg,#f472b6,#db2777); color: #fff; }
+    .btn-both { background: linear-gradient(135deg,#a78bfa,#7c3aed); color: #fff; }
+    .btn-clear { background: linear-gradient(135deg,#f87171,#dc2626); color: #fff; }
+    #log {
+      background: #0f172a;
+      border-radius: 10px;
+      padding: 1rem;
+      max-height: 400px;
+      overflow-y: auto;
+      font-family: 'Cascadia Code', 'Fira Code', monospace;
+      font-size: .8rem;
+      line-height: 1.6;
+      white-space: pre-wrap;
+    }
+    .log-ok { color: #34d399; }
+    .log-info { color: #60a5fa; }
+    .log-warn { color: #fbbf24; }
+    .log-err { color: #f87171; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🌱 EduBridge Seed Data</h1>
+    <p class="desc">Thêm dữ liệu mẫu (gia sư, học viên, đánh giá, kết quả học tập) vào Firestore.</p>
+
+    <div class="btn-group">
+      <button class="btn-tutor" id="btn-tutors">➕ 6 Gia sư</button>
+      <button class="btn-student" id="btn-students">➕ 6 Học viên</button>
+      <button class="btn-review" id="btn-reviews">⭐ 10 Đánh giá</button>
+      <button class="btn-result" id="btn-results">📊 10 Kết quả</button>
+      <button class="btn-both" id="btn-both">🚀 Thêm tất cả</button>
+      <button class="btn-clear" id="btn-clear">🗑️ Xóa dữ liệu mẫu</button>
+    </div>
+
+    <div id="log"></div>
+  </div>
+
+  <script type="module" src="./seed-data.js"></script>
+</body>
+</html>
