@@ -409,7 +409,26 @@
 <script type="module">
 import { getDocs, collection, query, where, orderBy, limit, getDoc, doc }
   from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
-import { db } from "./firebase-config.js";
+import { onAuthStateChanged, signInAnonymously }
+  from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+import { auth, db } from "./firebase-config.js";
+
+// ── Ensure user is authenticated (anonymous fallback for landing page) ──
+function ensureAuth() {
+  return new Promise((resolve) => {
+    const unsub = onAuthStateChanged(auth, async (user) => {
+      unsub();
+      if (user) { resolve(user); return; }
+      try {
+        const cred = await signInAnonymously(auth);
+        resolve(cred.user);
+      } catch (e) {
+        console.warn("Anonymous auth failed:", e);
+        resolve(null);
+      }
+    });
+  });
+}
 
 // ── Colour palettes per index (banner + avatar gradient)
 const PALETTES = [
@@ -508,6 +527,9 @@ function buildHeroRow(tutor, palette) {
 async function loadFeaturedTutors() {
   const grid = document.getElementById("featured-tutor-grid");
   const heroRows = document.getElementById("hero-tutor-rows");
+
+  // Ensure user is authenticated (anonymous if not logged in)
+  await ensureAuth();
 
   try {
     // Fetch top 6 approved tutors, sort by avgRating desc
