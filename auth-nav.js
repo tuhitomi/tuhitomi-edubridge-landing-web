@@ -206,8 +206,11 @@ if (navAuthLink) {
         navAuthLink.removeAttribute("title");
         if (signupCta) signupCta.style.display = "";
       }
-      await updateBellBadge(user);
-      await updateAdminLink(user);
+      // Skip notification/admin queries for anonymous users (from landing page fallback)
+      if (!user.isAnonymous) {
+        await updateBellBadge(user);
+        await updateAdminLink(user);
+      }
       return;
     }
 
