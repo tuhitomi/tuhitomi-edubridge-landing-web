@@ -374,7 +374,7 @@ function renderWeeklyScheduleTable(item, editable) {
 function renderConnectedScheduleCard(item, mode) {
   var isTutor = mode === "tutor";
   var counterpartLabel = isTutor ? "Học viên" : "Gia sư";
-  var counterpartName = isTutor ? (item.studentName || "Học viên") : (item.tutorName || "Gia sư");
+  var counterpartName = isTutor ? (item.studentName || "Học viên, Phụ huynh của học viên") : (item.tutorName || "Gia sư");
   var updatedAt = item.weeklyScheduleUpdatedAt ? '<small>Cập nhật: ' + formatTime(item.weeklyScheduleUpdatedAt) + '</small>' : "";
   var saveButton = isTutor
     ? '<div class="weekly-schedule-actions"><button type="button" class="btn btn-primary btn-sm save-weekly-schedule-btn" data-id="' + item.id + '">Lưu lịch 7 ngày</button><span class="weekly-schedule-status" data-id="' + item.id + '"></span></div>'
@@ -687,7 +687,7 @@ async function renderUpdateResultForm(email) {
     '<option value="">-- Chọn lớp học --</option>' +
     teaching.map(function (item) {
       return '<option value="' + item.id + '" data-student="' + (item.studentEmail || "") + '" data-subject="' + (item.subject || "") + '">' +
-        (item.studentName || "Học viên") + ' — ' + (item.subject || "Môn học") +
+        (item.studentName || "Học viên, Phụ huynh của học viên") + ' — ' + (item.subject || "Môn học") +
         '</option>';
     }).join("");
 
