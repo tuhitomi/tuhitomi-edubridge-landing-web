@@ -459,10 +459,9 @@ img { display: block; max-width: 100%; }
 
 .hero-copy .eyebrow { animation: fadeSlideUp 0.5s 0.1s var(--ease-out) both; }
 .hero-copy h1 { animation: fadeSlideUp 0.55s 0.18s var(--ease-out) both; }
-.hero-copy .hero-slogan { animation: fadeSlideUp 0.55s 0.24s var(--ease-out) both; }
-.hero-copy .hero-sub { animation: fadeSlideUp 0.55s 0.3s var(--ease-out) both; }
-.hero-copy .hero-search { animation: fadeSlideUp 0.55s 0.37s var(--ease-out) both; }
-.hero-copy .hero-trust { animation: fadeSlideUp 0.5s 0.44s var(--ease-out) both; }
+.hero-copy .hero-sub { animation: fadeSlideUp 0.55s 0.26s var(--ease-out) both; }
+.hero-copy .hero-search { animation: fadeSlideUp 0.55s 0.33s var(--ease-out) both; }
+.hero-copy .hero-trust { animation: fadeSlideUp 0.5s 0.4s var(--ease-out) both; }
 
 .hero-copy h1 {
   font-family: var(--font-display);
@@ -476,15 +475,6 @@ img { display: block; max-width: 100%; }
   font-style: italic;
   color: var(--brand);
   font-family: var(--font-display);
-}
-
-.hero-slogan {
-  font-family: var(--font-display);
-  font-size: clamp(1.15rem, 2vw, 1.45rem);
-  font-weight: 700;
-  line-height: 1.35;
-  color: var(--brand);
-  margin: -0.4rem 0 0.9rem;
 }
 
 .hero-sub {
