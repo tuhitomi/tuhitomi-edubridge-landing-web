@@ -40,6 +40,8 @@
       <p id="notify-detail-time" class="form-note"></p>
       <pre id="notify-detail-payload" class="history-item"></pre>
       <div class="request-modal-actions">
+        <button type="button" class="btn btn-primary" id="notify-accept-request-btn" hidden>Chấp nhận</button>
+        <button type="button" class="btn btn-secondary" id="notify-decline-request-btn" hidden>Từ chối</button>
         <button type="button" class="btn btn-secondary" id="notify-detail-close-btn">Đóng</button>
       </div>
     </div>
@@ -78,6 +80,8 @@
     const detailTextEl = document.getElementById("notify-detail-text");
     const detailTimeEl = document.getElementById("notify-detail-time");
     const detailPayloadEl = document.getElementById("notify-detail-payload");
+    const detailAcceptRequestBtn = document.getElementById("notify-accept-request-btn");
+    const detailDeclineRequestBtn = document.getElementById("notify-decline-request-btn");
     const detailCloseBtn = document.getElementById("notify-detail-close-btn");
 
     // ============ STATE VARIABLES ============
@@ -85,6 +89,7 @@
     let canReviewTutor = false;
     let notificationsUnsubscribe = null;
     let currentNotifications = [];
+    let activeDetailNotification = null;
 
     // ============ UTILITY FUNCTIONS ============
     function formatTime(value) {
@@ -143,6 +148,133 @@
       }
     }
 
+    async function createNotification(userEmail, text, type, payload) {
+      await addDoc(collection(db, 'notifications'), {
+        userEmail: String(userEmail || "").trim().toLowerCase(),
+        text: text,
+        type: type || "general",
+        payload: payload || {},
+        read: false,
+        createdAt: new Date().toISOString()
+      });
+      window.dispatchEvent(new Event("edubridge-notifications-updated"));
+    }
+
+    async function getRequestForCurrentTutor(requestId) {
+      if (!requestId) return null;
+      const snap = await getDoc(doc(db, 'requests', String(requestId)));
+      if (!snap.exists()) return null;
+
+      const request = { id: snap.id, ...snap.data() };
+      if (String(request.tutorEmail || "").trim().toLowerCase() !== currentEmail) {
+        return null;
+      }
+      return request;
+    }
+
+    async function acceptTutorRequest(requestId, button) {
+      const request = await getRequestForCurrentTutor(requestId);
+      if (!request) {
+        alert("Không tìm thấy yêu cầu hoặc yêu cầu này không thuộc tài khoản gia sư hiện tại.");
+        return;
+      }
+      if (request.status !== "waiting_tutor") {
+        alert("Yêu cầu này không còn ở trạng thái chờ gia sư phản hồi.");
+        return;
+      }
+
+      const originalText = button ? button.textContent : "";
+      if (button) {
+        button.disabled = true;
+        button.textContent = "Đang xử lý...";
+      }
+
+      try {
+        await updateDoc(doc(db, 'requests', String(requestId)), {
+          status: "accepted_waiting_funds",
+          tutorRespondedAt: new Date().toISOString()
+        });
+        await createNotification(
+          request.studentEmail,
+          "Gia sư " + (request.tutorName || currentEmail) + " đã chấp nhận yêu cầu. Vui lòng nạp tiền để bắt đầu.",
+          "matching-status",
+          { requestId: String(requestId), status: "accepted_waiting_funds" }
+        );
+        alert("Đã chấp nhận yêu cầu.");
+        closeDetail();
+      } catch (error) {
+        console.error('Error accepting tutor request:', error);
+        alert("Có lỗi xảy ra khi chấp nhận yêu cầu.");
+      } finally {
+        if (button) {
+          button.disabled = false;
+          button.textContent = originalText || "Chấp nhận";
+        }
+      }
+    }
+
+    async function declineTutorRequest(requestId, button) {
+      const request = await getRequestForCurrentTutor(requestId);
+      if (!request) {
+        alert("Không tìm thấy yêu cầu hoặc yêu cầu này không thuộc tài khoản gia sư hiện tại.");
+        return;
+      }
+      if (request.status !== "waiting_tutor") {
+        alert("Yêu cầu này không còn ở trạng thái chờ gia sư phản hồi.");
+        return;
+      }
+
+      const reason = prompt("Lý do từ chối yêu cầu (tùy chọn):", "") || "";
+      const originalText = button ? button.textContent : "";
+      if (button) {
+        button.disabled = true;
+        button.textContent = "Đang xử lý...";
+      }
+
+      try {
+        await updateDoc(doc(db, 'requests', String(requestId)), {
+          status: "declined",
+          tutorRespondedAt: new Date().toISOString(),
+          declineReason: reason.trim()
+        });
+        await createNotification(
+          request.studentEmail,
+          "Gia sư " + (request.tutorName || currentEmail) + " đã từ chối yêu cầu của bạn.",
+          "matching-status",
+          { requestId: String(requestId), status: "declined" }
+        );
+        alert("Đã từ chối yêu cầu.");
+        closeDetail();
+      } catch (error) {
+        console.error('Error declining tutor request:', error);
+        alert("Có lỗi xảy ra khi từ chối yêu cầu.");
+      } finally {
+        if (button) {
+          button.disabled = false;
+          button.textContent = originalText || "Từ chối";
+        }
+      }
+    }
+
+    async function syncRequestActionButtons(notification) {
+      activeDetailNotification = notification;
+      detailAcceptRequestBtn.hidden = true;
+      detailDeclineRequestBtn.hidden = true;
+      detailAcceptRequestBtn.removeAttribute("data-request-id");
+      detailDeclineRequestBtn.removeAttribute("data-request-id");
+
+      const requestId = notification && notification.payload ? notification.payload.requestId : "";
+      if (notification.type !== "tutor-request" || !requestId) return;
+
+      const request = await getRequestForCurrentTutor(requestId);
+      if (!request || request.status !== "waiting_tutor") return;
+
+      detailAcceptRequestBtn.hidden = false;
+      detailDeclineRequestBtn.hidden = false;
+      detailAcceptRequestBtn.setAttribute("data-request-id", requestId);
+      detailDeclineRequestBtn.setAttribute("data-request-id", requestId);
+    }
+
     function openDetail(notificationId) {
       // Find notification in current list (using String comparison)
       const notification = currentNotifications.find(n => n.id === notificationId);
@@ -152,10 +284,14 @@
       }
 
       // Show modal immediately
+      activeDetailNotification = notification;
       detailTextEl.textContent = notification.text || "(Không có nội dung)";
       detailTimeEl.textContent = "Thời gian: " + formatTime(notification.createdAt) + " • Loại: " + (notification.type || "general");
       detailPayloadEl.textContent = notification.payload ? JSON.stringify(notification.payload, null, 2) : "Không có dữ liệu bổ sung.";
+      detailAcceptRequestBtn.hidden = true;
+      detailDeclineRequestBtn.hidden = true;
       detailModalEl.hidden = false;
+      syncRequestActionButtons(notification).catch(err => console.error('Error loading request actions:', err));
 
       // Update read state in background (non-blocking)
       if (!notification.read) {
@@ -165,6 +301,7 @@
 
     function closeDetail() {
       detailModalEl.hidden = true;
+      activeDetailNotification = null;
     }
 
     async function updateTutorStatus(tutorEmail, status, reason) {
@@ -252,6 +389,21 @@
         });
       });
 
+      // Tutor request action buttons
+      document.querySelectorAll(".notify-accept-request-btn").forEach(button => {
+        button.addEventListener("click", async function () {
+          const requestId = button.getAttribute("data-request-id");
+          await acceptTutorRequest(requestId, button);
+        });
+      });
+
+      document.querySelectorAll(".notify-decline-request-btn").forEach(button => {
+        button.addEventListener("click", async function () {
+          const requestId = button.getAttribute("data-request-id");
+          await declineTutorRequest(requestId, button);
+        });
+      });
+
       // Admin approval buttons
       if (canReviewTutor) {
         document.querySelectorAll(".notify-approve-btn").forEach(button => {
@@ -283,6 +435,8 @@
             const unreadTag = item.read ? "" : " <strong>(Mới)</strong>";
             const toggleReadLabel = item.read ? "Đánh dấu chưa đọc" : "Đánh dấu đã đọc";
             const toggleReadValue = item.read ? "false" : "true";
+            const requestId = item.payload && item.payload.requestId ? String(item.payload.requestId) : "";
+            const isTutorRequest = item.type === "tutor-request" && requestId;
 
             // Check if this is a tutor approval request for admin/moderator
             const isTutorApprovalRequest = canReviewTutor && 
@@ -313,6 +467,10 @@
               item.text + unreadTag + 
               '<br><small>' + formatTime(item.createdAt) + '</small>' +
               '<div class="request-modal-actions">' +
+              (isTutorRequest
+                ? '<button type="button" class="btn btn-primary notify-accept-request-btn" data-request-id="' + requestId + '">Chấp nhận</button>' +
+                  '<button type="button" class="btn btn-secondary notify-decline-request-btn" data-request-id="' + requestId + '">Từ chối</button>'
+                : '') +
               '<button type="button" class="btn btn-secondary notify-detail-btn" data-id="' + item.id + '">Xem chi tiết</button>' +
               '<button type="button" class="btn btn-secondary notify-toggle-read-btn" data-id="' + item.id + '" data-read="' + toggleReadValue + '">' + toggleReadLabel + '</button>' +
               '</div>' +
@@ -357,6 +515,12 @@
     });
 
     detailCloseBtn.addEventListener("click", closeDetail);
+    detailAcceptRequestBtn.addEventListener("click", async function () {
+      await acceptTutorRequest(detailAcceptRequestBtn.getAttribute("data-request-id"), detailAcceptRequestBtn);
+    });
+    detailDeclineRequestBtn.addEventListener("click", async function () {
+      await declineTutorRequest(detailDeclineRequestBtn.getAttribute("data-request-id"), detailDeclineRequestBtn);
+    });
     detailModalEl.addEventListener("click", function (event) {
       if (event.target === detailModalEl) closeDetail();
     });
