@@ -434,7 +434,7 @@ async function renderHistories(email) {
         } else if (item.status === "in_teaching") {
           actionButtons = '<div class="request-modal-actions"><button type="button" class="btn btn-primary tutor-release-btn" data-id="' + item.id + '">Xác nhận hoàn thành tuần đầu</button></div>';
         }
-        return '<li class="history-item"><strong>Học viên:</strong> ' + item.studentName + '<br><strong>Môn:</strong> ' + item.subject + '<br><strong>Trạng thái:</strong> <span class="status-badge ' + requestStatusClass(item.status) + '">' + requestStatusLabel(item.status) + "</span><br><strong>Ghi chú:</strong> " + (item.note || "Không có") + '<br><small>' + formatTime(item.createdAt) + "</small>" + actionButtons + "</li>";
+        return '<li class="history-item"><strong>Học viên, Phụ huynh của học viên:</strong> ' + item.studentName + '<br><strong>Môn:</strong> ' + item.subject + '<br><strong>Trạng thái:</strong> <span class="status-badge ' + requestStatusClass(item.status) + '">' + requestStatusLabel(item.status) + "</span><br><strong>Ghi chú:</strong> " + (item.note || "Không có") + '<br><small>' + formatTime(item.createdAt) + "</small>" + actionButtons + "</li>";
       }).join("")
     : '<li class="history-item">Chưa có yêu cầu nào gửi đến bạn.</li>';
 
