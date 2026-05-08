@@ -22,15 +22,20 @@ function isPermissionDeniedError(error) {
 
 // Global variable to store unsubscribe function for notifications listener
 let notificationsUnsubscribe = null;
-const avatarIconSvg =
-  '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
-  '<circle cx="12" cy="8" r="4" fill="currentColor"/>' +
-  '<path fill="currentColor" d="M12 14c-5 0-8 2.5-8 5v1h16v-1c0-2.5-3-5-8-5Z"/>' +
-  "</svg>";
 const bellIconSvg =
   '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">' +
   '<path fill="currentColor" d="M12 22a2.5 2.5 0 0 0 2.45-2h-4.9A2.5 2.5 0 0 0 12 22Zm7-6v-1l-1.5-1.5V10a5.5 5.5 0 0 0-11 0v3.5L5 15v1h14Z" />' +
   "</svg>";
+
+function getUserInitials(user) {
+  var source = String((user && user.displayName) || (user && user.email) || "U").trim();
+  var namePart = source.split("@")[0];
+  var parts = namePart.split(/[\s._-]+/).filter(Boolean);
+  if (parts.length >= 2) {
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  }
+  return namePart.slice(0, 2).toUpperCase() || "U";
+}
 
 async function readNotifications(userEmail) {
   try {
@@ -192,7 +197,7 @@ if (navAuthLink) {
     if (user) {
       if (user.emailVerified) {
         navAuthLink.href = "profile.html";
-        navAuthLink.innerHTML = avatarIconSvg;
+        navAuthLink.innerHTML = '<span class="nav-auth-avatar" aria-hidden="true">' + getUserInitials(user) + '</span><span class="nav-auth-label">Hồ sơ</span>';
         navAuthLink.classList.add("nav-auth-icon");
         navAuthLink.setAttribute("aria-label", "Trang cá nhân");
         navAuthLink.title = "Trang cá nhân";
