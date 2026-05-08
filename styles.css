@@ -275,6 +275,100 @@ img { display: block; max-width: 100%; }
   box-shadow: 0 2px 8px rgba(10, 95, 74, 0.12);
   transition: transform var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast), border-color var(--duration-fast), background var(--duration-fast);
 }
+
+/* 7-day shared schedule */
+.weekly-schedule-card {
+  display: block;
+  border-left-color: var(--brand);
+}
+.weekly-schedule-card:hover {
+  transform: none;
+}
+.weekly-schedule-wrap {
+  width: 100%;
+  overflow-x: auto;
+  margin-top: 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+}
+.weekly-schedule-table {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+.weekly-schedule-table th {
+  padding: 10px;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  text-align: left;
+}
+.weekly-schedule-table th:last-child,
+.weekly-schedule-table td:last-child {
+  border-right: 0;
+}
+.weekly-schedule-table th span {
+  display: block;
+  font-size: var(--text-xs);
+  font-weight: 800;
+  color: var(--ink-100);
+}
+.weekly-schedule-table th small {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+  color: var(--ink-40);
+}
+.weekly-schedule-table td {
+  padding: 8px;
+  border-right: 1px solid var(--border);
+  vertical-align: top;
+}
+.weekly-schedule-input {
+  width: 100%;
+  min-height: 108px;
+  resize: vertical;
+  border: 1.5px solid var(--border-strong);
+  border-radius: var(--r-md);
+  background: var(--page-bg);
+  color: var(--ink-100);
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  line-height: 1.5;
+  padding: 9px;
+}
+.weekly-schedule-input:focus {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px var(--brand-ghost);
+  outline: none;
+}
+.weekly-schedule-readonly {
+  min-height: 108px;
+  padding: 9px;
+  border-radius: var(--r-md);
+  background: var(--page-bg);
+  color: var(--ink-60);
+  font-size: var(--text-xs);
+  line-height: 1.55;
+  white-space: normal;
+}
+.weekly-schedule-readonly span {
+  color: var(--ink-20);
+}
+.weekly-schedule-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 0.9rem;
+  flex-wrap: wrap;
+}
+.weekly-schedule-status {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  color: var(--brand);
+}
 .nav-auth-icon:hover {
   transform: translateY(-1px);
   background: var(--brand-light);

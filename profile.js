@@ -1,5 +1,5 @@
 import { onAuthStateChanged, signOut, updateProfile } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
-import { collection, doc, getDocs, setDoc, getDoc, addDoc, updateDoc, query, where, limit, orderBy } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+import { collection, doc, getDocs, setDoc, getDoc, addDoc, updateDoc, query, where, limit, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 import { auth, db } from "./firebase-config.js";
 
 var form = document.getElementById("profile-form");
@@ -28,11 +28,15 @@ var disputeReasonEl = document.getElementById("dispute-reason");
 var createDisputeBtn = document.getElementById("create-dispute-btn");
 var currentUser = null;
 var SERVICE_FEE = 50000;
+var scheduleUnsubscribes = [];
 
 // ── Schedule & Results DOM refs ──
 var scheduleSection = document.getElementById("tutor-schedule-section");
 var scheduleList = document.getElementById("teaching-schedule");
 var scheduleCountEl = document.getElementById("schedule-count");
+var studentScheduleSection = document.getElementById("student-schedule-section");
+var studentScheduleList = document.getElementById("student-schedule-list");
+var studentScheduleCountEl = document.getElementById("student-schedule-count");
 var updateResultsSection = document.getElementById("tutor-update-results-section");
 var resultRequestSelect = document.getElementById("result-request-select");
 var resultSessionDate = document.getElementById("result-session-date");
@@ -279,6 +283,116 @@ function formatTime(value) {
   }
 }
 
+function escapeHtml(value) {
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function isConnectedRequest(item) {
+  return item.status === "accepted_waiting_funds" || item.status === "in_teaching";
+}
+
+function formatDateInput(date) {
+  var year = date.getFullYear();
+  var month = String(date.getMonth() + 1).padStart(2, "0");
+  var day = String(date.getDate()).padStart(2, "0");
+  return year + "-" + month + "-" + day;
+}
+
+function buildDefaultWeeklySchedule() {
+  var labels = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
+  var today = new Date();
+  today.setHours(0, 0, 0, 0);
+  var days = [];
+
+  for (var i = 0; i < 7; i++) {
+    var date = new Date(today);
+    date.setDate(today.getDate() + i);
+    days.push({
+      date: formatDateInput(date),
+      label: labels[date.getDay()],
+      content: ""
+    });
+  }
+  return days;
+}
+
+function normalizeWeeklySchedule(schedule) {
+  var defaults = buildDefaultWeeklySchedule();
+  if (!Array.isArray(schedule)) return defaults;
+
+  return defaults.map(function (day, index) {
+    var saved = schedule[index] || {};
+    return {
+      date: saved.date || day.date,
+      label: saved.label || day.label,
+      content: String(saved.content || "")
+    };
+  });
+}
+
+function formatScheduleDate(value) {
+  try {
+    return new Date(value + "T00:00:00").toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" });
+  } catch (e) {
+    return value || "";
+  }
+}
+
+function renderWeeklyScheduleTable(item, editable) {
+  var schedule = normalizeWeeklySchedule(item.weeklySchedule);
+  var cells = schedule.map(function (day, index) {
+    var content = escapeHtml(day.content);
+    if (editable) {
+      return (
+        '<td>' +
+        '<textarea class="weekly-schedule-input" data-day-index="' + index + '" rows="4" placeholder="Giờ học, nội dung, ghi chú...">' + content + '</textarea>' +
+        '</td>'
+      );
+    }
+    return '<td><div class="weekly-schedule-readonly">' + (content ? content.replace(/\n/g, "<br>") : '<span>Chưa cập nhật</span>') + '</div></td>';
+  }).join("");
+
+  var headers = schedule.map(function (day) {
+    return '<th><span>' + escapeHtml(day.label) + '</span><small>' + escapeHtml(formatScheduleDate(day.date)) + '</small></th>';
+  }).join("");
+
+  return (
+    '<div class="weekly-schedule-wrap">' +
+    '<table class="weekly-schedule-table">' +
+    '<thead><tr>' + headers + '</tr></thead>' +
+    '<tbody><tr>' + cells + '</tr></tbody>' +
+    '</table>' +
+    '</div>'
+  );
+}
+
+function renderConnectedScheduleCard(item, mode) {
+  var isTutor = mode === "tutor";
+  var counterpartLabel = isTutor ? "Học viên" : "Gia sư";
+  var counterpartName = isTutor ? (item.studentName || "Học viên") : (item.tutorName || "Gia sư");
+  var updatedAt = item.weeklyScheduleUpdatedAt ? '<small>Cập nhật: ' + formatTime(item.weeklyScheduleUpdatedAt) + '</small>' : "";
+  var saveButton = isTutor
+    ? '<div class="weekly-schedule-actions"><button type="button" class="btn btn-primary btn-sm save-weekly-schedule-btn" data-id="' + item.id + '">Lưu lịch 7 ngày</button><span class="weekly-schedule-status" data-id="' + item.id + '"></span></div>'
+    : "";
+
+  return (
+    '<li class="schedule-card weekly-schedule-card" data-request-id="' + item.id + '">' +
+    '<div class="schedule-card-body">' +
+    '<div class="sc-name">' + escapeHtml(counterpartLabel + ": " + counterpartName) + '</div>' +
+    '<div class="sc-detail"><strong>Môn:</strong> ' + escapeHtml(item.subject || "—") + ' · <strong>Trạng thái:</strong> ' + escapeHtml(requestStatusLabel(item.status)) + '</div>' +
+    updatedAt +
+    renderWeeklyScheduleTable(item, isTutor) +
+    saveButton +
+    '</div>' +
+    '</li>'
+  );
+}
+
 // ── FIX: renderHistories — update expired individually, not rewrite-all ──
 
 async function renderHistories(email) {
@@ -357,6 +471,7 @@ async function bindRequestActions(email) {
       await updateRequestById(requestId, { status: "accepted_waiting_funds", tutorRespondedAt: new Date().toISOString() });
       await pushNotification(req.studentEmail, "Gia sư " + req.tutorName + " đã chấp nhận yêu cầu. Vui lòng nạp tiền để bắt đầu.", "matching-status", { requestId: requestId, status: "accepted_waiting_funds" });
       await renderHistories(email);
+      await renderTeachingSchedule(email);
     });
   });
 
@@ -370,6 +485,7 @@ async function bindRequestActions(email) {
       await updateRequestById(requestId, { status: "declined", tutorRespondedAt: new Date().toISOString(), declineReason: reason.trim() });
       await pushNotification(req.studentEmail, "Gia sư " + req.tutorName + " đã từ chối yêu cầu của bạn.", "matching-status", { requestId: requestId, status: "declined" });
       await renderHistories(email);
+      await renderStudentSchedule(email);
     });
   });
 
@@ -391,6 +507,7 @@ async function bindRequestActions(email) {
       await updateRequestById(requestId, { escrow: escrow, status: "in_teaching" });
       await pushNotification(item.tutorEmail, "Phụ huynh đã nạp tiền vào ví trung gian cho lớp " + item.subject + ". Bạn có thể bắt đầu dạy.", "escrow-update", { requestId: requestId, status: "in_teaching" });
       await renderHistories(email);
+      await renderStudentSchedule(email);
     });
   });
 
@@ -432,7 +549,7 @@ async function renderTeachingSchedule(email) {
   email = String(email || "").trim().toLowerCase();
   var requests = await readTutorRequests(email);
   var teaching = requests.filter(function (item) {
-    return String(item.tutorEmail || "").toLowerCase() === email && item.status === "in_teaching";
+    return String(item.tutorEmail || "").toLowerCase() === email && isConnectedRequest(item);
   });
 
   if (teaching.length === 0) {
@@ -449,24 +566,105 @@ async function renderTeachingSchedule(email) {
   scheduleSection.style.display = "block";
   scheduleCountEl.textContent = String(teaching.length);
   scheduleList.innerHTML = teaching.map(function (item) {
-    var note = item.note || "Chưa có ghi chú";
-    var createdDate = "";
-    try { createdDate = new Date(item.createdAt).toLocaleDateString("vi-VN"); } catch (e) {}
-    return (
-      '<li class="schedule-card">' +
-      '<div class="schedule-card-icon">📚</div>' +
-      '<div class="schedule-card-body">' +
-      '<div class="sc-name">' + (item.studentName || "Học viên") + '</div>' +
-      '<div class="sc-detail">' +
-      '<strong>Môn:</strong> ' + (item.subject || "—") + '<br>' +
-      '<strong>Ghi chú:</strong> ' + note + '<br>' +
-      '<strong>Bắt đầu:</strong> ' + createdDate +
-      '</div>' +
-      '</div>' +
-      '<span class="schedule-card-badge">Đang dạy</span>' +
-      '</li>'
-    );
+    return renderConnectedScheduleCard(item, "tutor");
   }).join("");
+  bindWeeklyScheduleActions(email);
+}
+
+async function renderStudentSchedule(email) {
+  if (!studentScheduleSection || !studentScheduleList) return;
+  email = String(email || "").trim().toLowerCase();
+  var requests = await readRequestsForUser(email);
+  var connected = requests.filter(function (item) {
+    return String(item.studentEmail || "").toLowerCase() === email && isConnectedRequest(item);
+  });
+
+  if (connected.length === 0) {
+    studentScheduleSection.style.display = "none";
+    studentScheduleCountEl.textContent = "0";
+    studentScheduleList.innerHTML = "";
+    return;
+  }
+
+  studentScheduleSection.style.display = "block";
+  studentScheduleCountEl.textContent = String(connected.length);
+  studentScheduleList.innerHTML = connected.map(function (item) {
+    return renderConnectedScheduleCard(item, "student");
+  }).join("");
+}
+
+async function bindWeeklyScheduleActions(email) {
+  document.querySelectorAll(".save-weekly-schedule-btn").forEach(function (button) {
+    button.addEventListener("click", async function () {
+      var requestId = button.getAttribute("data-id");
+      var card = document.querySelector('.weekly-schedule-card[data-request-id="' + requestId + '"]');
+      var statusEl = document.querySelector('.weekly-schedule-status[data-id="' + requestId + '"]');
+      if (!card) return;
+
+      var snap = await getDoc(doc(db, 'requests', requestId));
+      if (!snap.exists() || String(snap.data().tutorEmail || "").toLowerCase() !== email) return;
+
+      var nextSchedule = normalizeWeeklySchedule(snap.data().weeklySchedule);
+      card.querySelectorAll(".weekly-schedule-input").forEach(function (input) {
+        var index = Number(input.getAttribute("data-day-index"));
+        if (nextSchedule[index]) nextSchedule[index].content = input.value.trim();
+      });
+
+      button.disabled = true;
+      button.textContent = "Đang lưu...";
+      if (statusEl) statusEl.textContent = "";
+
+      try {
+        await updateRequestById(requestId, {
+          weeklySchedule: nextSchedule,
+          weeklyScheduleUpdatedAt: new Date().toISOString()
+        });
+        var item = snap.data();
+        await pushNotification(item.studentEmail, "Gia sư " + (item.tutorName || email) + " đã cập nhật lịch học 7 ngày cho môn " + (item.subject || "lớp học") + ".", "schedule-updated", { requestId: requestId });
+        if (statusEl) statusEl.textContent = "Đã lưu";
+        await renderTeachingSchedule(email);
+      } catch (error) {
+        console.error("Cannot save weekly schedule", error);
+        if (statusEl) statusEl.textContent = "Không lưu được";
+      } finally {
+        button.disabled = false;
+        button.textContent = "Lưu lịch 7 ngày";
+      }
+    });
+  });
+}
+
+function clearScheduleRealtime() {
+  scheduleUnsubscribes.forEach(function (unsubscribe) {
+    try { unsubscribe(); } catch (e) {}
+  });
+  scheduleUnsubscribes = [];
+}
+
+function setupScheduleRealtime(email, canEditTutorSchedule) {
+  clearScheduleRealtime();
+  email = String(email || "").trim().toLowerCase();
+  if (!email) return;
+
+  var studentQuery = query(collection(db, 'requests'), where('studentEmail', '==', email));
+  scheduleUnsubscribes.push(onSnapshot(studentQuery, function () {
+    renderStudentSchedule(email).catch(function (error) {
+      console.warn("Cannot refresh student schedule", error);
+    });
+  }, function (error) {
+    console.warn("Cannot listen to student schedule", error);
+  }));
+
+  if (canEditTutorSchedule) {
+    var tutorQuery = query(collection(db, 'requests'), where('tutorEmail', '==', email));
+    scheduleUnsubscribes.push(onSnapshot(tutorQuery, function () {
+      renderTeachingSchedule(email).catch(function (error) {
+        console.warn("Cannot refresh tutor schedule", error);
+      });
+    }, function (error) {
+      console.warn("Cannot listen to tutor schedule", error);
+    }));
+  }
 }
 
 // ── Update results form (for tutors) ──
@@ -604,14 +802,17 @@ onAuthStateChanged(auth, async function (user) {
   await renderHistories(emailLower);
   await renderTutorProfile(emailLower);
   await renderWalletInfo(emailLower);
+  await renderStudentSchedule(emailLower);
 
   // ── Schedule & Results ──
   // Check if this user is a tutor
   var tutorProfile = await getTutorProfileByEmail(emailLower);
-  if (tutorProfile && tutorProfile.status === "approved") {
+  var canEditTutorSchedule = !!(tutorProfile && tutorProfile.status === "approved");
+  if (canEditTutorSchedule) {
     await renderTeachingSchedule(emailLower);
     await renderUpdateResultForm(emailLower);
   }
+  setupScheduleRealtime(emailLower, canEditTutorSchedule);
   // Always show learning results for any user (student/parent)
   await renderLearningResults(emailLower);
 });
@@ -630,9 +831,12 @@ form.addEventListener("submit", async function (event) {
 });
 
 logoutBtn.addEventListener("click", async function () {
+  clearScheduleRealtime();
   await signOut(auth);
   window.location.href = "dang-nhap.html";
 });
+
+window.addEventListener("beforeunload", clearScheduleRealtime);
 
 // ── FIX: saveTutorProfile — use setDoc on single doc instead of delete-all/rewrite-all ──
 
