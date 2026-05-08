@@ -397,7 +397,7 @@ class TutorBrowser {
       tutorName,
       tutorEmail,
       subject:        this.selectedTutor.subjectLabel,
-      studentEmail:   this.activeUser.email,
+      studentEmail,
       studentName,
       note,
       createdAt:      nowIso,

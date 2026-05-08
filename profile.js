@@ -62,6 +62,46 @@ async function readRequests() {
   }
 }
 
+async function readRequestsForUser(email) {
+  var normalizedEmail = String(email || "").trim().toLowerCase();
+  if (!normalizedEmail) return [];
+
+  try {
+    var sentQuery = query(collection(db, 'requests'), where('studentEmail', '==', normalizedEmail));
+    var receivedQuery = query(collection(db, 'requests'), where('tutorEmail', '==', normalizedEmail));
+    var results = await Promise.all([getDocs(sentQuery), getDocs(receivedQuery)]);
+    var byId = {};
+
+    results.forEach(function (snapshot) {
+      snapshot.docs.forEach(function (docSnap) {
+        byId[docSnap.id] = { ...docSnap.data(), id: docSnap.id };
+      });
+    });
+
+    return Object.keys(byId).map(function (id) {
+      return byId[id];
+    });
+  } catch (e) {
+    console.warn('Cannot read user requests', e);
+    return [];
+  }
+}
+
+async function readTutorRequests(email) {
+  var normalizedEmail = String(email || "").trim().toLowerCase();
+  if (!normalizedEmail) return [];
+
+  try {
+    var snapshot = await getDocs(query(collection(db, 'requests'), where('tutorEmail', '==', normalizedEmail)));
+    return snapshot.docs.map(function (docSnap) {
+      return { ...docSnap.data(), id: docSnap.id };
+    });
+  } catch (e) {
+    console.warn('Cannot read tutor requests', e);
+    return [];
+  }
+}
+
 async function updateRequestById(requestId, updates) {
   await updateDoc(doc(db, 'requests', String(requestId)), updates);
 }
@@ -242,19 +282,20 @@ function formatTime(value) {
 // ── FIX: renderHistories — update expired individually, not rewrite-all ──
 
 async function renderHistories(email) {
-  var requests = await readRequests();
+  email = String(email || "").trim().toLowerCase();
+  var requests = await readRequestsForUser(email);
   // Update expired requests individually
   for (var i = 0; i < requests.length; i++) {
-    if (requests[i].status === "waiting_tutor" && requests[i].respondBy && new Date(requests[i].respondBy).getTime() < Date.now()) {
+    if (String(requests[i].tutorEmail || "").toLowerCase() === email && requests[i].status === "waiting_tutor" && requests[i].respondBy && new Date(requests[i].respondBy).getTime() < Date.now()) {
       requests[i].status = "expired";
       try { await updateRequestById(requests[i].id, { status: "expired" }); } catch (e) { console.warn('Cannot update expired', e); }
     }
   }
   var sent = requests.filter(function (item) {
-    return item.studentEmail === email;
+    return String(item.studentEmail || "").toLowerCase() === email;
   });
   var received = requests.filter(function (item) {
-    return item.tutorEmail === email;
+    return String(item.tutorEmail || "").toLowerCase() === email;
   });
   var disputable = requests.filter(function (item) {
     var involved = item.studentEmail === email || item.tutorEmail === email;
@@ -311,7 +352,7 @@ async function bindRequestActions(email) {
     button.addEventListener("click", async function () {
       var requestId = button.getAttribute("data-id");
       var snap = await getDoc(doc(db, 'requests', requestId));
-      if (!snap.exists() || snap.data().tutorEmail !== email) return;
+      if (!snap.exists() || String(snap.data().tutorEmail || "").toLowerCase() !== email) return;
       var req = snap.data();
       await updateRequestById(requestId, { status: "accepted_waiting_funds", tutorRespondedAt: new Date().toISOString() });
       await pushNotification(req.studentEmail, "Gia sư " + req.tutorName + " đã chấp nhận yêu cầu. Vui lòng nạp tiền để bắt đầu.", "matching-status", { requestId: requestId, status: "accepted_waiting_funds" });
@@ -324,7 +365,7 @@ async function bindRequestActions(email) {
       var requestId = button.getAttribute("data-id");
       var reason = prompt("Lý do từ chối yêu cầu (tùy chọn):", "") || "";
       var snap = await getDoc(doc(db, 'requests', requestId));
-      if (!snap.exists() || snap.data().tutorEmail !== email) return;
+      if (!snap.exists() || String(snap.data().tutorEmail || "").toLowerCase() !== email) return;
       var req = snap.data();
       await updateRequestById(requestId, { status: "declined", tutorRespondedAt: new Date().toISOString(), declineReason: reason.trim() });
       await pushNotification(req.studentEmail, "Gia sư " + req.tutorName + " đã từ chối yêu cầu của bạn.", "matching-status", { requestId: requestId, status: "declined" });
@@ -336,7 +377,7 @@ async function bindRequestActions(email) {
     button.addEventListener("click", async function () {
       var requestId = button.getAttribute("data-id");
       var snap = await getDoc(doc(db, 'requests', requestId));
-      if (!snap.exists() || snap.data().studentEmail !== email) return;
+      if (!snap.exists() || String(snap.data().studentEmail || "").toLowerCase() !== email) return;
       var item = snap.data();
       var monthlyTuition = Number(item.pricePerSession || 0) * Number(item.monthlySessions || 8);
       var escrow = {
@@ -357,7 +398,7 @@ async function bindRequestActions(email) {
     button.addEventListener("click", async function () {
       var requestId = button.getAttribute("data-id");
       var snap = await getDoc(doc(db, 'requests', requestId));
-      if (!snap.exists() || snap.data().tutorEmail !== email) return;
+      if (!snap.exists() || String(snap.data().tutorEmail || "").toLowerCase() !== email) return;
       var item = snap.data();
       if (!item.escrow) return;
       await updateRequestById(requestId, { status: "completed", releasedAt: new Date().toISOString() });
@@ -388,9 +429,10 @@ async function renderWalletInfo(email) {
 
 async function renderTeachingSchedule(email) {
   if (!scheduleSection || !scheduleList) return;
-  var requests = await readRequests();
+  email = String(email || "").trim().toLowerCase();
+  var requests = await readTutorRequests(email);
   var teaching = requests.filter(function (item) {
-    return item.tutorEmail === email && item.status === "in_teaching";
+    return String(item.tutorEmail || "").toLowerCase() === email && item.status === "in_teaching";
   });
 
   if (teaching.length === 0) {
@@ -431,9 +473,10 @@ async function renderTeachingSchedule(email) {
 
 async function renderUpdateResultForm(email) {
   if (!updateResultsSection || !resultRequestSelect) return;
-  var requests = await readRequests();
+  email = String(email || "").trim().toLowerCase();
+  var requests = await readTutorRequests(email);
   var teaching = requests.filter(function (item) {
-    return item.tutorEmail === email && item.status === "in_teaching";
+    return String(item.tutorEmail || "").toLowerCase() === email && item.status === "in_teaching";
   });
 
   if (teaching.length === 0) {
@@ -557,12 +600,12 @@ onAuthStateChanged(auth, async function (user) {
   currentUser = user;
   nameInput.value = user.displayName || "";
   emailInput.value = user.email || "";
-  await renderHistories(user.email || "");
-  await renderTutorProfile(user.email || "");
-  await renderWalletInfo(String(user.email || "").toLowerCase());
+  var emailLower = String(user.email || "").toLowerCase();
+  await renderHistories(emailLower);
+  await renderTutorProfile(emailLower);
+  await renderWalletInfo(emailLower);
 
   // ── Schedule & Results ──
-  var emailLower = String(user.email || "").toLowerCase();
   // Check if this user is a tutor
   var tutorProfile = await getTutorProfileByEmail(emailLower);
   if (tutorProfile && tutorProfile.status === "approved") {
@@ -695,7 +738,7 @@ createDisputeBtn.addEventListener("click", async function () {
   await addDoc(collection(db, 'disputes'), {
     requestId: requestId,
     reporterEmail: email,
-    reporterRole: request.studentEmail === email ? "student" : "tutor",
+    reporterRole: String(request.studentEmail || "").toLowerCase() === email ? "student" : "tutor",
     tutorEmail: request.tutorEmail,
     studentEmail: request.studentEmail,
     reason: reason,
